@@ -7,6 +7,11 @@ set(PROJECT_SOURCES
         notpad.cpp
 )
 
+set(RESOURCE_FILES
+    forms/input.txt
+)
+
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(${TARGET_NAME}
         MANUAL_FINALIZATION
@@ -17,6 +22,11 @@ else()
         ${PROJECT_SOURCES}
     )
 endif()
+
+qt6_add_resources(${TARGET_NAME} "resources"
+    FILES
+        ${RESOURCE_FILES}
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}  # Adds src/ to the include paths

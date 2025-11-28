@@ -3,11 +3,13 @@
 
 #include <QMainWindow>
 
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class NotPad;
 }
 QT_END_NAMESPACE
+
 
 class NotPad : public QMainWindow
 {
@@ -17,7 +19,12 @@ public:
     NotPad(QWidget *parent = nullptr);
     ~NotPad();
 
+private slots:
+    void on_findButton_clicked();
+
 private:
     Ui::NotPad *ui;
 };
+
+
 #endif // NOTPAD_HPP

@@ -2,6 +2,7 @@
 #define NOTPAD_HPP
 
 #include <QMainWindow>
+#include <QDir>
 
 
 QT_BEGIN_NAMESPACE
@@ -19,10 +20,21 @@ public:
     NotPad(QWidget *parent = nullptr);
     ~NotPad();
 
+private:
+    bool openFile(const QString &fileName);
+
 private slots:
+    void on_actionOpen_triggered();
+    void on_actionAbout_triggered();
+    void on_actionAboutQt_triggered();
+
     void on_findButton_clicked();
 
 private:
+
+    QDir m_currentDir;
+    std::unique_ptr<QFile> m_file;
+
     Ui::NotPad *ui;
 };
 

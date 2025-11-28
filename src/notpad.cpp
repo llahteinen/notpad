@@ -4,16 +4,8 @@
 #include <QFile>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QFileDialog>
 
-
-
-static QString loadTextFile()
-{
-    QFile inputFile(":/forms/input.txt");
-    if (!inputFile.open(QIODevice::ReadOnly))
-        qFatal("Cannot open resource file");
-    return QTextStream(&inputFile).readAll();
-}
 
 
 NotPad::NotPad(QWidget *parent)
@@ -22,7 +14,12 @@ NotPad::NotPad(QWidget *parent)
 {
     ui->setupUi(this);
 
-    ui->textEdit->setText(loadTextFile());
+    qDebug() << "Platform:" << QGuiApplication::platformName();
+    qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
+    qDebug() << "Current theme:" << QIcon::themeName();
+
+    openFile(":/forms/input.txt"); /// Breaks m_currentDir
+    m_currentDir = QDir("../../../testifiles");
 }
 
 NotPad::~NotPad()
@@ -30,6 +27,59 @@ NotPad::~NotPad()
     delete ui;
 }
 
+bool NotPad::openFile(const QString &fileName)
+{
+    auto file = std::make_unique<QFile>(fileName);
+    if(!file->exists())
+    {
+        statusBar()->showMessage(tr("File %1 could not be opened")
+                                     .arg(QDir::toNativeSeparators(fileName)));
+        return false;
+    }
+    Q_ASSERT(file);
+    m_file = std::move(file);
+
+    QFileInfo fileInfo(*m_file);
+    m_currentDir = fileInfo.dir();
+//    m_currentDir = fileInfo.absoluteDir();
+
+    statusBar()->showMessage(tr("File opened: %1").arg(QDir::toNativeSeparators(fileName)));
+
+    if(!m_file->open(QFile::ReadOnly | QFile::Text))
+    {
+        statusBar()->showMessage(tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), m_file->errorString()));
+        return false;
+    }
+
+    QTextStream fileStream(m_file.get());
+    ui->textEdit->setText(fileStream.readAll());
+    m_file->close(); /// Free the file resource for use by other processes
+    return true;
+}
+
+
+/// SLOTS ================================================
+
+void NotPad::on_actionOpen_triggered()
+{
+    qDebug() << "on_actionOpen_triggered";
+    QFileDialog fileDialog(this, tr("Open Document"), m_currentDir.absolutePath());
+    fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
+    while (fileDialog.exec() == QDialog::Accepted
+           && !openFile(fileDialog.selectedFiles().constFirst())) {
+    }
+}
+
+void NotPad::on_actionAbout_triggered()
+{
+    qDebug() << "on_actionAbout_triggered";
+}
+
+void NotPad::on_actionAboutQt_triggered()
+{
+    qDebug() << "on_actionAboutQt_triggered";
+    QMessageBox::aboutQt(this);
+}
 
 void NotPad::on_findButton_clicked()
 {

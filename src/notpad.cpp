@@ -12,7 +12,11 @@ NotPad::NotPad(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
 {
+    qInfo() << PROJECT_NAME << "starting";
+
     ui->setupUi(this);
+
+    setWindowTitle(QString("%1 v%2").arg(PROJECT_NAME, PROJECT_VERSION));
 
     qDebug() << "Platform:" << QGuiApplication::platformName();
     qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
@@ -73,6 +77,10 @@ void NotPad::on_actionOpen_triggered()
 void NotPad::on_actionAbout_triggered()
 {
     qDebug() << "on_actionAbout_triggered";
+    QString text = tr("A lightweight and small notepad application, "
+                      "concentrating on plain text files. ");
+
+    QMessageBox::about(this, tr("About %1 v%2").arg(PROJECT_NAME, PROJECT_VERSION), text);
 }
 
 void NotPad::on_actionAboutQt_triggered()

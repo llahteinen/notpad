@@ -1,0 +1,31 @@
+QMenuBar {
+    color: black;
+    border-bottom: 1px solid rgba(0, 0, 0, 30);
+    background-color: rgba(255, 255, 255, 50); /* Transparent background */
+    padding: 1px;            /* Padding inside the whole menu bar */
+}
+QMenuBar::item {
+    background: transparent; /* For some weird reason when setting this, the font starts to look right (on Windows) */
+    padding: 3px 8px;        /* Padding inside the menubar items e.g. File */
+}
+QMenuBar::item:selected {    /* Hover effect */
+    background-color: rgba(0, 0, 0, 20); /* Darker background on hover */
+}
+QMenuBar::item:pressed {     /* Click effect */
+    background-color: rgba(0, 0, 0, 10); /* Different darkness on click */
+}
+
+QMenu {
+    color: black;
+    border-radius: 0px;
+    border: 1px solid rgba(0, 0, 0, 30);
+    background-color: rgb(252, 252, 252);
+}
+QMenu::item {
+}
+QMenu::item:selected {    /* Hover effect */
+    background-color: rgba(0, 0, 0, 12); /* Darker background on hover */
+}
+QMenu::item:pressed {     /* Click effect */
+    background-color: rgba(0, 0, 0, 6);  /* Different darkness on click */
+}

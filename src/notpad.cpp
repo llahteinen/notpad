@@ -18,6 +18,22 @@ NotPad::NotPad(QWidget *parent)
 
     setWindowTitle(QString("%1 v%2").arg(PROJECT_NAME, PROJECT_VERSION));
 
+    QFile styleFile(":/forms/styles.css");
+    if(styleFile.open(QFile::ReadOnly))
+    {
+        const auto style = styleFile.readAll();
+//        qDebug() << "style" << style;
+        qApp->setStyleSheet(style);
+        if(style.trimmed().isEmpty())
+        {
+            qWarning() << "Style was empty.";
+        }
+    }
+    else
+    {
+        qWarning() << "Setting style failed.";
+    }
+
     qDebug() << "Platform:" << QGuiApplication::platformName();
     qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
     qDebug() << "Current theme:" << QIcon::themeName();

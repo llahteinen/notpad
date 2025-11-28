@@ -9,6 +9,7 @@ set(PROJECT_SOURCES
 
 set(RESOURCE_FILES
     forms/input.txt
+    forms/styles.css
 )
 
 

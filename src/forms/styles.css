@@ -28,9 +28,14 @@ QMenu {
 QMenu::active {
     color: #333;            /* Affects text and checkmark, but not (png) icons */
 }
-/*QMenu::separator {
-
-}*/
+QMenu::separator {
+    background: rgba(0, 0, 0, 30);
+    height: 1px;
+    margin-left: 26px;
+    margin-right: 4px;
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
 /* The text section */
 QMenu::item {
     padding-left: 12px;     /* Padding starting from an icon or indicator/checkmark, or from left of menu if the whole menu has no icons or indicators */
@@ -41,6 +46,9 @@ QMenu::item {
 }
 QMenu::item::active {
 /*    color: #333;*/        /* Also affects text and checkmark, but not icons */
+}
+QMenu::item::disabled {
+    color: #888;            /* Maybe adjust this later. The icon goes a bit grey, but no idea how to adjust that */
 }
 QMenu::item:selected {    /* Hover effect */
     background-color: rgba(0, 0, 0, 12); /* Darker background on hover */

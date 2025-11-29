@@ -15,8 +15,14 @@ NotPad::NotPad(QWidget *parent)
     qInfo() << PROJECT_NAME << "starting";
 
     ui->setupUi(this);
+    m_editor = ui->textEdit;
 
     setWindowTitle(QString("%1 v%2").arg(PROJECT_NAME, PROJECT_VERSION));
+
+
+    connect(m_editor, &QTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
+    connect(m_editor, &QTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
+
 
     QFile styleFile(":/forms/styles.css");
     if(styleFile.open(QFile::ReadOnly))
@@ -34,10 +40,14 @@ NotPad::NotPad(QWidget *parent)
         qWarning() << "Setting style failed.";
     }
 
+    ui->main_find_widget->layout()->setContentsMargins(0, 0, 0, 0); /// L, T, R, B
+    on_actionFind_triggered(ui->actionFind->isChecked());
+
     qDebug() << "Platform:" << QGuiApplication::platformName();
     qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
     qDebug() << "Current theme:" << QIcon::themeName();
 
+    /// Open a test text file
     openFile(":/forms/input.txt"); /// Breaks m_currentDir
     m_currentDir = QDir("../../../testifiles");
 }
@@ -72,8 +82,12 @@ bool NotPad::openFile(const QString &fileName)
     }
 
     QTextStream fileStream(m_file.get());
-    ui->textEdit->setText(fileStream.readAll());
+    m_editor->setText(fileStream.readAll());
     m_file->close(); /// Free the file resource for use by other processes
+
+    /// setText clears undo history, but the undo/redo available signals might not be emitted
+    onUndoAvailable(false);
+    onRedoAvailable(false);
     return true;
 }
 
@@ -105,10 +119,10 @@ void NotPad::on_actionAboutQt_triggered()
     QMessageBox::aboutQt(this);
 }
 
-void NotPad::on_findButton_clicked()
+void NotPad::on_find_findButton_clicked()
 {
-    QString searchString = ui->lineEdit->text();
-    QTextDocument *document = ui->textEdit->document();
+    QString searchString = ui->find_lineEdit->text();
+    QTextDocument *document = m_editor->document();
 
     bool found = false;
 
@@ -157,5 +171,33 @@ void NotPad::on_actionWord_wrap_triggered(bool enabled)
     const auto wrap_mode = enabled ? QTextOption::WrapMode::WordWrap
                                    : QTextOption::WrapMode::NoWrap;
     /// NOTE: maybe with binary files could use WrapAnywhere
-    ui->textEdit->setWordWrapMode(wrap_mode);
+    m_editor->setWordWrapMode(wrap_mode);
 }
+
+void NotPad::on_actionFind_triggered(bool checked)
+{
+    ui->main_find_widget->setHidden(!checked);
+}
+
+void NotPad::on_actionUndo_triggered()
+{
+    m_editor->undo();
+}
+
+void NotPad::on_actionRedo_triggered()
+{
+    m_editor->redo();
+}
+
+void NotPad::onUndoAvailable(bool available)
+{
+    qDebug() << "onUndoAvailable" << available;
+    ui->actionUndo->setEnabled(available);
+}
+
+void NotPad::onRedoAvailable(bool available)
+{
+    qDebug() << "onRedoAvailable" << available;
+    ui->actionRedo->setEnabled(available);
+}
+

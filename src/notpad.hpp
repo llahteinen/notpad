@@ -24,9 +24,13 @@ private:
     bool openFile(const QString &fileName);
 
 private slots:
+    /// File menu
     void on_actionOpen_triggered();
+    /// Help menu
     void on_actionAbout_triggered();
     void on_actionAboutQt_triggered();
+    /// Options menu
+    void on_actionWord_wrap_triggered(bool enabled);
 
     void on_findButton_clicked();
 

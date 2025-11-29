@@ -182,6 +182,12 @@
    </property>
   </action>
   <action name="actionWord_wrap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="QIcon::ThemeIcon::FormatJustifyLeft"/>
    </property>

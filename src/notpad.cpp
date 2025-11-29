@@ -150,3 +150,12 @@ void NotPad::on_findButton_clicked()
         }
     }
 }
+
+void NotPad::on_actionWord_wrap_triggered(bool enabled)
+{
+    qDebug() << "on_actionWord_wrap_triggered" << enabled;
+    const auto wrap_mode = enabled ? QTextOption::WrapMode::WordWrap
+                                   : QTextOption::WrapMode::NoWrap;
+    /// NOTE: maybe with binary files could use WrapAnywhere
+    ui->textEdit->setWordWrapMode(wrap_mode);
+}

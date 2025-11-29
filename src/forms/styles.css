@@ -1,8 +1,11 @@
 QMenuBar {
-    color: black;
+/*    color: #333;*/       /* Don't set this because it overrides inactive colors */
     border-bottom: 1px solid rgba(0, 0, 0, 30);
     background-color: rgba(255, 255, 255, 50); /* Transparent background */
-    padding: 1px;            /* Padding inside the whole menu bar */
+    padding: 1px;           /* Padding inside the whole menu bar */
+}
+QMenuBar::active {
+    color: #333;            /* Affects the top menu bar but not inside the menus */
 }
 QMenuBar::item {
     background: transparent; /* For some weird reason when setting this, the font starts to look right (on Windows) */
@@ -16,12 +19,28 @@ QMenuBar::item:pressed {     /* Click effect */
 }
 
 QMenu {
-    color: black;
+/*    color: #333;*/       /* Don't set this because it overrides inactive colors */
     border-radius: 0px;
     border: 1px solid rgba(0, 0, 0, 30);
     background-color: rgb(252, 252, 252);
+    padding: 2px;
 }
+QMenu::active {
+    color: #333;            /* Affects text and checkmark, but not (png) icons */
+}
+/*QMenu::separator {
+
+}*/
+/* The text section */
 QMenu::item {
+    padding-left: 12px;     /* Padding starting from an icon or indicator/checkmark, or from left of menu if the whole menu has no icons or indicators */
+    padding-right: 12px;    /* Padding right of the shortcut key */
+    padding-top: 4px;
+    padding-bottom: 4px;
+    min-width: 80px;        /* Can be used to make more space between text and shortcut. Seems to affect the text portion itself, the shortcut and icon sections excluded */
+}
+QMenu::item::active {
+/*    color: #333;*/        /* Also affects text and checkmark, but not icons */
 }
 QMenu::item:selected {    /* Hover effect */
     background-color: rgba(0, 0, 0, 12); /* Darker background on hover */
@@ -29,3 +48,47 @@ QMenu::item:selected {    /* Hover effect */
 QMenu::item:pressed {     /* Click effect */
     background-color: rgba(0, 0, 0, 6);  /* Different darkness on click */
 }
+/* The whole row, if the item is checked */
+/*QMenu::item:checked {
+    background-color: rgba(0, 0, 0, 30);
+}*/
+/* Checkable menu item checkmark (for items that don't have icon set) */
+/* It seems quite weird to try to get this look same as an ::icon */
+/* If you set this to same size as ::icon including its padding, the text will be misaligned */
+/* So set this width to same as ::icon's without padding (16 px) */
+/* This also affects uncheckable items that don't have icon, but only in menus that also contains items that have icon or are checkable */
+QMenu::indicator {
+/*    color: #F00;*/            /* Doesn't do anything */
+    width: 16px;            /* 16px Same size as QMenu::icon (on Windows). 20px == icon size + padding */
+    height: 16px;           /* 16px Same size as QMenu::icon (on Windows). 20px == icon size + padding */
+    padding: 2px;           /* This pushes the text right. On ::icon it DOESN'T */
+/*    background-color: pink;*/ /* Background of the check mark area, get's rid of the check icon */
+}
+QMenu::indicator::active {
+/*    color: #F00;*/            /* Doesn't do anything */
+}
+QMenu::indicator:checked {
+
+}
+/* Need to set the colorized background size by padding. Width doesn't work */
+QMenu::icon {
+/*    width: 36px;*/        /* Doesn't have any effect */
+    padding: 4px;           /* 4px padding == total size 24x24 px Same padding as QMenu::item -> vertically fills whole row */
+    border-radius: 2px;
+}
+QMenu::icon:pressed,
+QMenu::icon:checked {
+    background-color: rgba(0, 0, 0, 16);
+    padding: 3px;           /* Reduce padding same amount as border size */
+    border: 1px inset lightgray;
+}
+/* QT EXAMPLE */
+/*QMenu::icon:checked {
+    background: gray;
+    border: 1px inset gray;
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    bottom: 1px;
+    left: 1px;
+}*/

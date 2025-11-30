@@ -40,7 +40,6 @@ NotPad::NotPad(QWidget *parent)
         qWarning() << "Setting style failed.";
     }
 
-    ui->main_find_widget->layout()->setContentsMargins(0, 0, 0, 0); /// L, T, R, B
     on_actionFind_triggered(ui->actionFind->isChecked());
 
     qDebug() << "Platform:" << QGuiApplication::platformName();

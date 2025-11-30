@@ -13,6 +13,9 @@ NotPad::NotPad(QWidget *parent)
     , ui(new Ui::NotPad)
     , m_defaultNameFilter{m_nameFilters.at(1)}
     , m_currentNameFilter{m_defaultNameFilter}
+    , m_currentDir{}
+    , m_file{}
+    , m_fileEdited{}
 {
     qInfo() << PROJECT_NAME << "starting";
 
@@ -24,6 +27,7 @@ NotPad::NotPad(QWidget *parent)
 
     connect(m_editor, &QTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
     connect(m_editor, &QTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
+    connect(m_editor, &QTextEdit::textChanged,   this, &NotPad::onTextChanged);
 
 
     QFile styleFile(":/forms/styles.css");
@@ -50,6 +54,7 @@ NotPad::NotPad(QWidget *parent)
 
     /// Open a test text file
     openFile(":/forms/input.txt"); /// Breaks m_currentDir
+    m_file.reset(); /// :/forms does not work well, so reset it
     m_currentDir = QDir("../../../testifiles");
 }
 
@@ -89,6 +94,7 @@ bool NotPad::openFile(const QString &fileName)
     /// setText clears undo history, but the undo/redo available signals might not be emitted
     onUndoAvailable(false);
     onRedoAvailable(false);
+    m_fileEdited = false;
     return true;
 }
 
@@ -146,8 +152,92 @@ bool NotPad::saveFile(const QString &fileName)
     return saveFile(m_file.get());
 }
 
+bool NotPad::save()
+{
+    bool saved = false;
+    if(!m_file)
+    {
+        saved = saveAs();
+    }
+    else
+    {
+        saved = saveFile(m_file.get());
+    }
+
+    if(saved)
+    {
+        m_fileEdited = false;
+    }
+    return saved;
+}
+
+bool NotPad::saveAs()
+{
+    QFileDialog fileDialog(this, tr("Save Document"), m_currentDir.absolutePath());
+    fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
+    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+    fileDialog.setViewMode(QFileDialog::ViewMode::Detail);
+//    fileDialog.setDefaultSuffix("txt");   /// TODO: Make selectable?
+    fileDialog.setFileMode(QFileDialog::FileMode::AnyFile);
+    fileDialog.setNameFilters(m_nameFilters);
+    fileDialog.selectNameFilter(m_currentNameFilter);
+
+    bool saved = false;
+    if(fileDialog.exec() == QDialog::Accepted)
+    {
+        m_currentNameFilter = fileDialog.selectedNameFilter();
+
+        qDebug() << fileDialog.selectedFiles();
+        Q_ASSERT(fileDialog.selectedFiles().size() == 1 && "Selected save file count must be 1");
+        saved = saveFile(fileDialog.selectedFiles().at(0));
+    }
+
+    if(saved)
+    {
+        m_fileEdited = false;
+    }
+    return saved;
+}
+
 
 /// SLOTS ================================================
+
+void NotPad::on_actionNew_triggered()
+{
+    qDebug() << "on_actionNew_triggered";
+    if(m_fileEdited)
+    {
+        qDebug() << "File is edited";
+        const auto choice = QMessageBox::warning(this, tr("New file"),
+                                       tr("The document has been modified.\n"
+                                          "Do you want to save your changes?"),
+                                       QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+                                       QMessageBox::Save);
+
+        qDebug() << "Choice" << choice;
+        switch(choice)
+        {
+        case QMessageBox::Discard:
+            {
+                break;
+            }
+        case QMessageBox::Save:
+            {
+                if(save()) break;   /// File was saved
+                else return;        /// File saving canceled or failed
+            }
+        case QMessageBox::Cancel:
+        default:
+            {
+                return;
+            }
+        }
+    }
+
+    m_editor->clear();
+    m_file.reset();
+    m_fileEdited = false;
+}
 
 void NotPad::on_actionOpen_triggered()
 {
@@ -163,34 +253,13 @@ void NotPad::on_actionOpen_triggered()
 void NotPad::on_actionSave_triggered()
 {
     qDebug() << "on_actionSave_triggered";
-    if(!m_file)
-    {
-        on_actionSave_as_triggered();
-    }
-    else
-    {
-        saveFile(m_file.get());
-    }
+    save();
 }
 
 void NotPad::on_actionSave_as_triggered()
 {
     qDebug() << "on_actionSave_as_triggered";
-    QFileDialog fileDialog(this, tr("Save Document"), m_currentDir.absolutePath());
-    fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
-    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
-    fileDialog.setViewMode(QFileDialog::ViewMode::Detail);
-//    fileDialog.setDefaultSuffix("txt");   /// TODO: Make selectable?
-    fileDialog.setFileMode(QFileDialog::FileMode::AnyFile);
-    fileDialog.setNameFilters(m_nameFilters);
-    fileDialog.selectNameFilter(m_currentNameFilter);
-    if(fileDialog.exec() == QDialog::Accepted)
-    {
-        qDebug() << fileDialog.selectedFiles();
-        Q_ASSERT(fileDialog.selectedFiles().size() == 1 && "Selected save file count must be 1");
-        saveFile(fileDialog.selectedFiles().at(0));
-        m_currentNameFilter = fileDialog.selectedNameFilter();
-    }
+    saveAs();
 }
 
 void NotPad::on_actionAbout_triggered()
@@ -288,5 +357,11 @@ void NotPad::onRedoAvailable(bool available)
 {
     qDebug() << "onRedoAvailable" << available;
     ui->actionRedo->setEnabled(available);
+}
+
+void NotPad::onTextChanged()
+{
+//    qDebug() << "onTextChanged";
+    m_fileEdited = true;
 }
 

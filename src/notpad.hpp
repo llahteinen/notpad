@@ -25,14 +25,21 @@ private:
     bool openFile(const QString &fileName);
     bool saveFile(const QString &fileName);
     bool saveFile(QFile* file);
+    /// \return true if file was saved, false if saving was canceled by user or resulted in error
+    bool save();
+    /// \return true if file was saved, false if saving was canceled by user or resulted in error
+    bool saveAs();
 
 private slots:
     /// Custom slots
     void onUndoAvailable(bool available);
     void onRedoAvailable(bool available);
+    void onTextChanged();
 
+    /// Automatically connected slots
     /// MENU ================================
     /// File menu
+    void on_actionNew_triggered();
     void on_actionOpen_triggered();
     void on_actionSave_triggered();
     void on_actionSave_as_triggered();
@@ -75,6 +82,7 @@ private:
     QString m_currentNameFilter;
     QDir m_currentDir;
     std::unique_ptr<QFile> m_file;
+    bool m_fileEdited;
 
     QTextEdit* m_editor;
 };

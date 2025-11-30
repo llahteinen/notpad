@@ -11,6 +11,8 @@
 NotPad::NotPad(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
+    , m_defaultNameFilter{m_nameFilters.at(1)}
+    , m_currentNameFilter{m_defaultNameFilter}
 {
     qInfo() << PROJECT_NAME << "starting";
 
@@ -90,6 +92,60 @@ bool NotPad::openFile(const QString &fileName)
     return true;
 }
 
+bool NotPad::saveFile(QFile* const file)
+{
+    Q_ASSERT(file);
+    if(file->exists())
+    {
+        qDebug() << "About to overwrite" << m_file->fileName();
+    }
+    else
+    {
+        qDebug() << "Writing new file" << m_file->fileName();
+    }
+    const QFileInfo fileInfo(*file);
+    m_currentDir = fileInfo.dir();
+
+    if(!file->open(QFile::WriteOnly | QFile::Text))
+    {
+        qWarning() << "Failed to open file:" << file->errorString();
+        statusBar()->showMessage(tr("Cannot open file for writing %1:\n%2.").arg(QDir::toNativeSeparators(file->fileName()), file->errorString()));
+        return false;
+    }
+
+    QTextStream fstream{file};
+    fstream.setEncoding(QStringConverter::Utf8);
+    fstream << m_editor->toPlainText();
+    if(fstream.status() != QTextStream::Ok)
+    {
+        qWarning() << "Failed to write to file:" << fstream.status();
+        statusBar()->showMessage(tr("File write failed %1:\n%2.").arg(fstream.status()));
+        file->close();
+        return false;
+    }
+
+    fstream.flush(); // Ensure data is written to the file
+    if(file->error() != QFile::NoError)
+    {
+        qWarning() << "File error after writing:" << file->errorString();
+        statusBar()->showMessage(tr("File write failed %1:\n%2.").arg(file->errorString()));
+        file->close();
+        return false;
+    }
+
+    file->close(); /// Free the file resource for use by other processes
+    statusBar()->showMessage(tr("File saved: %1").arg(QDir::toNativeSeparators(file->fileName())));
+    return true;
+}
+
+bool NotPad::saveFile(const QString &fileName)
+{
+    auto file = std::make_unique<QFile>(fileName);
+    Q_ASSERT(file);
+    m_file = std::move(file);
+    return saveFile(m_file.get());
+}
+
 
 /// SLOTS ================================================
 
@@ -98,8 +154,42 @@ void NotPad::on_actionOpen_triggered()
     qDebug() << "on_actionOpen_triggered";
     QFileDialog fileDialog(this, tr("Open Document"), m_currentDir.absolutePath());
     fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
+    fileDialog.setNameFilters(m_nameFilters);
     while (fileDialog.exec() == QDialog::Accepted
            && !openFile(fileDialog.selectedFiles().constFirst())) {
+    }
+}
+
+void NotPad::on_actionSave_triggered()
+{
+    qDebug() << "on_actionSave_triggered";
+    if(!m_file)
+    {
+        on_actionSave_as_triggered();
+    }
+    else
+    {
+        saveFile(m_file.get());
+    }
+}
+
+void NotPad::on_actionSave_as_triggered()
+{
+    qDebug() << "on_actionSave_as_triggered";
+    QFileDialog fileDialog(this, tr("Save Document"), m_currentDir.absolutePath());
+    fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
+    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+    fileDialog.setViewMode(QFileDialog::ViewMode::Detail);
+//    fileDialog.setDefaultSuffix("txt");   /// TODO: Make selectable?
+    fileDialog.setFileMode(QFileDialog::FileMode::AnyFile);
+    fileDialog.setNameFilters(m_nameFilters);
+    fileDialog.selectNameFilter(m_currentNameFilter);
+    if(fileDialog.exec() == QDialog::Accepted)
+    {
+        qDebug() << fileDialog.selectedFiles();
+        Q_ASSERT(fileDialog.selectedFiles().size() == 1 && "Selected save file count must be 1");
+        saveFile(fileDialog.selectedFiles().at(0));
+        m_currentNameFilter = fileDialog.selectedNameFilter();
     }
 }
 

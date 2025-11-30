@@ -23,6 +23,8 @@ public:
 
 private:
     bool openFile(const QString &fileName);
+    bool saveFile(const QString &fileName);
+    bool saveFile(QFile* file);
 
 private slots:
     /// Custom slots
@@ -32,6 +34,8 @@ private slots:
     /// MENU ================================
     /// File menu
     void on_actionOpen_triggered();
+    void on_actionSave_triggered();
+    void on_actionSave_as_triggered();
     /// Edit menu
     void on_actionUndo_triggered();
     void on_actionRedo_triggered();
@@ -47,11 +51,32 @@ private slots:
 
 private:
 
+    Ui::NotPad *ui;
+
+    QStringList m_nameFilters
+    {
+        "All files (*)",
+        "Text files (*.txt)",
+        "Log files (*.log)",
+        "Markdown files (*.md)",
+        "JSON files (*.json)",
+        "C/C++ files (*.cpp *.hpp *.c *.h)",
+        "HTML files (*.htm *.html *.php)",
+        "CSS files (*.css)",
+    };
+//    QStringList m_mimeTypeFilters{ /// This is alternative to nameFilters, both can't be used together
+//        "text/plain", /// Returns a huge amount of suffixes
+//        "text/csv",
+//        "text/html",
+//        "application/json",
+//        "application/octet-stream" /// will show "All files (*)"
+//    };
+    const QString m_defaultNameFilter;
+    QString m_currentNameFilter;
     QDir m_currentDir;
     std::unique_ptr<QFile> m_file;
 
     QTextEdit* m_editor;
-    Ui::NotPad *ui;
 };
 
 

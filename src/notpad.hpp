@@ -22,6 +22,8 @@ public:
     ~NotPad();
 
 private:
+    void closeEvent(QCloseEvent* event) override;
+
     bool openFile(const QString &fileName);
     bool saveFile(const QString &fileName);
     bool saveFile(QFile* file);
@@ -29,6 +31,8 @@ private:
     bool save();
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     bool saveAs();
+    /// \return true for permission to close file, false for no permission
+    bool confirmFileClose(const QString& messageTitle = tr("Confirmation"));
 
 private slots:
     /// Custom slots

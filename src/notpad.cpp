@@ -5,6 +5,7 @@
 #include <QTextStream>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QCloseEvent>
 
 
 
@@ -61,6 +62,20 @@ NotPad::NotPad(QWidget *parent)
 NotPad::~NotPad()
 {
     delete ui;
+}
+
+void NotPad::closeEvent(QCloseEvent* event)
+{
+    qDebug() << "MainWindow closeEvent";
+    if(confirmFileClose(tr("Closing")))
+    {
+        QMainWindow::closeEvent(event);
+    }
+    else
+    {
+        /// Don't close
+        event->ignore();
+    }
 }
 
 bool NotPad::openFile(const QString &fileName)
@@ -199,44 +214,59 @@ bool NotPad::saveAs()
     return saved;
 }
 
-
-/// SLOTS ================================================
-
-void NotPad::on_actionNew_triggered()
+bool NotPad::confirmFileClose(const QString& messageTitle)
 {
-    qDebug() << "on_actionNew_triggered";
+    bool permission = false;
     if(m_fileEdited)
     {
         qDebug() << "File is edited";
-        const auto choice = QMessageBox::warning(this, tr("New file"),
-                                       tr("The document has been modified.\n"
-                                          "Do you want to save your changes?"),
-                                       QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
-                                       QMessageBox::Save);
+        const auto choice = QMessageBox::warning(this, messageTitle,
+                                                 tr("The document has been modified.\n"
+                                                    "Do you want to save your changes?"),
+                                                 QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+                                                 QMessageBox::Save);
 
         qDebug() << "Choice" << choice;
         switch(choice)
         {
         case QMessageBox::Discard:
             {
+                permission = true;
                 break;
             }
         case QMessageBox::Save:
             {
-                if(save()) break;   /// File was saved
-                else return;        /// File saving canceled or failed
+                /// true: file was saved
+                /// false: file saving canceled or failed
+                permission = save();
+                break;
             }
         case QMessageBox::Cancel:
         default:
             {
-                return;
+                permission = false;
             }
         }
     }
+    else
+    {
+        /// Not edited, always permission to close
+        permission = true;
+    }
+    return permission;
+}
 
-    m_editor->clear();
-    m_file.reset();
-    m_fileEdited = false;
+/// SLOTS ================================================
+
+void NotPad::on_actionNew_triggered()
+{
+    qDebug() << "on_actionNew_triggered";
+    if(confirmFileClose(tr("New file")))
+    {
+        m_editor->clear();
+        m_file.reset();
+        m_fileEdited = false;
+    }
 }
 
 void NotPad::on_actionOpen_triggered()

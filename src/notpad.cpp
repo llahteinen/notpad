@@ -17,6 +17,7 @@ NotPad::NotPad(QWidget *parent)
     , m_currentDir{}
     , m_file{}
     , m_fileEdited{}
+    , m_settings{}
 {
     qInfo() << PROJECT_NAME << "starting";
 
@@ -25,11 +26,7 @@ NotPad::NotPad(QWidget *parent)
 
     setWindowTitle(QString("%1 v%2").arg(PROJECT_NAME, PROJECT_VERSION));
 
-
-    connect(m_editor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
-    connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
-    connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged);
-
+    setupEditor();
 
     QFile styleFile(":/forms/styles.css");
     if(styleFile.open(QFile::ReadOnly))
@@ -76,6 +73,51 @@ void NotPad::closeEvent(QCloseEvent* event)
         /// Don't close
         event->ignore();
     }
+}
+
+void NotPad::setupEditor()
+{
+    connect(m_editor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
+    connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
+    connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged);
+
+    restoreFontSize();
+}
+
+void NotPad::incrementFontSize(int increment)
+{
+    auto font = m_editor->font();
+    auto size = font.pointSize();
+    auto index = m_settings.standardFontSizes.indexOf(size);
+    Q_ASSERT(index >= 0);
+    if(index < 0)
+    {
+        qWarning() << "Got weird font size" << size;
+        index = m_settings.standardFontSizes.indexOf(m_settings.fontSizeDefault);
+    }
+    index += increment;
+    index = qMax(index, 0);
+    index = qMin(index, m_settings.standardFontSizes.length()-1);
+    qDebug() << "index" << index;
+    size = m_settings.standardFontSizes.at(index);
+    qDebug() << "size" << size;
+    font.setPointSize(size);
+    m_editor->setFont(font);
+    updateTabWidth(); /// TODO: Implement using QEvent::FontChange
+}
+
+void NotPad::restoreFontSize()
+{
+    auto font = m_editor->font();
+    font.setPointSize(m_settings.fontSizeDefault);
+    qDebug() << "pointSize" << font.pointSize();
+    m_editor->setFont(font);
+    updateTabWidth();
+}
+
+void NotPad::updateTabWidth()
+{
+    m_editor->setTabStopDistance(m_settings.tabWidthChars * m_editor->fontMetrics().averageCharWidth());
 }
 
 bool NotPad::openFile(const QString &fileName)
@@ -360,6 +402,21 @@ void NotPad::on_actionWord_wrap_triggered(bool enabled)
                                    : QTextOption::WrapMode::NoWrap;
     /// NOTE: maybe with binary files could use WrapAnywhere
     m_editor->setWordWrapMode(wrap_mode);
+}
+
+void NotPad::on_actionFontSmaller_triggered()
+{
+    incrementFontSize(-1);
+}
+
+void NotPad::on_actionFontLarger_triggered()
+{
+    incrementFontSize(1);
+}
+
+void NotPad::on_actionRestoreFontSize_triggered()
+{
+    restoreFontSize();
 }
 
 void NotPad::on_actionFind_triggered(bool checked)

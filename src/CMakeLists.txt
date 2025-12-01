@@ -38,6 +38,22 @@ target_link_libraries(${TARGET_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
 
+target_compile_definitions(${TARGET_NAME} PRIVATE
+#    $<$<CONFIG:Debug>:
+#    >
+    $<$<CONFIG:Release>:
+        QT_NO_DEBUG_OUTPUT   # Disable qDebug output
+    >
+)
+target_compile_options(${TARGET_NAME} PRIVATE
+    $<$<CONFIG:Release>:
+        $<$<CXX_COMPILER_ID:MSVC>:
+            /O1
+            /MD
+        >
+    >
+)
+
 # When this property is set to true the executable when linked on Windows will be created with a WinMain() entry point
 # instead of just main(). This makes it a GUI executable instead of a console application.
 # qDebug etc will go to system debug log instead of console. Stdout will go nowhere.

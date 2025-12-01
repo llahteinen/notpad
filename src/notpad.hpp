@@ -1,6 +1,7 @@
 #ifndef NOTPAD_HPP
 #define NOTPAD_HPP
 
+#include "Settings.hpp"
 #include <QMainWindow>
 #include <QDir>
 
@@ -23,6 +24,12 @@ public:
 
 private:
     void closeEvent(QCloseEvent* event) override;
+
+    void setupEditor();
+
+    void incrementFontSize(int increment);
+    void restoreFontSize();
+    void updateTabWidth();
 
     bool openFile(const QString &fileName);
     bool saveFile(const QString &fileName);
@@ -56,6 +63,9 @@ private slots:
     void on_actionAboutQt_triggered();
     /// Options menu
     void on_actionWord_wrap_triggered(bool enabled);
+    void on_actionFontSmaller_triggered();
+    void on_actionFontLarger_triggered();
+    void on_actionRestoreFontSize_triggered();
     /// /MENU ================================
 
     void on_find_findButton_clicked();
@@ -87,6 +97,8 @@ private:
     QDir m_currentDir;
     std::unique_ptr<QFile> m_file;
     bool m_fileEdited;
+
+    Settings m_settings;
 
     QPlainTextEdit* m_editor;
 };

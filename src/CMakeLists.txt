@@ -5,6 +5,7 @@ set(PROJECT_SOURCES
         forms/notpad.ui
         notpad.hpp
         notpad.cpp
+        settings.hpp
 )
 
 set(RESOURCE_FILES

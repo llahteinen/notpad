@@ -26,9 +26,9 @@ NotPad::NotPad(QWidget *parent)
     setWindowTitle(QString("%1 v%2").arg(PROJECT_NAME, PROJECT_VERSION));
 
 
-    connect(m_editor, &QTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
-    connect(m_editor, &QTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
-    connect(m_editor, &QTextEdit::textChanged,   this, &NotPad::onTextChanged);
+    connect(m_editor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
+    connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
+    connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged);
 
 
     QFile styleFile(":/forms/styles.css");
@@ -53,10 +53,10 @@ NotPad::NotPad(QWidget *parent)
     qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
     qDebug() << "Current theme:" << QIcon::themeName();
 
-    /// Open a test text file
-    openFile(":/forms/input.txt"); /// Breaks m_currentDir
-    m_file.reset(); /// :/forms does not work well, so reset it
-    m_currentDir = QDir("../../../testifiles");
+//    /// Open a test text file
+//    openFile(":/forms/input.txt"); /// Breaks m_currentDir
+//    m_file.reset(); /// :/forms does not work well, so reset it
+//    m_currentDir = QDir("../../../testifiles");
 }
 
 NotPad::~NotPad()
@@ -103,7 +103,7 @@ bool NotPad::openFile(const QString &fileName)
     }
 
     QTextStream fileStream(m_file.get());
-    m_editor->setText(fileStream.readAll());
+    m_editor->setPlainText(fileStream.readAll());
     m_file->close(); /// Free the file resource for use by other processes
 
     /// setText clears undo history, but the undo/redo available signals might not be emitted

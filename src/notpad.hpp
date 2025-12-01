@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QDir>
 
-class QTextEdit;
+class QPlainTextEdit;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -88,7 +88,7 @@ private:
     std::unique_ptr<QFile> m_file;
     bool m_fileEdited;
 
-    QTextEdit* m_editor;
+    QPlainTextEdit* m_editor;
 };
 
 

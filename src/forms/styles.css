@@ -1,3 +1,14 @@
+QScrollBar {
+}
+QScrollBar:horizontal {
+    height: 14px;
+}
+QScrollBar:vertical {
+    width: 14px;
+/*    border-radius: 0px;*/     /* Looks bad */
+/*    color: #333;*/            /* Does nothing */
+}
+
 QMenuBar {
 /*    color: #333;*/       /* Don't set this because it overrides inactive colors */
     border-bottom: 1px solid rgba(0, 0, 0, 30);

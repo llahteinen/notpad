@@ -8,6 +8,8 @@ set(PROJECT_SOURCES
         Settings.hpp
         tab.hpp
         tab.cpp
+        editor.hpp
+        editor.cpp
 )
 
 set(RESOURCE_FILES

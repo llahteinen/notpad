@@ -1,6 +1,7 @@
 #include "notpad.hpp"
 #include "forms/ui_notpad.h"
 #include "tab.hpp"
+#include "editor.hpp"
 #include <QString>
 #include <QFile>
 #include <QTextStream>
@@ -24,11 +25,14 @@ NotPad::NotPad(QWidget *parent)
 
     ui->setupUi(this);
     m_tabManager = new TabManager(ui->tabWidget, ui->textEdit, this);
-    m_editor = ui->textEdit;
+
+    connect(m_tabManager, &TabManager::currentChanged, this, &NotPad::onCurrentTabChanged);
+
+//    m_editor = ui->textEdit;
 
     setWindowTitle(QString("%1 v%2").arg(PROJECT_NAME, PROJECT_VERSION));
 
-    setupEditor();
+//    setupEditor();
 
     QFile styleFile(":/forms/styles.css");
     if(styleFile.open(QFile::ReadOnly))
@@ -75,6 +79,21 @@ void NotPad::closeEvent(QCloseEvent* event)
         /// Don't close
         event->ignore();
     }
+}
+
+void NotPad::onCurrentTabChanged(int index)
+{
+    qDebug() << "onCurrentTabChanged" << index;
+    auto* widget = m_tabManager->currentWidget();
+    qDebug() << "widget" << widget;
+    auto* editor = qobject_cast<Editor*>(widget);
+//    Q_ASSERT(editor != nullptr);
+    if(editor != nullptr)
+    {
+        m_editor = editor;
+        m_file = m_editor->m_file;
+    }
+    qDebug() << "file" << m_file.get();
 }
 
 void NotPad::setupEditor()
@@ -124,7 +143,7 @@ void NotPad::updateTabWidth()
 
 bool NotPad::openFile(const QString &fileName)
 {
-    auto file = std::make_unique<QFile>(fileName);
+    auto file = std::make_unique<QFile>(fileName); /// Pitää kattoa miten unique ja shared hommat menee
     if(!file->exists())
     {
         statusBar()->showMessage(tr("File %1 could not be opened")
@@ -133,6 +152,7 @@ bool NotPad::openFile(const QString &fileName)
     }
     Q_ASSERT(file);
     m_file = std::move(file);
+    m_editor->m_file = m_file;
 
     QFileInfo fileInfo(*m_file);
     m_currentDir = fileInfo.dir();
@@ -208,6 +228,7 @@ bool NotPad::saveFile(const QString &fileName)
     auto file = std::make_unique<QFile>(fileName);
     Q_ASSERT(file);
     m_file = std::move(file);
+    m_editor->m_file = m_file;
     return saveFile(m_file.get());
 }
 

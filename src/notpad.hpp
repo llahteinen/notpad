@@ -6,6 +6,7 @@
 #include <QDir>
 
 class TabManager;
+class Editor;
 class QPlainTextEdit;
 
 QT_BEGIN_NAMESPACE
@@ -47,6 +48,7 @@ private slots:
     void onUndoAvailable(bool available);
     void onRedoAvailable(bool available);
     void onTextChanged();
+    void onCurrentTabChanged(int index);
 
     /// Automatically connected slots
     /// MENU ================================
@@ -96,13 +98,13 @@ private:
     const QString m_defaultNameFilter;
     QString m_currentNameFilter;
     QDir m_currentDir;
-    std::unique_ptr<QFile> m_file;
+    std::shared_ptr<QFile> m_file;
     bool m_fileEdited;
 
     Settings m_settings;
 
     TabManager* m_tabManager;
-    QPlainTextEdit* m_editor;
+    Editor* m_editor;
 };
 
 

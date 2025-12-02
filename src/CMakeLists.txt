@@ -6,6 +6,8 @@ set(PROJECT_SOURCES
         notpad.hpp
         notpad.cpp
         settings.hpp
+        tab.hpp
+        tab.cpp
 )
 
 set(RESOURCE_FILES

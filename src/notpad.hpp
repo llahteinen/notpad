@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QDir>
 
+class TabManager;
 class QPlainTextEdit;
 
 QT_BEGIN_NAMESPACE
@@ -100,6 +101,7 @@ private:
 
     Settings m_settings;
 
+    TabManager* m_tabManager;
     QPlainTextEdit* m_editor;
 };
 

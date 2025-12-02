@@ -110,19 +110,74 @@
      </widget>
     </item>
     <item>
-     <widget class="QPlainTextEdit" name="textEdit">
-      <property name="font">
-       <font>
-        <family>Consolas</family>
-        <pointsize>10</pointsize>
-       </font>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="tabPosition">
+       <enum>QTabWidget::TabPosition::North</enum>
       </property>
-      <property name="undoRedoEnabled">
+      <property name="tabShape">
+       <enum>QTabWidget::TabShape::Rounded</enum>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <property name="usesScrollButtons">
        <bool>true</bool>
       </property>
-      <property name="lineWrapMode">
-       <enum>QPlainTextEdit::LineWrapMode::WidgetWidth</enum>
+      <property name="documentMode">
+       <bool>true</bool>
       </property>
+      <property name="tabsClosable">
+       <bool>true</bool>
+      </property>
+      <property name="movable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="tab1">
+       <attribute name="icon">
+        <iconset theme="QIcon::ThemeIcon::DocumentNew"/>
+       </attribute>
+       <attribute name="title">
+        <string notr="true">Tab 1</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="tab1_verticalLayout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QPlainTextEdit" name="textEdit">
+          <property name="font">
+           <font>
+            <family>Consolas</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="undoRedoEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="lineWrapMode">
+           <enum>QPlainTextEdit::LineWrapMode::WidgetWidth</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="icon">
+        <iconset theme="QIcon::ThemeIcon::DocumentSaveAs"/>
+       </attribute>
+       <attribute name="title">
+        <string>Tab 2</string>
+       </attribute>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -141,6 +196,7 @@
      <string>&amp;File</string>
     </property>
     <addaction name="actionNew"/>
+    <addaction name="actionNewTab"/>
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
     <addaction name="actionSave_as"/>
@@ -336,6 +392,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+0</string>
+   </property>
+  </action>
+  <action name="actionNewTab">
+   <property name="text">
+    <string>New Tab</string>
    </property>
   </action>
  </widget>

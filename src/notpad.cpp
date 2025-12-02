@@ -1,5 +1,6 @@
 #include "notpad.hpp"
 #include "forms/ui_notpad.h"
+#include "tab.hpp"
 #include <QString>
 #include <QFile>
 #include <QTextStream>
@@ -22,6 +23,7 @@ NotPad::NotPad(QWidget *parent)
     qInfo() << PROJECT_NAME << "starting";
 
     ui->setupUi(this);
+    m_tabManager = new TabManager(ui->tabWidget, ui->textEdit, this);
     m_editor = ui->textEdit;
 
     setWindowTitle(QString("%1 v%2").arg(PROJECT_NAME, PROJECT_VERSION));

@@ -1,4 +1,5 @@
 #include "tab.hpp"
+#include "editor.hpp"
 #include <QPlainTextEdit>
 #include <QTabWidget>
 #include <QTabBar>
@@ -9,7 +10,7 @@
 
 QWidget* Tab::createEmptyTab()
 {
-    auto* editor = new QPlainTextEdit();
+    auto* editor = new Editor();
     auto* templ = m_plainEditorTemplate;
 
     /// Basic settings
@@ -31,6 +32,8 @@ TabManager::TabManager(QTabWidget* tabWidget, QPlainTextEdit* plainEditorTemplat
     m_tabWidget->tabBar()->setDocumentMode(true);
 
     connect(m_tabWidget, &QTabWidget::tabCloseRequested, this, &TabManager::onTabCloseRequested);
+    connect(m_tabWidget, &QTabWidget::tabBarDoubleClicked, this, &TabManager::onTabBarDoubleClicked);
+    connect(m_tabWidget, &QTabWidget::currentChanged, this, &TabManager::onCurrentChanged);
 
     QToolButton* tb = new QToolButton(m_tabWidget);
     tb->setText("+");
@@ -58,15 +61,17 @@ TabManager::TabManager(QTabWidget* tabWidget, QPlainTextEdit* plainEditorTemplat
 void TabManager::addEmptyTab()
 {
     QWidget* new_editor = m_factory.createEmptyTab();
-//    const int index = qMax(m_tabWidget->count(), 0);
-//    m_tabWidget->insertTab(index, new_editor, "title");
     const int index = m_tabWidget->addTab(new_editor, "Untitled");
-    m_tabWidget->setCurrentIndex(index);
 
+    m_tabWidget->setTabIcon(index, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew));
+
+//    /// Custom close button
 //    QToolButton* tb = new QToolButton(m_tabWidget);
 //    tb->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::EditClear));
 //    m_tabWidget->tabBar()->setTabButton(index, QTabBar::RightSide, tb);
     /// Toimii mutta pitää tehdä signaalit
+
+    m_tabWidget->setCurrentIndex(index);
 }
 
 void TabManager::addTabFromFile(const QString& /*filePath*/, const QString& /*title*/)
@@ -85,9 +90,32 @@ void TabManager::closeCurrentTab()
     }
 }
 
+QWidget* TabManager::currentWidget() const
+{
+    return m_tabWidget->currentWidget();
+}
+
+/// Only fired by manually closing a tab
 void TabManager::onTabCloseRequested(int index)
 {
+    qDebug() << "onTabCloseRequested" << index;
     QWidget* tabContent = m_tabWidget->widget(index);
     m_tabWidget->removeTab(index);
     delete tabContent; /// En tiä tarvitaanko
+}
+
+void TabManager::onTabBarDoubleClicked(int index)
+{
+    qDebug() << "onTabBarDoubleClicked" << index;
+    if(index == -1)
+    {
+        addEmptyTab();
+    }
+}
+
+/// This gets fired also when index 0 is closed and the new current index is again 0
+void TabManager::onCurrentChanged(int index)
+{
+//    qDebug() << "onCurrentChanged" << index;
+    emit currentChanged(index);
 }

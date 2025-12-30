@@ -1,5 +1,5 @@
-#ifndef TAB_H
-#define TAB_H
+#ifndef TAB_HPP
+#define TAB_HPP
 
 #include <QObject>
 
@@ -29,15 +29,22 @@ public:
     void addTabFromFile(const QString& filePath, const QString& title = "");
 
     void closeCurrentTab();
+    QWidget* currentWidget() const;
 
 public slots:
 
     void addEmptyTab();
     void onTabCloseRequested(int index);
+    void onTabBarDoubleClicked(int index);
+    void onCurrentChanged(int index);
 
 private:
     QTabWidget* const m_tabWidget;
     Tab m_factory;
+
+signals:
+    void currentChanged(int index);
+
 };
 
 
@@ -62,4 +69,4 @@ protected:
 };
 */
 
-#endif // TAB_H
+#endif // TAB_HPP

@@ -1,6 +1,7 @@
 #include "notpad.hpp"
 #include "forms/ui_notpad.h"
 #include "tab.hpp"
+#include "editor.hpp"
 #include <QString>
 #include <QFile>
 #include <QTextStream>
@@ -23,12 +24,14 @@ NotPad::NotPad(QWidget *parent)
     qInfo() << PROJECT_NAME << "starting";
 
     ui->setupUi(this);
-    m_tabManager = new TabManager(ui->tabWidget, ui->textEdit, this);
-    m_editor = ui->textEdit;
+    m_tabManager = new TabManager(ui->tabWidget, ui->textEdit, this); /// ui->textEdit is used as template for all new tabs
+    /// Close the template tabs
+    while(ui->tabWidget->count() > 0)
+        ui->tabWidget->removeTab(0);
+
+    connect(m_tabManager, &TabManager::currentChanged, this, &NotPad::onCurrentTabChanged);
 
     setWindowTitle(QString("%1 v%2").arg(PROJECT_NAME, PROJECT_VERSION));
-
-    setupEditor();
 
     QFile styleFile(":/forms/styles.css");
     if(styleFile.open(QFile::ReadOnly))
@@ -51,6 +54,9 @@ NotPad::NotPad(QWidget *parent)
     qDebug() << "Platform:" << QGuiApplication::platformName();
     qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
     qDebug() << "Current theme:" << QIcon::themeName();
+
+    m_tabManager->addEmptyTab();
+    setupEditor();
 
 //    /// Open a test text file
 //    openFile(":/forms/input.txt"); /// Breaks m_currentDir
@@ -75,6 +81,37 @@ void NotPad::closeEvent(QCloseEvent* event)
         /// Don't close
         event->ignore();
     }
+}
+
+void NotPad::onCurrentTabChanged(int index)
+{
+    qDebug() << "onCurrentTabChanged" << index;
+    /// Last tab closed
+    if(index == -1)
+    {
+        m_editor = nullptr;
+        m_file = nullptr;
+
+        /// Close application after last tab?
+        if(true)
+            qApp->quit();
+        return;
+    }
+
+    auto* widget = m_tabManager->currentWidget();
+    qDebug() << "widget" << widget;
+    auto* editor = qobject_cast<Editor*>(widget);
+    Q_ASSERT(editor != nullptr);
+    if(editor != nullptr)
+    {
+        m_editor = editor;
+        m_file = m_editor->m_file;
+    }
+    else
+    {
+        qDebug() << "Invalid editor" << editor;
+    }
+    qDebug() << "file" << m_file.get();
 }
 
 void NotPad::setupEditor()
@@ -133,6 +170,7 @@ bool NotPad::openFile(const QString &fileName)
     }
     Q_ASSERT(file);
     m_file = std::move(file);
+    m_editor->m_file = m_file;
 
     QFileInfo fileInfo(*m_file);
     m_currentDir = fileInfo.dir();
@@ -208,6 +246,7 @@ bool NotPad::saveFile(const QString &fileName)
     auto file = std::make_unique<QFile>(fileName);
     Q_ASSERT(file);
     m_file = std::move(file);
+    m_editor->m_file = m_file;
     return saveFile(m_file.get());
 }
 

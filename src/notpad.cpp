@@ -2,6 +2,7 @@
 #include "forms/ui_notpad.h"
 #include "tab.hpp"
 #include "editor.hpp"
+#include "file.hpp"
 #include <QString>
 #include <QFile>
 #include <QTextStream>
@@ -208,50 +209,29 @@ bool NotPad::openFile(const QString &fileName)
     return true;
 }
 
-bool NotPad::saveFile(QFile* const file)
+void NotPad::messageSaveStatus(File::Status status, const QFile* const file)
 {
-    Q_ASSERT(file);
-    if(file->exists())
+    QString msg;
+    switch(status)
     {
-        qDebug() << "About to overwrite" << currentFile()->fileName();
+    case File::Status::CANCELED:
+        break;
+    case File::Status::FAIL_OPEN_WRITE:
+        msg = tr("Cannot open file for writing: %1").arg(file->errorString());
+        break;
+    case File::Status::FAIL_WRITE:
+        msg = tr("File write failed: %1").arg(file->errorString());
+        break;
+    case File::Status::FAIL_WRITE_UNKNOWN:
+        msg = tr("File write failed: %1").arg(file->errorString());
+        break;
+    case File::Status::SUCCESS_WRITE:
+        msg = tr("File saved: %1").arg(QDir::toNativeSeparators(file->fileName()));
+        break;
+    default:
+        msg = tr("File write failed.");
     }
-    else
-    {
-        qDebug() << "Writing new file" << currentFile()->fileName();
-    }
-    const QFileInfo fileInfo(*file);
-    m_currentDir = fileInfo.dir();
-
-    if(!file->open(QFile::WriteOnly | QFile::Text))
-    {
-        qWarning() << "Failed to open file:" << file->errorString();
-        statusBar()->showMessage(tr("Cannot open file for writing %1:\n%2.").arg(QDir::toNativeSeparators(file->fileName()), file->errorString()));
-        return false;
-    }
-
-    QTextStream fstream{file};
-    fstream.setEncoding(QStringConverter::Utf8);
-    fstream << m_editor->toPlainText();
-    if(fstream.status() != QTextStream::Ok)
-    {
-        qWarning() << "Failed to write to file:" << fstream.status();
-        statusBar()->showMessage(tr("File write failed %1:\n%2.").arg(fstream.status()));
-        file->close();
-        return false;
-    }
-
-    fstream.flush(); // Ensure data is written to the file
-    if(file->error() != QFile::NoError)
-    {
-        qWarning() << "File error after writing:" << file->errorString();
-        statusBar()->showMessage(tr("File write failed %1:\n%2.").arg(file->errorString()));
-        file->close();
-        return false;
-    }
-
-    file->close(); /// Free the file resource for use by other processes
-    statusBar()->showMessage(tr("File saved: %1").arg(QDir::toNativeSeparators(file->fileName())));
-    return true;
+    statusBar()->showMessage(msg);
 }
 
 bool NotPad::save()
@@ -261,12 +241,16 @@ bool NotPad::save()
 
 bool NotPad::save(Editor* const editor)
 {
-    return editor->save();
+    const auto status = editor->save();
+    messageSaveStatus(status, editor->m_file.get());
+    return status == File::Status::SUCCESS_WRITE;
 }
 
 bool NotPad::saveAs()
 {
-    return m_editor->saveAs();
+    const auto status = m_editor->saveAs();
+    messageSaveStatus(status, m_editor->m_file.get());
+    return status == File::Status::SUCCESS_WRITE;
 }
 
 bool NotPad::confirmAppClose(const QString& messageTitle)
@@ -374,13 +358,13 @@ void NotPad::on_actionOpen_triggered()
 void NotPad::on_actionSave_triggered()
 {
     qDebug() << "on_actionSave_triggered";
-    m_editor->save();
+    save();
 }
 
 void NotPad::on_actionSave_as_triggered()
 {
     qDebug() << "on_actionSave_as_triggered";
-    m_editor->saveAs();
+    saveAs();
 }
 
 void NotPad::on_actionAbout_triggered()

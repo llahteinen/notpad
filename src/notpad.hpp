@@ -1,7 +1,8 @@
 #ifndef NOTPAD_HPP
 #define NOTPAD_HPP
 
-#include "Settings.hpp"
+#include "settings.hpp"
+#include "file.hpp"
 #include <QMainWindow>
 #include <QDir>
 
@@ -33,8 +34,9 @@ private:
     void restoreFontSize();
     void updateTabWidth();
 
+    void messageSaveStatus(File::Status status, const QFile* file);
+
     bool openFile(const QString &fileName);
-    bool saveFile(QFile* file);
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     bool save();
     /// \return true if file was saved, false if saving was canceled by user or resulted in error

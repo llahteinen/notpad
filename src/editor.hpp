@@ -1,6 +1,7 @@
 #ifndef EDITOR_HPP
 #define EDITOR_HPP
 
+#include "file.hpp"
 #include <QPlainTextEdit>
 #include <QFile>
 
@@ -16,9 +17,9 @@ public:
     {}
 
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
-    bool save();
+    File::Status save();
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
-    bool saveAs();
+    File::Status saveAs();
 
     bool isModified() const;
 

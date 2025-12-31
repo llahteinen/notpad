@@ -1,13 +1,12 @@
 #include "editor.hpp"
 #include "settings.hpp"
-#include "file.hpp"
 #include <QFileDialog>
 
 
-bool Editor::save()
+File::Status Editor::save()
 {
     qDebug() << "Editor::save";
-    bool saved = false;
+    File::Status saved{File::Status::UNKNOWN};
     if(!m_file)
     {
         saved = saveAs();
@@ -18,14 +17,14 @@ bool Editor::save()
         saved = File::saveFile(toPlainText(), m_file.get());
     }
 
-    if(saved)
+    if(saved == File::Status::SUCCESS_WRITE)
     {
         document()->setModified(false);
     }
     return saved;
 }
 
-bool Editor::saveAs()
+File::Status Editor::saveAs()
 {
     qDebug() << "Editor::saveAs";
     QFileDialog fileDialog(this, tr("Save Document"), SETTINGS.currentDir.absolutePath());
@@ -37,7 +36,7 @@ bool Editor::saveAs()
     fileDialog.setNameFilters(SETTINGS.nameFilters);
     fileDialog.selectNameFilter(SETTINGS.currentNameFilter);
 
-    bool saved = false;
+    File::Status saved{File::Status::UNKNOWN};
     if(fileDialog.exec() == QDialog::Accepted)
     {
         SETTINGS.currentNameFilter = fileDialog.selectedNameFilter();
@@ -46,8 +45,12 @@ bool Editor::saveAs()
         Q_ASSERT(fileDialog.selectedFiles().size() == 1 && "Selected save file count must be 1");
         saved = File::saveFile(m_file, toPlainText(), fileDialog.selectedFiles().at(0));
     }
+    else
+    {
+        saved = File::Status::CANCELED;
+    }
 
-    if(saved)
+    if(saved == File::Status::SUCCESS_WRITE)
     {
         document()->setModified(false);
     }

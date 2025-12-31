@@ -1,5 +1,6 @@
 #include "tab.hpp"
 #include "editor.hpp"
+#include "settings.hpp"
 #include <QPlainTextEdit>
 #include <QTabWidget>
 #include <QTabBar>
@@ -61,7 +62,7 @@ TabManager::TabManager(QTabWidget* tabWidget, QPlainTextEdit* plainEditorTemplat
 void TabManager::addEmptyTab()
 {
     QWidget* new_editor = m_factory.createEmptyTab();
-    const int index = m_tabWidget->addTab(new_editor, "Untitled");
+    const int index = m_tabWidget->addTab(new_editor, SETTINGS.defaultDocName);
 
     m_tabWidget->setTabIcon(index, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew));
 
@@ -90,6 +91,14 @@ void TabManager::closeCurrentTab()
     }
 }
 
+void TabManager::closeTab(int index)
+{
+    qDebug() << "closeTab" << index;
+    QWidget* tabContent = m_tabWidget->widget(index);
+    m_tabWidget->removeTab(index);
+    tabContent->deleteLater(); /// Not sure if this is needed
+}
+
 QWidget* TabManager::currentWidget() const
 {
     return m_tabWidget->currentWidget();
@@ -99,9 +108,8 @@ QWidget* TabManager::currentWidget() const
 void TabManager::onTabCloseRequested(int index)
 {
     qDebug() << "onTabCloseRequested" << index;
-    QWidget* tabContent = m_tabWidget->widget(index);
-    m_tabWidget->removeTab(index);
-    delete tabContent; /// En tiä tarvitaanko
+    /// Need to ask main for permission to close tab
+    emit tabCloseRequested(index);
 }
 
 void TabManager::onTabBarDoubleClicked(int index)

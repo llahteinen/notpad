@@ -14,11 +14,7 @@
 NotPad::NotPad(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
-    , m_defaultNameFilter{m_nameFilters.at(1)}
-    , m_currentNameFilter{m_defaultNameFilter}
     , m_currentDir{}
-    , m_file{}
-    , m_fileEdited{}
     , m_settings{}
 {
     qInfo() << PROJECT_NAME << "starting";
@@ -30,6 +26,7 @@ NotPad::NotPad(QWidget *parent)
         ui->tabWidget->removeTab(0);
 
     connect(m_tabManager, &TabManager::currentChanged, this, &NotPad::onCurrentTabChanged);
+    connect(m_tabManager, &TabManager::tabCloseRequested, this, &NotPad::onTabCloseRequested);
 
     setWindowTitle(QString("%1 v%2").arg(PROJECT_NAME, PROJECT_VERSION));
 
@@ -72,7 +69,7 @@ NotPad::~NotPad()
 void NotPad::closeEvent(QCloseEvent* event)
 {
     qDebug() << "MainWindow closeEvent";
-    if(confirmFileClose(tr("Closing")))
+    if(!SETTINGS.confirmAppClose || confirmAppClose(tr("Quitting")))
     {
         QMainWindow::closeEvent(event);
     }
@@ -83,6 +80,25 @@ void NotPad::closeEvent(QCloseEvent* event)
     }
 }
 
+void NotPad::onTabCloseRequested(int index)
+{
+    auto* widget = ui->tabWidget->widget(index);
+    qDebug() << "widget" << widget;
+    auto* editor = qobject_cast<Editor*>(widget);
+    Q_ASSERT(editor != nullptr);
+    if(editor != nullptr)
+    {
+        if(confirmFileClose(editor, tr("Closing tab")))
+        {
+            m_tabManager->closeTab(index);
+        }
+        else
+        {
+            /// Don't close
+        }
+    }
+}
+
 void NotPad::onCurrentTabChanged(int index)
 {
     qDebug() << "onCurrentTabChanged" << index;
@@ -90,7 +106,6 @@ void NotPad::onCurrentTabChanged(int index)
     if(index == -1)
     {
         m_editor = nullptr;
-        m_file = nullptr;
 
         /// Close application after last tab?
         if(true)
@@ -105,13 +120,12 @@ void NotPad::onCurrentTabChanged(int index)
     if(editor != nullptr)
     {
         m_editor = editor;
-        m_file = m_editor->m_file;
     }
     else
     {
         qDebug() << "Invalid editor" << editor;
     }
-    qDebug() << "file" << m_file.get();
+    qDebug() << "file" << currentFile();
 }
 
 void NotPad::setupEditor()
@@ -169,29 +183,28 @@ bool NotPad::openFile(const QString &fileName)
         return false;
     }
     Q_ASSERT(file);
-    m_file = std::move(file);
-    m_editor->m_file = m_file;
+    m_editor->m_file = std::move(file);
 
-    QFileInfo fileInfo(*m_file);
+    QFileInfo fileInfo(*currentFile());
     m_currentDir = fileInfo.dir();
 //    m_currentDir = fileInfo.absoluteDir();
 
     statusBar()->showMessage(tr("File opened: %1").arg(QDir::toNativeSeparators(fileName)));
 
-    if(!m_file->open(QFile::ReadOnly | QFile::Text))
+    if(!currentFile()->open(QFile::ReadOnly | QFile::Text))
     {
-        statusBar()->showMessage(tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), m_file->errorString()));
+        statusBar()->showMessage(tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), currentFile()->errorString()));
         return false;
     }
 
-    QTextStream fileStream(m_file.get());
+    QTextStream fileStream(currentFile());
     m_editor->setPlainText(fileStream.readAll());
-    m_file->close(); /// Free the file resource for use by other processes
+    currentFile()->close(); /// Free the file resource for use by other processes
 
     /// setText clears undo history, but the undo/redo available signals might not be emitted
     onUndoAvailable(false);
     onRedoAvailable(false);
-    m_fileEdited = false;
+    m_editor->document()->setModified(false);
     return true;
 }
 
@@ -200,11 +213,11 @@ bool NotPad::saveFile(QFile* const file)
     Q_ASSERT(file);
     if(file->exists())
     {
-        qDebug() << "About to overwrite" << m_file->fileName();
+        qDebug() << "About to overwrite" << currentFile()->fileName();
     }
     else
     {
-        qDebug() << "Writing new file" << m_file->fileName();
+        qDebug() << "Writing new file" << currentFile()->fileName();
     }
     const QFileInfo fileInfo(*file);
     m_currentDir = fileInfo.dir();
@@ -241,66 +254,52 @@ bool NotPad::saveFile(QFile* const file)
     return true;
 }
 
-bool NotPad::saveFile(const QString &fileName)
-{
-    auto file = std::make_unique<QFile>(fileName);
-    Q_ASSERT(file);
-    m_file = std::move(file);
-    m_editor->m_file = m_file;
-    return saveFile(m_file.get());
-}
-
 bool NotPad::save()
 {
-    bool saved = false;
-    if(!m_file)
-    {
-        saved = saveAs();
-    }
-    else
-    {
-        saved = saveFile(m_file.get());
-    }
+    return save(m_editor);
+}
 
-    if(saved)
-    {
-        m_fileEdited = false;
-    }
-    return saved;
+bool NotPad::save(Editor* const editor)
+{
+    return editor->save();
 }
 
 bool NotPad::saveAs()
 {
-    QFileDialog fileDialog(this, tr("Save Document"), m_currentDir.absolutePath());
-    fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
-    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
-    fileDialog.setViewMode(QFileDialog::ViewMode::Detail);
-//    fileDialog.setDefaultSuffix("txt");   /// TODO: Make selectable?
-    fileDialog.setFileMode(QFileDialog::FileMode::AnyFile);
-    fileDialog.setNameFilters(m_nameFilters);
-    fileDialog.selectNameFilter(m_currentNameFilter);
-
-    bool saved = false;
-    if(fileDialog.exec() == QDialog::Accepted)
-    {
-        m_currentNameFilter = fileDialog.selectedNameFilter();
-
-        qDebug() << fileDialog.selectedFiles();
-        Q_ASSERT(fileDialog.selectedFiles().size() == 1 && "Selected save file count must be 1");
-        saved = saveFile(fileDialog.selectedFiles().at(0));
-    }
-
-    if(saved)
-    {
-        m_fileEdited = false;
-    }
-    return saved;
+    return m_editor->saveAs();
 }
 
-bool NotPad::confirmFileClose(const QString& messageTitle)
+bool NotPad::confirmAppClose(const QString& messageTitle)
 {
     bool permission = false;
-    if(m_fileEdited)
+    {
+        const auto choice = QMessageBox::warning(this, messageTitle,
+                                                 tr("Do you want to quit?"),
+                                                 QMessageBox::Yes | QMessageBox::No,
+                                                 QMessageBox::No);
+
+        switch(choice)
+        {
+        case QMessageBox::Yes:
+            {
+                permission = true;
+                break;
+            }
+        case QMessageBox::No:
+        default:
+            {
+                permission = false;
+            }
+        }
+    }
+    return permission;
+}
+
+bool NotPad::confirmFileClose(Editor* editor, const QString& messageTitle)
+{
+    qDebug() << "NotPad::confirmFileClose";
+    bool permission = false;
+    if(editor->isModified())
     {
         qDebug() << "File is edited";
         const auto choice = QMessageBox::warning(this, messageTitle,
@@ -321,7 +320,7 @@ bool NotPad::confirmFileClose(const QString& messageTitle)
             {
                 /// true: file was saved
                 /// false: file saving canceled or failed
-                permission = save();
+                permission = save(editor);
                 break;
             }
         case QMessageBox::Cancel:
@@ -339,16 +338,25 @@ bool NotPad::confirmFileClose(const QString& messageTitle)
     return permission;
 }
 
+QFile* NotPad::currentFile()
+{
+    if(m_editor != nullptr)
+    {
+        return m_editor->m_file.get();
+    }
+    return nullptr;
+}
+
 /// SLOTS ================================================
 
 void NotPad::on_actionNew_triggered()
 {
     qDebug() << "on_actionNew_triggered";
-    if(confirmFileClose(tr("New file")))
+    if(confirmFileClose(m_editor, tr("New file")))
     {
         m_editor->clear();
-        m_file.reset();
-        m_fileEdited = false;
+        m_editor->m_file.reset();
+        m_editor->document()->setModified(false);
     }
 }
 
@@ -357,7 +365,7 @@ void NotPad::on_actionOpen_triggered()
     qDebug() << "on_actionOpen_triggered";
     QFileDialog fileDialog(this, tr("Open Document"), m_currentDir.absolutePath());
     fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
-    fileDialog.setNameFilters(m_nameFilters);
+    fileDialog.setNameFilters(SETTINGS.nameFilters);
     while (fileDialog.exec() == QDialog::Accepted
            && !openFile(fileDialog.selectedFiles().constFirst())) {
     }
@@ -366,13 +374,13 @@ void NotPad::on_actionOpen_triggered()
 void NotPad::on_actionSave_triggered()
 {
     qDebug() << "on_actionSave_triggered";
-    save();
+    m_editor->save();
 }
 
 void NotPad::on_actionSave_as_triggered()
 {
     qDebug() << "on_actionSave_as_triggered";
-    saveAs();
+    m_editor->saveAs();
 }
 
 void NotPad::on_actionAbout_triggered()
@@ -490,6 +498,5 @@ void NotPad::onRedoAvailable(bool available)
 void NotPad::onTextChanged()
 {
 //    qDebug() << "onTextChanged";
-    m_fileEdited = true;
 }
 

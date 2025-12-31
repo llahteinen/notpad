@@ -29,6 +29,7 @@ public:
     void addTabFromFile(const QString& filePath, const QString& title = "");
 
     void closeCurrentTab();
+    void closeTab(int index);
     QWidget* currentWidget() const;
 
 public slots:
@@ -43,6 +44,7 @@ private:
     Tab m_factory;
 
 signals:
+    void tabCloseRequested(int index);
     void currentChanged(int index);
 
 };

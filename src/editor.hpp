@@ -12,10 +12,17 @@ class Editor : public QPlainTextEdit
 public:
     explicit Editor(QWidget *parent = nullptr)
         : QPlainTextEdit(parent)
+        , m_file{}
     {}
 
-    std::shared_ptr<QFile> m_file;
-    bool m_fileEdited;
+    /// \return true if file was saved, false if saving was canceled by user or resulted in error
+    bool save();
+    /// \return true if file was saved, false if saving was canceled by user or resulted in error
+    bool saveAs();
+
+    bool isModified() const;
+
+    std::unique_ptr<QFile> m_file;
 };
 
 #endif // EDITOR_HPP

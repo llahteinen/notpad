@@ -34,14 +34,19 @@ private:
     void updateTabWidth();
 
     bool openFile(const QString &fileName);
-    bool saveFile(const QString &fileName);
     bool saveFile(QFile* file);
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     bool save();
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
+    bool save(Editor* editor);
+    /// \return true if file was saved, false if saving was canceled by user or resulted in error
     bool saveAs();
+    /// \return true for permission to close application, false for no permission
+    bool confirmAppClose(const QString& messageTitle = tr("Confirmation"));
     /// \return true for permission to close file, false for no permission
-    bool confirmFileClose(const QString& messageTitle = tr("Confirmation"));
+    bool confirmFileClose(Editor* editor, const QString& messageTitle = tr("Confirmation"));
+
+    QFile* currentFile();
 
 private slots:
     /// Custom slots
@@ -49,6 +54,7 @@ private slots:
     void onRedoAvailable(bool available);
     void onTextChanged();
     void onCurrentTabChanged(int index);
+    void onTabCloseRequested(int index);
 
     /// Automatically connected slots
     /// MENU ================================
@@ -77,29 +83,7 @@ private:
 
     Ui::NotPad *ui;
 
-    QStringList m_nameFilters
-    {
-        "All files (*)",
-        "Text files (*.txt)",
-        "Log files (*.log)",
-        "Markdown files (*.md)",
-        "JSON files (*.json)",
-        "C/C++ files (*.cpp *.hpp *.c *.h)",
-        "HTML files (*.htm *.html *.php)",
-        "CSS files (*.css)",
-    };
-//    QStringList m_mimeTypeFilters{ /// This is alternative to nameFilters, both can't be used together
-//        "text/plain", /// Returns a huge amount of suffixes
-//        "text/csv",
-//        "text/html",
-//        "application/json",
-//        "application/octet-stream" /// will show "All files (*)"
-//    };
-    const QString m_defaultNameFilter;
-    QString m_currentNameFilter;
     QDir m_currentDir;
-    std::shared_ptr<QFile> m_file;
-    bool m_fileEdited;
 
     Settings m_settings;
 

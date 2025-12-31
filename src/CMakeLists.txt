@@ -10,6 +10,8 @@ set(PROJECT_SOURCES
         tab.cpp
         editor.hpp
         editor.cpp
+        file.hpp
+        file.cpp
 )
 
 set(RESOURCE_FILES

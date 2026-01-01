@@ -1,6 +1,5 @@
 #include "tab.hpp"
 #include "editor.hpp"
-#include "settings.hpp"
 #include <QPlainTextEdit>
 #include <QTabWidget>
 #include <QTabBar>
@@ -9,7 +8,7 @@
 #include <QLayout>
 
 
-QWidget* Tab::createEmptyTab()
+Editor* Tab::createEmptyTab()
 {
     auto* editor = new Editor();
     auto* templ = m_plainEditorTemplate;
@@ -75,11 +74,13 @@ void TabManager::addEmptyTab()
     m_tabWidget->setCurrentIndex(index);
 }
 
-void TabManager::addTabFromFile(const QString& /*filePath*/, const QString& /*title*/)
+void TabManager::addTabFromFile(const QString& text, const QString& title)
 {
-//    QWidget* tabContent = m_factory.createTabFromFile(filePath);
-//    QString tabTitle = title.isEmpty() ? QFileInfo(filePath).fileName() : title;
-//    m_tabWidget->addTab(tabContent, tabTitle);
+    Editor* editor = m_factory.createEmptyTab();
+    editor->setPlainText(text);
+    const int index = m_tabWidget->addTab(editor, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew), title);
+
+    m_tabWidget->setCurrentIndex(index);
 }
 
 void TabManager::closeCurrentTab()

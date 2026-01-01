@@ -15,7 +15,6 @@
 NotPad::NotPad(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
-    , m_currentDir{}
     , m_settings{}
 {
     qInfo() << PROJECT_NAME << "starting";
@@ -58,8 +57,8 @@ NotPad::NotPad(QWidget *parent)
 
 //    /// Open a test text file
 //    openFile(":/forms/input.txt"); /// Breaks m_currentDir
-//    m_file.reset(); /// :/forms does not work well, so reset it
-//    m_currentDir = QDir("../../../testifiles");
+//    m_editor->m_file.reset(); /// :/forms does not work well, so reset it
+//    SETTINGS.currentDir = QDir("../../../testifiles"); /// Set save/load dialog starting location
 }
 
 NotPad::~NotPad()
@@ -121,6 +120,9 @@ void NotPad::onCurrentTabChanged(int index)
     if(editor != nullptr)
     {
         m_editor = editor;
+
+        onUndoAvailable(m_editor->document()->isUndoAvailable());
+        onRedoAvailable(m_editor->document()->isRedoAvailable());
     }
     else
     {
@@ -184,28 +186,24 @@ bool NotPad::openFile(const QString &fileName)
         return false;
     }
     Q_ASSERT(file);
-    m_editor->m_file = std::move(file);
 
-    QFileInfo fileInfo(*currentFile());
-    m_currentDir = fileInfo.dir();
-//    m_currentDir = fileInfo.absoluteDir();
+    QFileInfo fileInfo(*file);
+    SETTINGS.currentDir = fileInfo.dir();
+//    SETTINGS.currentDir = fileInfo.absoluteDir();
 
     statusBar()->showMessage(tr("File opened: %1").arg(QDir::toNativeSeparators(fileName)));
 
-    if(!currentFile()->open(QFile::ReadOnly | QFile::Text))
+    if(!file->open(QFile::ReadOnly | QFile::Text))
     {
         statusBar()->showMessage(tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), currentFile()->errorString()));
         return false;
     }
 
-    QTextStream fileStream(currentFile());
-    m_editor->setPlainText(fileStream.readAll());
-    currentFile()->close(); /// Free the file resource for use by other processes
+    QTextStream fileStream(file.get());
+    m_tabManager->addTabFromFile(fileStream.readAll(), fileInfo.fileName());
+    /// onCurrentTabChanged will be triggered
 
-    /// setText clears undo history, but the undo/redo available signals might not be emitted
-    onUndoAvailable(false);
-    onRedoAvailable(false);
-    m_editor->document()->setModified(false);
+    file->close(); /// Free the file resource for use by other processes
     return true;
 }
 
@@ -336,6 +334,13 @@ QFile* NotPad::currentFile()
 void NotPad::on_actionNew_triggered()
 {
     qDebug() << "on_actionNew_triggered";
+
+    if(ui->tabWidget->count() == 0)
+    {
+        m_tabManager->addEmptyTab();
+        /// onCurrentTabChanged will be triggered
+    }
+
     if(confirmFileClose(m_editor, tr("New file")))
     {
         m_editor->clear();
@@ -347,7 +352,7 @@ void NotPad::on_actionNew_triggered()
 void NotPad::on_actionOpen_triggered()
 {
     qDebug() << "on_actionOpen_triggered";
-    QFileDialog fileDialog(this, tr("Open Document"), m_currentDir.absolutePath());
+    QFileDialog fileDialog(this, tr("Open Document"), SETTINGS.currentDir.absolutePath());
     fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
     fileDialog.setNameFilters(SETTINGS.nameFilters);
     while (fileDialog.exec() == QDialog::Accepted

@@ -85,8 +85,6 @@ private:
 
     Ui::NotPad *ui;
 
-    QDir m_currentDir;
-
     Settings m_settings;
 
     TabManager* m_tabManager;

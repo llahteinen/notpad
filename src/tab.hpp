@@ -2,6 +2,7 @@
 #define TAB_HPP
 
 #include "file.hpp"
+#include "settings.hpp"
 #include <QObject>
 
 class QTabWidget;
@@ -11,15 +12,16 @@ class Editor;
 
 class Tab
 {
-public:
+    friend class TabManager;
+private:
     Tab(QPlainTextEdit* plainEditorTemplate)
         : m_plainEditorTemplate{plainEditorTemplate}
     {}
 
     Editor* createEmptyTab();
     Editor* createTabFromFile(File::Status& o_status, const QString& fileName);
+    void setupEditor(Editor* editor, const QPlainTextEdit* templ);
 
-private:
     QPlainTextEdit* m_plainEditorTemplate;
 };
 
@@ -43,6 +45,9 @@ public slots:
     void onCurrentChanged(int index);
 
 private:
+    /// \brief Adds a tab and sets it active
+    void addTab(QWidget* editor, const QString& title = SETTINGS.defaultDocName);
+
     QTabWidget* const m_tabWidget;
     Tab m_factory;
 

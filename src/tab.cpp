@@ -1,6 +1,5 @@
 #include "tab.hpp"
 #include "editor.hpp"
-#include "settings.hpp"
 #include <QPlainTextEdit>
 #include <QTabWidget>
 #include <QTabBar>
@@ -12,15 +11,7 @@
 Editor* Tab::createEmptyTab()
 {
     auto* editor = new Editor();
-    auto* templ = m_plainEditorTemplate;
-
-    /// Basic settings
-    editor->setUndoRedoEnabled(true);
-
-    /// Dynamic global settings
-    editor->setFont(templ->font());
-    editor->setWordWrapMode(templ->wordWrapMode());
-
+    setupEditor(editor, m_plainEditorTemplate);
     return editor;
 }
 
@@ -32,16 +23,18 @@ Editor* Tab::createTabFromFile(File::Status& o_status, const QString& fileName)
         return nullptr;
     }
 
-    const auto* templ = m_plainEditorTemplate;
+    setupEditor(editor, m_plainEditorTemplate);
+    return editor;
+}
 
+void Tab::setupEditor(Editor* editor, const QPlainTextEdit* const templ)
+{
     /// Basic settings
     editor->setUndoRedoEnabled(true);
 
     /// Dynamic global settings
     editor->setFont(templ->font());
     editor->setWordWrapMode(templ->wordWrapMode());
-
-    return editor;
 }
 
 TabManager::TabManager(QTabWidget* tabWidget, QPlainTextEdit* plainEditorTemplate, QObject* parent)
@@ -79,12 +72,9 @@ TabManager::TabManager(QTabWidget* tabWidget, QPlainTextEdit* plainEditorTemplat
     m_tabWidget->setCornerWidget(tb, Qt::TopRightCorner);
 }
 
-void TabManager::addEmptyTab()
+void TabManager::addTab(QWidget* editor, const QString& title)
 {
-    QWidget* new_editor = m_factory.createEmptyTab();
-    const int index = m_tabWidget->addTab(new_editor, SETTINGS.defaultDocName);
-
-    m_tabWidget->setTabIcon(index, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew));
+    const int index = m_tabWidget->addTab(editor, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew), title);
 
 //    /// Custom close button
 //    QToolButton* tb = new QToolButton(m_tabWidget);
@@ -93,6 +83,12 @@ void TabManager::addEmptyTab()
     /// Toimii mutta pitää tehdä signaalit
 
     m_tabWidget->setCurrentIndex(index);
+}
+
+void TabManager::addEmptyTab()
+{
+    QWidget* new_editor = m_factory.createEmptyTab();
+    addTab(new_editor);
 }
 
 File::Status TabManager::addTabFromFile(const QString& fileName)
@@ -104,9 +100,7 @@ File::Status TabManager::addTabFromFile(const QString& fileName)
         return status;
     }
 
-    const int index = m_tabWidget->addTab(editor, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew), QFileInfo(*editor->m_file).fileName());
-
-    m_tabWidget->setCurrentIndex(index);
+    addTab(editor, QFileInfo(*editor->m_file).fileName());
     return status;
 }
 

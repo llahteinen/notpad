@@ -34,8 +34,8 @@ private:
     void restoreFontSize();
     void updateTabWidth();
 
-    void messageOpenStatus(File::Status status, const QFile* file);
-    void messageSaveStatus(File::Status status, const QFile* file);
+    void messageOpenStatus(const File::Status& status);
+    void messageSaveStatus(const File::Status& status);
 
     bool openFile(const QString &fileName);
     /// \return true if file was saved, false if saving was canceled by user or resulted in error

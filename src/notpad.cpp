@@ -176,7 +176,7 @@ void NotPad::updateTabWidth()
     m_editor->setTabStopDistance(m_settings.tabWidthChars * m_editor->fontMetrics().averageCharWidth());
 }
 
-void NotPad::messageOpenStatus(File::Status status, const QFile* const file)
+void NotPad::messageOpenStatus(const File::Status& status)
 {
     QString msg;
     switch(status)
@@ -184,13 +184,13 @@ void NotPad::messageOpenStatus(File::Status status, const QFile* const file)
     case File::Status::CANCELED:
         break;
     case File::Status::FAIL_OPEN_NOTFOUND:
-        msg = tr("File not found: %1").arg(file->errorString());
+        msg = tr("File not found: %1").arg(QDir::toNativeSeparators(status.fileName));
         break;
     case File::Status::FAIL_OPEN_READ:
-        msg = tr("Cannot open file for reading: %1").arg(file->errorString());
+        msg = tr("Cannot open file for reading: %1").arg(status.errorString);
         break;
     case File::Status::SUCCESS_READ:
-        msg = tr("File opened: %1").arg(QDir::toNativeSeparators(file->fileName()));
+        msg = tr("File opened: %1").arg(QDir::toNativeSeparators(status.fileName));
         break;
     default:
         msg = tr("File open/read failed.");
@@ -202,11 +202,11 @@ bool NotPad::openFile(const QString &fileName)
 {
     const auto status = m_tabManager->addTabFromFile(fileName);
     qDebug() << "openFile status" << static_cast<int>(status);
-    messageOpenStatus(status, m_editor->m_file.get());
+    messageOpenStatus(status);
     return status == File::Status::SUCCESS_READ;
 }
 
-void NotPad::messageSaveStatus(File::Status status, const QFile* const file)
+void NotPad::messageSaveStatus(const File::Status& status)
 {
     QString msg;
     switch(status)
@@ -214,16 +214,16 @@ void NotPad::messageSaveStatus(File::Status status, const QFile* const file)
     case File::Status::CANCELED:
         break;
     case File::Status::FAIL_OPEN_WRITE:
-        msg = tr("Cannot open file for writing: %1").arg(file->errorString());
+        msg = tr("Cannot open file for writing: %1").arg(status.errorString);
         break;
     case File::Status::FAIL_WRITE:
-        msg = tr("File write failed: %1").arg(file->errorString());
+        msg = tr("File write failed: %1").arg(status.errorString);
         break;
     case File::Status::FAIL_WRITE_UNKNOWN:
-        msg = tr("File write failed: %1").arg(file->errorString());
+        msg = tr("File write failed: %1").arg(status.errorString);
         break;
     case File::Status::SUCCESS_WRITE:
-        msg = tr("File saved: %1").arg(QDir::toNativeSeparators(file->fileName()));
+        msg = tr("File saved: %1").arg(QDir::toNativeSeparators(status.fileName));
         break;
     default:
         msg = tr("File write failed.");
@@ -238,15 +238,17 @@ bool NotPad::save()
 
 bool NotPad::save(Editor* const editor)
 {
+    qDebug() << "NotPad::save";
     const auto status = editor->save();
-    messageSaveStatus(status, editor->m_file.get());
+    messageSaveStatus(status);
     return status == File::Status::SUCCESS_WRITE;
 }
 
 bool NotPad::saveAs()
 {
+    qDebug() << "NotPad::saveAs";
     const auto status = m_editor->saveAs();
-    messageSaveStatus(status, m_editor->m_file.get());
+    messageSaveStatus(status);
     return status == File::Status::SUCCESS_WRITE;
 }
 

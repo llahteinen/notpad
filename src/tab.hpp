@@ -17,7 +17,7 @@ public:
     {}
 
     Editor* createEmptyTab();
-    Editor* createTabFromFile(const QString& fileName);
+    Editor* createTabFromFile(File::Status& o_status, const QString& fileName);
 
 private:
     QPlainTextEdit* m_plainEditorTemplate;

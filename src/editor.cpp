@@ -15,13 +15,13 @@ Editor* Editor::createEditor(std::unique_ptr<QFile> file, QWidget* parent)
 }
 
 /// static
-Editor* Editor::createEditor(const QString& fileName, QWidget* parent)
+Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QWidget* parent)
 {
     std::unique_ptr<QFile> file_p;
-    const auto status = File::openFile(file_p, fileName);
-    if(status != File::Status::SUCCESS_READ)
+    o_status = File::openFile(file_p, fileName);
+    if(o_status != File::Status::SUCCESS_READ)
     {
-        throw;
+        return nullptr;
     }
 
     Editor* editor = createEditor(std::move(file_p), parent);
@@ -74,7 +74,7 @@ File::Status Editor::saveAs()
     }
     else
     {
-        saved = File::Status::CANCELED;
+        saved.code = File::Status::CANCELED;
     }
 
     if(saved == File::Status::SUCCESS_WRITE)

@@ -22,7 +22,7 @@ public:
     {}
 
     static Editor* createEditor(std::unique_ptr<QFile> file_p, QWidget* parent = nullptr);
-    static Editor* createEditor(const QString& fileName, QWidget* parent = nullptr);
+    static Editor* createEditor(File::Status& o_status, const QString& fileName, QWidget* parent = nullptr);
 
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     File::Status save();

@@ -9,6 +9,8 @@ File::Status File::saveFile(QStringView text, QFile* const file)
     qDebug() << "File::saveFile";
     Q_ASSERT(file);
 
+    Status status{Status::UNKNOWN, file->fileName()};
+
     if(file->exists())
     {
         qDebug() << "About to overwrite" << file->fileName();
@@ -23,7 +25,9 @@ File::Status File::saveFile(QStringView text, QFile* const file)
     if(!file->open(QFile::WriteOnly | QFile::Text))
     {
         qWarning() << "Failed to open file:" << file->errorString();
-        return File::Status::FAIL_OPEN_WRITE;
+        status.code = Status::FAIL_OPEN_WRITE;
+        status.errorString = file->errorString();
+        return status;
     }
 
     QTextStream fstream{file};
@@ -33,7 +37,9 @@ File::Status File::saveFile(QStringView text, QFile* const file)
     {
         qWarning() << "Failed to write to file:" << fstream.status();
         file->close();
-        return File::Status::FAIL_WRITE;
+        status.code = Status::FAIL_WRITE;
+        status.errorString = file->errorString();
+        return status;
     }
 
     fstream.flush(); // Ensure data is written to the file
@@ -41,11 +47,14 @@ File::Status File::saveFile(QStringView text, QFile* const file)
     {
         qWarning() << "File error after writing:" << file->errorString();
         file->close();
-        return File::Status::FAIL_WRITE;
+        status.code = Status::FAIL_WRITE;
+        status.errorString = file->errorString();
+        return status;
     }
 
     file->close(); /// Free the file resource for use by other processes
-    return File::Status::SUCCESS_WRITE;
+    status.code = Status::SUCCESS_WRITE;
+    return status;
 }
 
 File::Status File::saveFile(std::unique_ptr<QFile>& file_p, QStringView text, const QString& fileName)
@@ -59,14 +68,21 @@ File::Status File::saveFile(std::unique_ptr<QFile>& file_p, QStringView text, co
 File::Status File::openFile(std::unique_ptr<QFile>& file, const QString& fileName)
 {
     qDebug() << "File::openFile" << fileName;
+
+    Status status{Status::UNKNOWN, fileName};
+
     file = std::make_unique<QFile>(fileName);
     if(!file->exists())
     {
         qWarning() << "Does not exist";
-        return Status::FAIL_OPEN_NOTFOUND;
+        status.code = Status::FAIL_OPEN_NOTFOUND;
+        status.errorString = "File not found";
+        return status;
     }
-
     Q_ASSERT(file);
+
+    status.fileName = file->fileName();
+
     QFileInfo fileInfo(*file);
     SETTINGS.currentDir = fileInfo.dir();
 //    SETTINGS.currentDir = fileInfo.absoluteDir();
@@ -76,8 +92,11 @@ File::Status File::openFile(std::unique_ptr<QFile>& file, const QString& fileNam
     if(!file->open(QFile::ReadOnly | QFile::Text))
     {
         qWarning() << "Can't open";
-        return Status::FAIL_OPEN_READ;
+        status.code = Status::FAIL_OPEN_READ;
+        status.errorString = file->errorString();
+        return status;
     }
 
-    return Status::SUCCESS_READ;
+    status.code = Status::SUCCESS_READ;
+    return status;
 }

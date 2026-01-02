@@ -24,9 +24,14 @@ Editor* Tab::createEmptyTab()
     return editor;
 }
 
-Editor* Tab::createTabFromFile(const QString& fileName)
+Editor* Tab::createTabFromFile(File::Status& o_status, const QString& fileName)
 {
-    auto* editor = Editor::createEditor(fileName);
+    auto* editor = Editor::createEditor(o_status, fileName);
+    if(editor == nullptr)
+    {
+        return nullptr;
+    }
+
     const auto* templ = m_plainEditorTemplate;
 
     /// Basic settings
@@ -92,11 +97,17 @@ void TabManager::addEmptyTab()
 
 File::Status TabManager::addTabFromFile(const QString& fileName)
 {
-    Editor* editor = m_factory.createTabFromFile(fileName);
+    File::Status status;
+    Editor* editor = m_factory.createTabFromFile(status, fileName);
+    if(editor == nullptr)
+    {
+        return status;
+    }
+
     const int index = m_tabWidget->addTab(editor, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew), QFileInfo(*editor->m_file).fileName());
 
     m_tabWidget->setCurrentIndex(index);
-    return File::Status::SUCCESS_READ;
+    return status;
 }
 
 void TabManager::closeCurrentTab()

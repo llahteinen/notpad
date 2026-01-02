@@ -6,6 +6,7 @@
 #include <QString>
 #include <QStringList>
 #include <QDir>
+#include <QStandardPaths>
 
 
 class Settings
@@ -51,7 +52,7 @@ public:
 
     /// Runtime (not to be persisted)
     QString currentNameFilter{defaultNameFilter};
-    QDir currentDir{};
+    QDir currentDir{QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)};
 
 };
 

@@ -1,9 +1,9 @@
 #ifndef FILE_HPP
 #define FILE_HPP
 
-#include <QFile>
 #include <QString>
 
+class QFile;
 
 namespace File
 {
@@ -48,20 +48,17 @@ namespace File
         QString errorString;
     };
 
-    /// \brief Save to a file using QFile pointer.
+    /// \brief Save to a file using QFile reference.
     /// \param text Text to be saved to the file
-    /// \param file_p Pointer to an existing QFile instance
-    /// \return Success
-    Status saveFile(QStringView text, QFile* const file);
+    /// \param file File to be saved to. Must have filename already set
+    /// \return Success status object
+    Status saveFile(QStringView text, QFile& file);
 
-    /// \brief Save to a file using file name. Outputs file_p pointer of the newly created QFile.
-    /// \param file_p[out]
-    /// \param text Text to be saved to the file
+    /// \brief Open a file for reading, but don't read anything.
+    /// \param file File to be opened
     /// \param fileName
-    /// \return Success
-    Status saveFile(std::unique_ptr<QFile>& file_p, QStringView text, const QString& fileName);
-
-    Status openFile(std::unique_ptr<QFile>& file_p, const QString& fileName);
+    /// \return Success status object
+    Status openFile(QFile& file, const QString& fileName);
 };
 
 #endif // FILE_HPP

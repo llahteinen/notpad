@@ -11,23 +11,18 @@ class Editor : public QPlainTextEdit
     Q_OBJECT
 
 public:
-    explicit Editor(QWidget *parent = nullptr)
-        : QPlainTextEdit(parent)
-        , m_file{}
-    {}
+    explicit Editor(QWidget *parent = nullptr);
+    Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent = nullptr);
 
-    Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent = nullptr)
-        : QPlainTextEdit(text, parent)
-        , m_file{std::move(file_p)}
-    {}
-
-    static Editor* createEditor(std::unique_ptr<QFile> file_p, QWidget* parent = nullptr);
     static Editor* createEditor(File::Status& o_status, const QString& fileName, QWidget* parent = nullptr);
+
+    /// \return True if can be saved over previous file. False if "save as" / file selection is needed first.
+    bool saveOrSaveAs();
 
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     File::Status save();
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
-    File::Status saveAs();
+    File::Status saveAs(const QString& fileName);
 
     bool isModified() const;
 

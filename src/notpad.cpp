@@ -88,7 +88,7 @@ void NotPad::onTabCloseRequested(int index)
     Q_ASSERT(editor != nullptr);
     if(editor != nullptr)
     {
-        if(confirmFileClose(editor, tr("Closing tab")))
+        if(confirmFileClose(editor, ui->tabWidget->tabText(index)))
         {
             m_tabManager->closeTab(index);
         }
@@ -239,6 +239,10 @@ bool NotPad::save()
 bool NotPad::save(Editor* const editor)
 {
     qDebug() << "NotPad::save";
+    if(!editor->saveOrSaveAs())
+    {
+        return saveAs();
+    }
     const auto status = editor->save();
     messageSaveStatus(status);
     return status == File::Status::SUCCESS_WRITE;
@@ -247,7 +251,38 @@ bool NotPad::save(Editor* const editor)
 bool NotPad::saveAs()
 {
     qDebug() << "NotPad::saveAs";
-    const auto status = m_editor->saveAs();
+    QFileDialog fileDialog(this, tr("Save Document"), SETTINGS.currentDir.absolutePath());
+    fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
+    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+    fileDialog.setViewMode(QFileDialog::ViewMode::Detail);
+//    fileDialog.setDefaultSuffix("txt");   /// TODO: Make selectable?
+    fileDialog.setFileMode(QFileDialog::FileMode::AnyFile);
+    fileDialog.setNameFilters(SETTINGS.nameFilters);
+    fileDialog.selectNameFilter(SETTINGS.currentNameFilter);
+
+    File::Status status{File::Status::UNKNOWN};
+    if(fileDialog.exec() == QDialog::Accepted)
+    {
+        qDebug() << fileDialog.selectedFiles();
+        Q_ASSERT(fileDialog.selectedFiles().size() == 1 && "Selected save file count must be 1");
+        const QString file_name = fileDialog.selectedFiles().constFirst();
+        status = m_editor->saveAs(file_name);
+
+        const QFileInfo fileInfo(file_name);
+        SETTINGS.currentDir = fileInfo.dir();
+//        SETTINGS.currentDir = fileInfo.absoluteDir();
+        SETTINGS.currentNameFilter = fileDialog.selectedNameFilter();
+
+        if(status == File::Status::SUCCESS_WRITE)
+        {
+            ui->tabWidget->setTabText(ui->tabWidget->indexOf(m_editor), fileInfo.fileName());
+        }
+    }
+    else
+    {
+        status.code = File::Status::CANCELED;
+    }
+
     messageSaveStatus(status);
     return status == File::Status::SUCCESS_WRITE;
 }
@@ -356,8 +391,13 @@ void NotPad::on_actionOpen_triggered()
     QFileDialog fileDialog(this, tr("Open Document"), SETTINGS.currentDir.absolutePath());
     fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
     fileDialog.setNameFilters(SETTINGS.nameFilters);
-    while (fileDialog.exec() == QDialog::Accepted
-           && !openFile(fileDialog.selectedFiles().constFirst())) {
+
+    if(fileDialog.exec() == QDialog::Accepted)
+    {
+        openFile(fileDialog.selectedFiles().constFirst());
+        const QFileInfo fileInfo(fileDialog.selectedFiles().constFirst());
+        SETTINGS.currentDir = fileInfo.dir();
+//        SETTINGS.currentDir = fileInfo.absoluteDir();
     }
 }
 

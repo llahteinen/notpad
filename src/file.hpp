@@ -14,7 +14,10 @@ namespace File
         FAIL_OPEN_WRITE,
         FAIL_WRITE,
         FAIL_WRITE_UNKNOWN,
+        FAIL_OPEN_NOTFOUND,
+        FAIL_OPEN_READ,
         SUCCESS_WRITE,
+        SUCCESS_READ,
     };
 
     /// \brief Save to a file using QFile pointer.
@@ -29,6 +32,8 @@ namespace File
     /// \param fileName
     /// \return Success
     Status saveFile(std::unique_ptr<QFile>& file_p, QStringView text, const QString& fileName);
+
+    Status openFile(std::unique_ptr<QFile>& file_p, const QString& fileName);
 };
 
 #endif // FILE_HPP

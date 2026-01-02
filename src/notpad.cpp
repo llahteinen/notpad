@@ -176,35 +176,34 @@ void NotPad::updateTabWidth()
     m_editor->setTabStopDistance(m_settings.tabWidthChars * m_editor->fontMetrics().averageCharWidth());
 }
 
+void NotPad::messageOpenStatus(File::Status status, const QFile* const file)
+{
+    QString msg;
+    switch(status)
+    {
+    case File::Status::CANCELED:
+        break;
+    case File::Status::FAIL_OPEN_NOTFOUND:
+        msg = tr("File not found: %1").arg(file->errorString());
+        break;
+    case File::Status::FAIL_OPEN_READ:
+        msg = tr("Cannot open file for reading: %1").arg(file->errorString());
+        break;
+    case File::Status::SUCCESS_READ:
+        msg = tr("File opened: %1").arg(QDir::toNativeSeparators(file->fileName()));
+        break;
+    default:
+        msg = tr("File open/read failed.");
+    }
+    statusBar()->showMessage(msg);
+}
+
 bool NotPad::openFile(const QString &fileName)
 {
-    auto file = std::make_unique<QFile>(fileName);
-    if(!file->exists())
-    {
-        statusBar()->showMessage(tr("File %1 could not be opened")
-                                     .arg(QDir::toNativeSeparators(fileName)));
-        return false;
-    }
-    Q_ASSERT(file);
-
-    QFileInfo fileInfo(*file);
-    SETTINGS.currentDir = fileInfo.dir();
-//    SETTINGS.currentDir = fileInfo.absoluteDir();
-
-    statusBar()->showMessage(tr("File opened: %1").arg(QDir::toNativeSeparators(fileName)));
-
-    if(!file->open(QFile::ReadOnly | QFile::Text))
-    {
-        statusBar()->showMessage(tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), currentFile()->errorString()));
-        return false;
-    }
-
-    QTextStream fileStream(file.get());
-    m_tabManager->addTabFromFile(fileStream.readAll(), fileInfo.fileName());
-    /// onCurrentTabChanged will be triggered
-
-    file->close(); /// Free the file resource for use by other processes
-    return true;
+    const auto status = m_tabManager->addTabFromFile(fileName);
+    qDebug() << "openFile status" << static_cast<int>(status);
+    messageOpenStatus(status, m_editor->m_file.get());
+    return status == File::Status::SUCCESS_READ;
 }
 
 void NotPad::messageSaveStatus(File::Status status, const QFile* const file)

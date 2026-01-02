@@ -3,6 +3,33 @@
 #include <QFileDialog>
 
 
+/// static
+Editor* Editor::createEditor(std::unique_ptr<QFile> file, QWidget* parent)
+{
+    if(file == nullptr)
+    {
+        throw;
+    }
+    QTextStream fileStream(file.get());
+    return new Editor(fileStream.readAll(), std::move(file), parent);
+}
+
+/// static
+Editor* Editor::createEditor(const QString& fileName, QWidget* parent)
+{
+    std::unique_ptr<QFile> file_p;
+    const auto status = File::openFile(file_p, fileName);
+    if(status != File::Status::SUCCESS_READ)
+    {
+        throw;
+    }
+
+    Editor* editor = createEditor(std::move(file_p), parent);
+    /// file_p is nullptr now
+    editor->m_file->close();
+    return editor;
+}
+
 File::Status Editor::save()
 {
     qDebug() << "Editor::save";

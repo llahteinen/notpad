@@ -1,7 +1,7 @@
 #ifndef TAB_HPP
 #define TAB_HPP
 
-#include "settings.hpp"
+#include "file.hpp"
 #include <QObject>
 
 class QTabWidget;
@@ -17,6 +17,7 @@ public:
     {}
 
     Editor* createEmptyTab();
+    Editor* createTabFromFile(const QString& fileName);
 
 private:
     QPlainTextEdit* m_plainEditorTemplate;
@@ -28,7 +29,7 @@ class TabManager : public QObject
 public:
     TabManager(QTabWidget* tabWidget, QPlainTextEdit* plainEditorTemplate, QObject* parent = nullptr);
 
-    void addTabFromFile(const QString& text, const QString& title = SETTINGS.defaultDocName);
+    File::Status addTabFromFile(const QString& fileName);
 
     void closeCurrentTab();
     void closeTab(int index);

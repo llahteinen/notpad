@@ -1,5 +1,6 @@
 #include "tab.hpp"
 #include "editor.hpp"
+#include "settings.hpp"
 #include <QPlainTextEdit>
 #include <QTabWidget>
 #include <QTabBar>
@@ -12,6 +13,21 @@ Editor* Tab::createEmptyTab()
 {
     auto* editor = new Editor();
     auto* templ = m_plainEditorTemplate;
+
+    /// Basic settings
+    editor->setUndoRedoEnabled(true);
+
+    /// Dynamic global settings
+    editor->setFont(templ->font());
+    editor->setWordWrapMode(templ->wordWrapMode());
+
+    return editor;
+}
+
+Editor* Tab::createTabFromFile(const QString& fileName)
+{
+    auto* editor = Editor::createEditor(fileName);
+    const auto* templ = m_plainEditorTemplate;
 
     /// Basic settings
     editor->setUndoRedoEnabled(true);
@@ -74,13 +90,13 @@ void TabManager::addEmptyTab()
     m_tabWidget->setCurrentIndex(index);
 }
 
-void TabManager::addTabFromFile(const QString& text, const QString& title)
+File::Status TabManager::addTabFromFile(const QString& fileName)
 {
-    Editor* editor = m_factory.createEmptyTab();
-    editor->setPlainText(text);
-    const int index = m_tabWidget->addTab(editor, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew), title);
+    Editor* editor = m_factory.createTabFromFile(fileName);
+    const int index = m_tabWidget->addTab(editor, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew), QFileInfo(*editor->m_file).fileName());
 
     m_tabWidget->setCurrentIndex(index);
+    return File::Status::SUCCESS_READ;
 }
 
 void TabManager::closeCurrentTab()

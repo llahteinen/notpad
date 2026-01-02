@@ -34,6 +34,7 @@ private:
     void restoreFontSize();
     void updateTabWidth();
 
+    void messageOpenStatus(File::Status status, const QFile* file);
     void messageSaveStatus(File::Status status, const QFile* file);
 
     bool openFile(const QString &fileName);

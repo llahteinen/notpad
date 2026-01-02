@@ -55,3 +55,29 @@ File::Status File::saveFile(std::unique_ptr<QFile>& file_p, QStringView text, co
     Q_ASSERT(file_p);
     return saveFile(text, file_p.get());
 }
+
+File::Status File::openFile(std::unique_ptr<QFile>& file, const QString& fileName)
+{
+    qDebug() << "File::openFile" << fileName;
+    file = std::make_unique<QFile>(fileName);
+    if(!file->exists())
+    {
+        qWarning() << "Does not exist";
+        return Status::FAIL_OPEN_NOTFOUND;
+    }
+
+    Q_ASSERT(file);
+    QFileInfo fileInfo(*file);
+    SETTINGS.currentDir = fileInfo.dir();
+//    SETTINGS.currentDir = fileInfo.absoluteDir();
+
+    qDebug() << QString("File opened: %1").arg(QDir::toNativeSeparators(fileName));
+
+    if(!file->open(QFile::ReadOnly | QFile::Text))
+    {
+        qWarning() << "Can't open";
+        return Status::FAIL_OPEN_READ;
+    }
+
+    return Status::SUCCESS_READ;
+}

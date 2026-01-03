@@ -48,6 +48,7 @@ public:
     int tabWidthChars{4};  /// Measured in characters or multiples of avg character width
     bool confirmAppClose{false};
     QString defaultDocName{"Untitled"};
+    bool wordWrap{true};
 
 
     /// Runtime (not to be persisted)

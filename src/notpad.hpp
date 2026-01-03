@@ -28,7 +28,8 @@ public:
 private:
     void closeEvent(QCloseEvent* event) override;
 
-    void setupEditor();
+    void setupSignals();
+    void setupMenu();
 
     void incrementFontSize(int increment);
     void restoreFontSize();
@@ -89,7 +90,8 @@ private:
     Settings m_settings;
 
     TabManager* m_tabManager;
-    Editor* m_editor;
+    Editor* m_editor;       //!< Editor that is currently selected in the active tab
+    Editor* m_prevEditor;   //!< Editor that was selected before the current one
 };
 
 

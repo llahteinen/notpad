@@ -16,6 +16,9 @@ NotPad::NotPad(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
     , m_settings{}
+    , m_tabManager{}
+    , m_editor{}
+    , m_prevEditor{}
 {
     qInfo() << PROJECT_NAME << "starting";
 
@@ -53,7 +56,6 @@ NotPad::NotPad(QWidget *parent)
     qDebug() << "Current theme:" << QIcon::themeName();
 
     m_tabManager->addEmptyTab();
-    setupEditor();
 
 //    /// Open a test text file
 //    openFile(":/forms/input.txt"); /// Breaks m_currentDir
@@ -102,42 +104,66 @@ void NotPad::onTabCloseRequested(int index)
 void NotPad::onCurrentTabChanged(int index)
 {
     qDebug() << "onCurrentTabChanged" << index;
+    m_prevEditor = m_editor;
+
     /// Last tab closed
     if(index == -1)
     {
-        m_editor = nullptr;
-
         /// Close application after last tab?
+        /// TODO: Should gray out everything in menus etc if we support window with zero open tabs
         if(true)
-            qApp->quit();
-        return;
+        {
+            qApp->quit(); /// This will not execute directly, so need to call return
+            return;
+        }
     }
 
     auto* widget = m_tabManager->currentWidget();
     qDebug() << "widget" << widget;
-    auto* editor = qobject_cast<Editor*>(widget);
-    Q_ASSERT(editor != nullptr);
-    if(editor != nullptr)
+    m_editor = qobject_cast<Editor*>(widget);
+    if(m_editor == nullptr)
     {
-        m_editor = editor;
+        qDebug() << "No editor";
+        /// No more tabs left
+    }
+    qDebug() << "file" << currentFile();
 
+    setupSignals();
+    setupMenu();
+}
+
+void NotPad::setupSignals()
+{
+    qDebug() << "setupSignals" << m_prevEditor << m_editor;
+    if(m_prevEditor)
+    {
+        disconnect(m_prevEditor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
+        disconnect(m_prevEditor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
+        disconnect(m_prevEditor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged);
+    }
+    if(m_editor)
+    {
+        connect(m_editor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable, Qt::UniqueConnection);
+        connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable, Qt::UniqueConnection);
+        connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged,   Qt::UniqueConnection);
+    }
+}
+
+void NotPad::setupMenu()
+{
+    if(m_editor)
+    {
         onUndoAvailable(m_editor->document()->isUndoAvailable());
         onRedoAvailable(m_editor->document()->isRedoAvailable());
+        ui->actionWord_wrap->setChecked(m_editor->isWordWrap());
+//        ui->actionSave->setEnabled(m_editor->isModified());
     }
     else
     {
-        qDebug() << "Invalid editor" << editor;
+        onUndoAvailable(false);
+        onRedoAvailable(false);
+        ui->actionWord_wrap->setChecked(SETTINGS.wordWrap);
     }
-    qDebug() << "file" << currentFile();
-}
-
-void NotPad::setupEditor()
-{
-    connect(m_editor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
-    connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
-    connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged);
-
-    restoreFontSize();
 }
 
 void NotPad::incrementFontSize(int increment)
@@ -477,10 +503,7 @@ void NotPad::on_find_findButton_clicked()
 void NotPad::on_actionWord_wrap_triggered(bool enabled)
 {
     qDebug() << "on_actionWord_wrap_triggered" << enabled;
-    const auto wrap_mode = enabled ? QTextOption::WrapMode::WordWrap
-                                   : QTextOption::WrapMode::NoWrap;
-    /// NOTE: maybe with binary files could use WrapAnywhere
-    m_editor->setWordWrapMode(wrap_mode);
+    m_editor->setWordWrap(enabled);
 }
 
 void NotPad::on_actionFontSmaller_triggered()
@@ -515,18 +538,18 @@ void NotPad::on_actionRedo_triggered()
 
 void NotPad::onUndoAvailable(bool available)
 {
-    qDebug() << "onUndoAvailable" << available;
+    qDebug() << "onUndoAvailable" << available << sender();
     ui->actionUndo->setEnabled(available);
 }
 
 void NotPad::onRedoAvailable(bool available)
 {
-    qDebug() << "onRedoAvailable" << available;
+    qDebug() << "onRedoAvailable" << available << sender();
     ui->actionRedo->setEnabled(available);
 }
 
 void NotPad::onTextChanged()
 {
-//    qDebug() << "onTextChanged";
+//    qDebug() << "onTextChanged" << sender();
 }
 

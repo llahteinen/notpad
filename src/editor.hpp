@@ -26,6 +26,11 @@ public:
 
     bool isModified() const;
 
+    void setWordWrap(bool enabled);
+    bool isWordWrap() const;
+    void updateTabWidth();
+    void setFont(const QFont&);     //!< Hide base class setFont
+
     std::unique_ptr<QFile> m_file;
 };
 

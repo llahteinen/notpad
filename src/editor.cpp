@@ -1,4 +1,5 @@
 #include "editor.hpp"
+#include "settings.hpp"
 #include <QFileDialog>
 
 
@@ -67,4 +68,28 @@ File::Status Editor::saveAs(const QString& fileName)
 bool Editor::isModified() const
 {
     return document()->isModified();
+}
+
+void Editor::setWordWrap(bool enabled)
+{
+    const auto wrap_mode = enabled ? QTextOption::WrapMode::WrapAtWordBoundaryOrAnywhere
+                                   : QTextOption::WrapMode::NoWrap;
+    /// NOTE: maybe with binary files could use WrapAnywhere
+    setWordWrapMode(wrap_mode);
+}
+
+bool Editor::isWordWrap() const
+{
+    return !(wordWrapMode() == QTextOption::WrapMode::NoWrap);
+}
+
+void Editor::updateTabWidth()
+{
+    setTabStopDistance(SETTINGS.tabWidthChars * fontMetrics().averageCharWidth());
+}
+
+void Editor::setFont(const QFont& font)
+{
+    QPlainTextEdit::setFont(font);
+    updateTabWidth();
 }

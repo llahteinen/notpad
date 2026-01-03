@@ -29,12 +29,13 @@ Editor* Tab::createTabFromFile(File::Status& o_status, const QString& fileName)
 
 void Tab::setupEditor(Editor* editor, const QPlainTextEdit* const templ)
 {
+    Q_UNUSED(templ);
     /// Basic settings
     editor->setUndoRedoEnabled(true);
 
     /// Dynamic global settings
-    editor->setFont(templ->font());
-    editor->setWordWrapMode(templ->wordWrapMode());
+    editor->setFont(SETTINGS.font);
+    editor->setWordWrap(SETTINGS.wordWrap);
 }
 
 TabManager::TabManager(QTabWidget* tabWidget, QPlainTextEdit* plainEditorTemplate, QObject* parent)

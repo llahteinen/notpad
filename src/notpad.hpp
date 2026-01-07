@@ -28,6 +28,8 @@ public:
 private:
     void closeEvent(QCloseEvent* event) override;
 
+    bool closeAllTabs();
+
     void setupSignals();
     void setupMenu();
 
@@ -58,7 +60,7 @@ private slots:
     void onRedoAvailable(bool available);
     void onTextChanged();
     void onCurrentTabChanged(int index);
-    void onTabCloseRequested(int index);
+    bool onTabCloseRequested(int index);
 
     /// Automatically connected slots
     /// MENU ================================

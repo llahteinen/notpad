@@ -71,7 +71,8 @@ NotPad::~NotPad()
 void NotPad::closeEvent(QCloseEvent* event)
 {
     qDebug() << "MainWindow closeEvent";
-    if(!SETTINGS.confirmAppClose || confirmAppClose(tr("Quitting")))
+    if((!SETTINGS.confirmAppClose || confirmAppClose(tr("Quitting")))
+        && closeAllTabs())
     {
         QMainWindow::closeEvent(event);
     }
@@ -82,15 +83,32 @@ void NotPad::closeEvent(QCloseEvent* event)
     }
 }
 
-void NotPad::onTabCloseRequested(int index)
+bool NotPad::closeAllTabs()
 {
+    const auto count = ui->tabWidget->count();
+    for(int i = 0; i < count; ++i)
+    {
+        /// Always close the active tab
+        if(!onTabCloseRequested(ui->tabWidget->currentIndex()))
+        {
+            qDebug() << "closeAllTabs abort";
+            return false;
+        }
+    }
+    return true;
+}
+
+bool NotPad::onTabCloseRequested(int index)
+{
+    bool permission = false;
     auto* widget = ui->tabWidget->widget(index);
     qDebug() << "widget" << widget;
     auto* editor = qobject_cast<Editor*>(widget);
     Q_ASSERT(editor != nullptr);
     if(editor != nullptr)
     {
-        if(confirmFileClose(editor, ui->tabWidget->tabText(index)))
+        permission = confirmFileClose(editor, ui->tabWidget->tabText(index));
+        if(permission)
         {
             m_tabManager->closeTab(index);
         }
@@ -99,6 +117,7 @@ void NotPad::onTabCloseRequested(int index)
             /// Don't close
         }
     }
+    return permission;
 }
 
 void NotPad::onCurrentTabChanged(int index)

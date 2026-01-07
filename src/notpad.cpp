@@ -58,7 +58,7 @@ NotPad::NotPad(QWidget *parent)
     m_tabManager->addEmptyTab();
 
 //    /// Open a test text file
-//    openFile(":/forms/input.txt"); /// Breaks m_currentDir
+//    openFile(":/forms/todo.txt"); /// Breaks m_currentDir
 //    m_editor->m_file.reset(); /// :/forms does not work well, so reset it
 //    SETTINGS.currentDir = QDir("../../../testifiles"); /// Set save/load dialog starting location
 }

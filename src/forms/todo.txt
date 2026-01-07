@@ -10,16 +10,17 @@
   - Length of file
   - Length of selection (chars and lines)
 - Titlebar
-  - File name
+  x File name (in tab title)
   - Edited
 - Font
-  - Size adjust
+  x Size adjust
   - Font selection ?
   - Fixed / not fixed switch
-- Tabs
+x Tabs
   - Right click tab
     - open in explorer
     - copy path / name
+- Drag & drop files
 - Unified titlebar / tab bar / menu bar ?
 - Encodings support
   - Detection of encoding when opening
@@ -46,12 +47,15 @@
 - Highlighting
   - Colorize current row
   - Highlight matches of selected text
+- Reload current file
+- Recent files list
+x License file
 
 ## Tuning
 - File extension
   - Appending the extension
   - Keeping track of selected file types
 - Better architecture
-  - File manager class
+  x File manager class
   - Settings class
   - etc

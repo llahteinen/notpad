@@ -28,6 +28,8 @@ public:
 private:
     void closeEvent(QCloseEvent* event) override;
 
+    void handleArguments();
+
     bool closeAllTabs();
 
     void setupSignals();

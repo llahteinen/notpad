@@ -55,11 +55,13 @@ NotPad::NotPad(QWidget *parent)
     qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
     qDebug() << "Current theme:" << QIcon::themeName();
 
-    m_tabManager->addEmptyTab();
 
-//    /// Open a test text file
-//    openFile(":/forms/todo.txt"); /// Breaks m_currentDir
-//    m_editor->m_file.reset(); /// :/forms does not work well, so reset it
+    /// Setup open tabs
+    /// Check command line arguments
+    handleArguments();
+    /// Add empty tab if there is none
+    if(m_tabManager->count() == 0) m_tabManager->addEmptyTab();
+
 //    SETTINGS.currentDir = QDir("../../../testifiles"); /// Set save/load dialog starting location
 }
 
@@ -83,9 +85,32 @@ void NotPad::closeEvent(QCloseEvent* event)
     }
 }
 
+void NotPad::handleArguments()
+{
+    /// arg0    = path to this executable
+    /// arg1... = possible file
+    /// Note that Qt automatically removes it's own supported args such as -widgetcount
+    const auto arguments = qApp->arguments();
+//    qDebug() << "args" << arguments;
+    for(int i = 1; i < arguments.size(); ++i)
+    {
+        /// Check if we have files
+        const QFileInfo arg{arguments.at(i)};
+        if(arg.isFile())
+        {
+            qInfo() << "Got file argument" << arg.filePath();
+            if(openFile(arg.absoluteFilePath()))
+            {
+                /// If multiple file arguments, the last one will dictate the current dir
+                SETTINGS.currentDir = arg.dir();
+            }
+        }
+    }
+}
+
 bool NotPad::closeAllTabs()
 {
-    const auto count = ui->tabWidget->count();
+    const auto count = m_tabManager->count();
     for(int i = 0; i < count; ++i)
     {
         /// Always close the active tab
@@ -416,7 +441,7 @@ void NotPad::on_actionNew_triggered()
 {
     qDebug() << "on_actionNew_triggered";
 
-    if(ui->tabWidget->count() == 0)
+    if(m_tabManager->count() == 0)
     {
         m_tabManager->addEmptyTab();
         /// onCurrentTabChanged will be triggered

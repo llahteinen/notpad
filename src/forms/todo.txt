@@ -1,6 +1,10 @@
 ### TODO
 
 ## Features
+- Command line arguments
+  x Open file via command line argument
+    - Add a tab instead of a new instance
+  - Sessionless mode / single file mode
 - Find
   - Find next and prev
   - Highlight all
@@ -12,6 +16,8 @@
 - Titlebar
   x File name (in tab title)
   - Edited
+    - Asterisk
+    - Icon
 - Font
   x Size adjust
   - Font selection ?
@@ -26,6 +32,8 @@ x Tabs
   - Detection of encoding when opening
   - Changing encoding ?
   - Selecting encoding when saving
+- Large file warning
+- Binary file warning/question?
 - Visualize hidden characters
   - Tabs and spaces
   - Line endings ?
@@ -49,7 +57,9 @@ x Tabs
   - Highlight matches of selected text
 - Reload current file
 - Recent files list
+- File finder select OS Native / Qt
 x License file
+- Rename the project
 
 ## Tuning
 - File extension

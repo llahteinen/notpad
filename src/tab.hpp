@@ -33,6 +33,7 @@ public:
 
     File::Status addTabFromFile(const QString& fileName);
 
+    int count() const;
     void closeCurrentTab();
     void closeTab(int index);
     QWidget* currentWidget() const;

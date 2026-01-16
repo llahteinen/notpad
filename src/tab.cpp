@@ -105,6 +105,11 @@ File::Status TabManager::addTabFromFile(const QString& fileName)
     return status;
 }
 
+int TabManager::count() const
+{
+    return m_tabWidget->count();
+}
+
 void TabManager::closeCurrentTab()
 {
     int currentIndex = m_tabWidget->currentIndex();

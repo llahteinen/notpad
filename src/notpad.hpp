@@ -54,7 +54,7 @@ private:
     /// \return true for permission to close file, false for no permission
     bool confirmFileClose(Editor* editor, const QString& messageTitle = tr("Confirmation"));
 
-    QFile* currentFile();
+    const QFile* currentFile();
 
 private slots:
     /// Custom slots

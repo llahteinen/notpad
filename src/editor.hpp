@@ -24,6 +24,9 @@ public:
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     File::Status saveAs(const QString& fileName);
 
+    void setName(const QString& name);
+    QString name() const;
+    const QFile* file() const;
     bool isModified() const;
 
     void setWordWrap(bool enabled);
@@ -31,7 +34,12 @@ public:
     void updateTabWidth();
     void setFont(const QFont&);     //!< Hide base class setFont
 
+private:
+    QString m_name;
     std::unique_ptr<QFile> m_file;
+
+signals:
+    void nameChanged(const QString& new_name);
 };
 
 #endif // EDITOR_HPP

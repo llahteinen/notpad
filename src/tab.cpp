@@ -1,5 +1,6 @@
 #include "tab.hpp"
 #include "editor.hpp"
+#include "settings.hpp"
 #include <QPlainTextEdit>
 #include <QTabWidget>
 #include <QTabBar>
@@ -73,9 +74,12 @@ TabManager::TabManager(QTabWidget* tabWidget, QPlainTextEdit* plainEditorTemplat
     m_tabWidget->setCornerWidget(tb, Qt::TopRightCorner);
 }
 
-void TabManager::addTab(QWidget* editor, const QString& title)
+void TabManager::addTab(Editor* editor)
 {
-    const int index = m_tabWidget->addTab(editor, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew), title);
+    const int index = m_tabWidget->addTab(editor, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew), editor->name());
+
+    connect(editor, &Editor::nameChanged, this, &TabManager::onNameChanged, Qt::UniqueConnection);
+    connect(editor, &Editor::modificationChanged, this, &TabManager::onModificationChanged, Qt::UniqueConnection);
 
 //    /// Custom close button
 //    QToolButton* tb = new QToolButton(m_tabWidget);
@@ -88,7 +92,7 @@ void TabManager::addTab(QWidget* editor, const QString& title)
 
 void TabManager::addEmptyTab()
 {
-    QWidget* new_editor = m_factory.createEmptyTab();
+    Editor* new_editor = m_factory.createEmptyTab();
     addTab(new_editor);
 }
 
@@ -101,13 +105,18 @@ File::Status TabManager::addTabFromFile(const QString& fileName)
         return status;
     }
 
-    addTab(editor, QFileInfo(*editor->m_file).fileName());
+    addTab(editor);
     return status;
 }
 
 int TabManager::count() const
 {
     return m_tabWidget->count();
+}
+
+int TabManager::currentIndex() const
+{
+    return m_tabWidget->currentIndex();
 }
 
 void TabManager::closeCurrentTab()
@@ -127,9 +136,27 @@ void TabManager::closeTab(int index)
     tabContent->deleteLater(); /// Not sure if this is needed
 }
 
+void TabManager::resetTab(int index)
+{
+    qDebug() << "resetTab" << index;
+    /// We want to emit signals about changed tabs only once
+    const auto blocked = m_tabWidget->blockSignals(true);
+    closeTab(index);
+    m_tabWidget->blockSignals(blocked);
+    addEmptyTab();
+}
+
 QWidget* TabManager::currentWidget() const
 {
     return m_tabWidget->currentWidget();
+}
+
+void TabManager::updateTabText(const Editor* editor)
+{
+    qDebug() << "updateTabText" << editor->name();
+    const bool modified = editor->isModified();
+    const QString text = QString("%1%2").arg((modified ? "*" : ""), editor->name());
+    m_tabWidget->setTabText(m_tabWidget->indexOf(editor), text);
 }
 
 /// Only fired by manually closing a tab
@@ -154,4 +181,34 @@ void TabManager::onCurrentChanged(int index)
 {
 //    qDebug() << "onCurrentChanged" << index;
     emit currentChanged(index);
+}
+
+void TabManager::onNameChanged([[maybe_unused]] const QString& new_name)
+{
+//    qDebug() << "TabManager::onNameChanged";
+    const auto editor = qobject_cast<const Editor*>(sender());
+    Q_ASSERT(editor != nullptr);
+    if(editor != nullptr)
+    {
+        updateTabText(editor);
+    }
+    else
+    {
+        qDebug() << "editor is null";
+    }
+}
+
+void TabManager::onModificationChanged([[maybe_unused]] bool modified)
+{
+//    qDebug() << "TabManager::onModificationChanged" << modified << sender();
+    const auto editor = qobject_cast<const Editor*>(sender());
+    Q_ASSERT(editor != nullptr);
+    if(editor != nullptr)
+    {
+        updateTabText(editor);
+    }
+    else
+    {
+        qDebug() << "editor is null";
+    }
 }

@@ -2,7 +2,6 @@
 #define TAB_HPP
 
 #include "file.hpp"
-#include "settings.hpp"
 #include <QObject>
 
 class QTabWidget;
@@ -34,9 +33,12 @@ public:
     File::Status addTabFromFile(const QString& fileName);
 
     int count() const;
+    int currentIndex() const;
     void closeCurrentTab();
     void closeTab(int index);
+    void resetTab(int index);
     QWidget* currentWidget() const;
+    void updateTabText(const Editor* editor);
 
 public slots:
 
@@ -44,10 +46,12 @@ public slots:
     void onTabCloseRequested(int index);
     void onTabBarDoubleClicked(int index);
     void onCurrentChanged(int index);
+    void onNameChanged(const QString& new_name);
+    void onModificationChanged(bool modified);
 
 private:
     /// \brief Adds a tab and sets it active
-    void addTab(QWidget* editor, const QString& title = SETTINGS.defaultDocName);
+    void addTab(Editor* editor);
 
     QTabWidget* const m_tabWidget;
     Tab m_factory;

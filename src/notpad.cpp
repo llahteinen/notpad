@@ -114,7 +114,7 @@ bool NotPad::closeAllTabs()
     for(int i = 0; i < count; ++i)
     {
         /// Always close the active tab
-        if(!onTabCloseRequested(ui->tabWidget->currentIndex()))
+        if(!onTabCloseRequested(m_tabManager->currentIndex()))
         {
             qDebug() << "closeAllTabs abort";
             return false;
@@ -132,7 +132,7 @@ bool NotPad::onTabCloseRequested(int index)
     Q_ASSERT(editor != nullptr);
     if(editor != nullptr)
     {
-        permission = confirmFileClose(editor, ui->tabWidget->tabText(index));
+        permission = confirmFileClose(editor, editor->name());
         if(permission)
         {
             m_tabManager->closeTab(index);
@@ -342,11 +342,6 @@ bool NotPad::saveAs()
         SETTINGS.currentDir = fileInfo.dir();
 //        SETTINGS.currentDir = fileInfo.absoluteDir();
         SETTINGS.currentNameFilter = fileDialog.selectedNameFilter();
-
-        if(status == File::Status::SUCCESS_WRITE)
-        {
-            ui->tabWidget->setTabText(ui->tabWidget->indexOf(m_editor), fileInfo.fileName());
-        }
     }
     else
     {
@@ -426,11 +421,11 @@ bool NotPad::confirmFileClose(Editor* editor, const QString& messageTitle)
     return permission;
 }
 
-QFile* NotPad::currentFile()
+const QFile* NotPad::currentFile()
 {
     if(m_editor != nullptr)
     {
-        return m_editor->m_file.get();
+        return m_editor->file();
     }
     return nullptr;
 }
@@ -446,12 +441,13 @@ void NotPad::on_actionNew_triggered()
         m_tabManager->addEmptyTab();
         /// onCurrentTabChanged will be triggered
     }
-
-    if(confirmFileClose(m_editor, tr("New file")))
+    else if(m_tabManager->count() > 0)
     {
-        m_editor->clear();
-        m_editor->m_file.reset();
-        m_editor->document()->setModified(false);
+        /// Close current tab and open empty one
+        if(confirmFileClose(m_editor, tr("New file")))
+        {
+            m_tabManager->resetTab(m_tabManager->currentIndex());
+        }
     }
 }
 

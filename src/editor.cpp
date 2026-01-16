@@ -1,17 +1,22 @@
 #include "editor.hpp"
 #include "settings.hpp"
 #include <QFileDialog>
+#include <QFileInfo>
 
 
 Editor::Editor(QWidget *parent)
     : QPlainTextEdit(parent)
+    , m_name{SETTINGS.defaultDocName}
     , m_file{}
 {}
 
 Editor::Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent)
     : QPlainTextEdit(text, parent)
+    , m_name{SETTINGS.defaultDocName}
     , m_file{std::move(file_p)}
-{}
+{
+    m_name = QFileInfo(*m_file).fileName();
+}
 
 /// static
 Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QWidget* parent)
@@ -60,9 +65,29 @@ File::Status Editor::saveAs(const QString& fileName)
     if(saved == File::Status::SUCCESS_WRITE)
     {
         m_file = std::move(file);
+        setName(QFileInfo(*m_file).fileName());
         document()->setModified(false);
     }
     return saved;
+}
+
+void Editor::setName(const QString& name)
+{
+    if(name != m_name)
+    {
+        m_name = name;
+        emit nameChanged(m_name);
+    }
+}
+
+QString Editor::name() const
+{
+    return m_name;
+}
+
+const QFile* Editor::file() const
+{
+    return m_file.get();
 }
 
 bool Editor::isModified() const

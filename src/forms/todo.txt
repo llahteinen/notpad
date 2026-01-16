@@ -15,8 +15,8 @@
   - Length of selection (chars and lines)
 - Titlebar
   x File name (in tab title)
-  - Edited
-    - Asterisk
+  x Edited
+    x Asterisk
     - Icon
 - Font
   x Size adjust
@@ -59,9 +59,9 @@ x Tabs
 - Recent files list
 - File finder select OS Native / Qt
 x License file
-- Rename the project
 
 ## Tuning
+- Rename the project
 - File extension
   - Appending the extension
   - Keeping track of selected file types

@@ -3,17 +3,16 @@
 #include "settings.hpp"
 #include <QTabBar>
 #include <QToolButton>
-#include <QLabel>
 
 
-Editor* Tab::createEmptyTab()
+Editor* TabManager::createEmptyEditor()
 {
     auto* editor = new Editor();
     setupEditor(editor);
     return editor;
 }
 
-Editor* Tab::createTabFromFile(File::Status& o_status, const QString& fileName)
+Editor* TabManager::createEditorFromFile(File::Status& o_status, const QString& fileName)
 {
     auto* editor = Editor::createEditor(o_status, fileName);
     if(editor == nullptr)
@@ -25,7 +24,7 @@ Editor* Tab::createTabFromFile(File::Status& o_status, const QString& fileName)
     return editor;
 }
 
-void Tab::setupEditor(Editor* editor)
+void TabManager::setupEditor(Editor* editor)
 {
     /// Basic settings
     editor->setUndoRedoEnabled(true);
@@ -37,7 +36,6 @@ void Tab::setupEditor(Editor* editor)
 
 TabManager::TabManager(QWidget* parent)
         : QTabWidget(parent)
-        , m_factory{}
 {
     connect(this, &QTabWidget::tabBarDoubleClicked, this, &TabManager::onTabBarDoubleClicked);
 }
@@ -79,14 +77,14 @@ void TabManager::addTab(Editor* editor)
 
 void TabManager::addEmptyTab()
 {
-    Editor* new_editor = m_factory.createEmptyTab();
+    Editor* new_editor = createEmptyEditor();
     addTab(new_editor);
 }
 
 File::Status TabManager::addTabFromFile(const QString& fileName)
 {
     File::Status status;
-    Editor* editor = m_factory.createTabFromFile(status, fileName);
+    Editor* editor = createEditorFromFile(status, fileName);
     if(editor == nullptr)
     {
         return status;
@@ -120,6 +118,21 @@ void TabManager::updateTabText(const Editor* editor)
     const bool modified = editor->isModified();
     const QString text = QString("%1%2").arg((modified ? "*" : ""), editor->name());
     QTabWidget::setTabText(QTabWidget::indexOf(editor), text);
+}
+
+Editor* TabManager::currentWidget() const
+{
+    auto* widget = QTabWidget::currentWidget();
+    qDebug() << "widget" << widget;
+    return qobject_cast<Editor*>(widget);
+}
+
+Editor* TabManager::widget(int index) const
+{
+    auto* widget = QTabWidget::widget(index);
+    qDebug() << "widget" << widget;
+    auto* editor = qobject_cast<Editor*>(widget);
+    return editor;
 }
 
 void TabManager::onTabBarDoubleClicked(int index)

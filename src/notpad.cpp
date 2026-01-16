@@ -3,6 +3,7 @@
 #include "tab.hpp"
 #include "editor.hpp"
 #include "file.hpp"
+#include "settings.hpp"
 #include <QString>
 #include <QFile>
 #include <QTextStream>
@@ -15,7 +16,6 @@
 NotPad::NotPad(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
-    , m_settings{}
     , m_tabManager{}
     , m_editor{}
     , m_prevEditor{}
@@ -127,9 +127,7 @@ bool NotPad::closeAllTabs()
 bool NotPad::onTabCloseRequested(int index)
 {
     bool permission = false;
-    auto* widget = m_tabManager->widget(index);
-    qDebug() << "widget" << widget;
-    auto* editor = qobject_cast<Editor*>(widget);
+    Editor* editor = m_tabManager->widget(index);
     Q_ASSERT(editor != nullptr);
     if(editor != nullptr)
     {
@@ -163,9 +161,7 @@ void NotPad::onCurrentTabChanged(int index)
         }
     }
 
-    auto* widget = m_tabManager->currentWidget();
-    qDebug() << "widget" << widget;
-    m_editor = qobject_cast<Editor*>(widget);
+    m_editor = m_tabManager->currentWidget();
     if(m_editor == nullptr)
     {
         qDebug() << "No editor";
@@ -215,18 +211,18 @@ void NotPad::incrementFontSize(int increment)
 {
     auto font = m_editor->font();
     auto size = font.pointSize();
-    auto index = m_settings.standardFontSizes.indexOf(size);
+    auto index = SETTINGS.standardFontSizes.indexOf(size);
     Q_ASSERT(index >= 0);
     if(index < 0)
     {
         qWarning() << "Got weird font size" << size;
-        index = m_settings.standardFontSizes.indexOf(m_settings.fontSizeDefault);
+        index = SETTINGS.standardFontSizes.indexOf(SETTINGS.fontSizeDefault);
     }
     index += increment;
     index = qMax(index, 0);
-    index = qMin(index, m_settings.standardFontSizes.length()-1);
+    index = qMin(index, SETTINGS.standardFontSizes.length()-1);
     qDebug() << "index" << index;
-    size = m_settings.standardFontSizes.at(index);
+    size = SETTINGS.standardFontSizes.at(index);
     qDebug() << "size" << size;
     font.setPointSize(size);
     m_editor->setFont(font);
@@ -236,7 +232,7 @@ void NotPad::incrementFontSize(int increment)
 void NotPad::restoreFontSize()
 {
     auto font = m_editor->font();
-    font.setPointSize(m_settings.fontSizeDefault);
+    font.setPointSize(SETTINGS.fontSizeDefault);
     qDebug() << "pointSize" << font.pointSize();
     m_editor->setFont(font);
     updateTabWidth();
@@ -244,7 +240,7 @@ void NotPad::restoreFontSize()
 
 void NotPad::updateTabWidth()
 {
-    m_editor->setTabStopDistance(m_settings.tabWidthChars * m_editor->fontMetrics().averageCharWidth());
+    m_editor->setTabStopDistance(SETTINGS.tabWidthChars * m_editor->fontMetrics().averageCharWidth());
 }
 
 void NotPad::messageOpenStatus(const File::Status& status)

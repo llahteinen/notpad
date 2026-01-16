@@ -58,6 +58,12 @@ x Tabs
 - Reload current file
 - Recent files list
 - File finder select OS Native / Qt
+- Key shortcuts
+  - Close tab (ctrl+w)
+  - Word wrap etc extra?
+- Improve about page
+  - www address
+  - creator
 x License file
 
 ## Tuning

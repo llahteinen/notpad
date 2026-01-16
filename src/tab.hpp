@@ -7,18 +7,6 @@
 class Editor;
 
 
-class Tab
-{
-    friend class TabManager;
-private:
-    Tab() {}
-
-    Editor* createEmptyTab();
-    Editor* createTabFromFile(File::Status& o_status, const QString& fileName);
-    void setupEditor(Editor* editor);
-
-};
-
 class TabManager : public QTabWidget
 {
     Q_OBJECT
@@ -33,6 +21,9 @@ public:
     void resetTab(int index);
     void updateTabText(const Editor* editor);
 
+    Editor* currentWidget() const;
+    Editor* widget(int index) const;
+
     using QTabWidget::addTab;
 
 public slots:
@@ -46,7 +37,9 @@ private:
     /// \brief Adds a tab and sets it active
     void addTab(Editor* editor);
 
-    Tab m_factory;
+    static Editor* createEmptyEditor();
+    static Editor* createEditorFromFile(File::Status& o_status, const QString& fileName);
+    static void setupEditor(Editor* editor);
 
 signals:
 

@@ -1,14 +1,11 @@
 #ifndef NOTPAD_HPP
 #define NOTPAD_HPP
 
-#include "settings.hpp"
 #include "file.hpp"
 #include <QMainWindow>
-#include <QDir>
 
 class TabManager;
 class Editor;
-class QPlainTextEdit;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -91,8 +88,6 @@ private slots:
 private:
 
     Ui::NotPad *ui;
-
-    Settings m_settings;
 
     TabManager* m_tabManager;
     Editor* m_editor;       //!< Editor that is currently selected in the active tab

@@ -430,6 +430,11 @@ void NotPad::on_actionNew_triggered()
     }
 }
 
+void NotPad::on_actionNewTab_triggered()
+{
+    m_tabManager->addEmptyTab();
+}
+
 void NotPad::on_actionOpen_triggered()
 {
     qDebug() << "on_actionOpen_triggered";

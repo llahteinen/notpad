@@ -395,8 +395,14 @@
    </property>
   </action>
   <action name="actionNewTab">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::FolderNew"/>
+   </property>
    <property name="text">
     <string>New Tab</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
    </property>
   </action>
  </widget>

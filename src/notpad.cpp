@@ -23,10 +23,11 @@ NotPad::NotPad(QWidget *parent)
     qInfo() << PROJECT_NAME << "starting";
 
     ui->setupUi(this);
-    m_tabManager = new TabManager(ui->tabWidget, ui->textEdit, this); /// ui->textEdit is used as template for all new tabs
+    m_tabManager = ui->tabWidget;
+    m_tabManager->setupUi();
     /// Close the template tabs
-    while(ui->tabWidget->count() > 0)
-        ui->tabWidget->removeTab(0);
+    while(m_tabManager->count() > 0)
+        m_tabManager->removeTab(0);
 
     connect(m_tabManager, &TabManager::currentChanged, this, &NotPad::onCurrentTabChanged);
     connect(m_tabManager, &TabManager::tabCloseRequested, this, &NotPad::onTabCloseRequested);
@@ -126,7 +127,7 @@ bool NotPad::closeAllTabs()
 bool NotPad::onTabCloseRequested(int index)
 {
     bool permission = false;
-    auto* widget = ui->tabWidget->widget(index);
+    auto* widget = m_tabManager->widget(index);
     qDebug() << "widget" << widget;
     auto* editor = qobject_cast<Editor*>(widget);
     Q_ASSERT(editor != nullptr);

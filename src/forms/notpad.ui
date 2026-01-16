@@ -110,7 +110,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QTabWidget" name="tabWidget">
+     <widget class="TabManager" name="tabWidget">
       <property name="tabPosition">
        <enum>QTabWidget::TabPosition::North</enum>
       </property>
@@ -406,6 +406,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TabManager</class>
+   <extends>QTabWidget</extends>
+   <header>tab.hpp</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

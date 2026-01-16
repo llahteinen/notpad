@@ -2,10 +2,8 @@
 #define TAB_HPP
 
 #include "file.hpp"
-#include <QObject>
+#include <QTabWidget>
 
-class QTabWidget;
-class QPlainTextEdit;
 class Editor;
 
 
@@ -13,39 +11,34 @@ class Tab
 {
     friend class TabManager;
 private:
-    Tab(QPlainTextEdit* plainEditorTemplate)
-        : m_plainEditorTemplate{plainEditorTemplate}
-    {}
+    Tab() {}
 
     Editor* createEmptyTab();
     Editor* createTabFromFile(File::Status& o_status, const QString& fileName);
-    void setupEditor(Editor* editor, const QPlainTextEdit* templ);
+    void setupEditor(Editor* editor);
 
-    QPlainTextEdit* m_plainEditorTemplate;
 };
 
-class TabManager : public QObject
+class TabManager : public QTabWidget
 {
     Q_OBJECT
 public:
-    TabManager(QTabWidget* tabWidget, QPlainTextEdit* plainEditorTemplate, QObject* parent = nullptr);
+    TabManager(QWidget* parent = nullptr);
+
+    void setupUi();
 
     File::Status addTabFromFile(const QString& fileName);
 
-    int count() const;
-    int currentIndex() const;
-    void closeCurrentTab();
     void closeTab(int index);
     void resetTab(int index);
-    QWidget* currentWidget() const;
     void updateTabText(const Editor* editor);
+
+    using QTabWidget::addTab;
 
 public slots:
 
     void addEmptyTab();
-    void onTabCloseRequested(int index);
     void onTabBarDoubleClicked(int index);
-    void onCurrentChanged(int index);
     void onNameChanged(const QString& new_name);
     void onModificationChanged(bool modified);
 
@@ -53,12 +46,9 @@ private:
     /// \brief Adds a tab and sets it active
     void addTab(Editor* editor);
 
-    QTabWidget* const m_tabWidget;
     Tab m_factory;
 
 signals:
-    void tabCloseRequested(int index);
-    void currentChanged(int index);
 
 };
 

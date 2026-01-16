@@ -17,8 +17,12 @@ set(PROJECT_SOURCES
 set(RESOURCE_FILES
     forms/todo.txt
     forms/styles.css
+    res/icon.ico
 )
 
+if(WIN32)
+    list(APPEND PROJECT_SOURCES resource.rc)
+endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(${TARGET_NAME}

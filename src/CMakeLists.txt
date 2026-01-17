@@ -6,6 +6,7 @@ set(PROJECT_SOURCES
         notpad.hpp
         notpad.cpp
         settings.hpp
+        settings.cpp
         tab.hpp
         tab.cpp
         editor.hpp
@@ -48,6 +49,8 @@ target_link_libraries(${TARGET_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(${TARGET_NAME} PRIVATE ORGANIZATION_NAME="${ORGANIZATION_NAME}")
+target_compile_definitions(${TARGET_NAME} PRIVATE ORGANIZATION_DOMAIN="${ORGANIZATION_DOMAIN}")
 
 target_compile_definitions(${TARGET_NAME} PRIVATE
 #    $<$<CONFIG:Debug>:

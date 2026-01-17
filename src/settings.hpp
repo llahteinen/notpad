@@ -8,6 +8,8 @@
 #include <QDir>
 #include <QStandardPaths>
 
+class QSettings;
+
 
 class Settings
 {
@@ -48,12 +50,30 @@ public:
     int tabWidthChars{4};  /// Measured in characters or multiples of avg character width
     bool confirmAppClose{false};
     QString defaultDocName{"Untitled"};
-    bool wordWrap{true};
+    bool wordWrap{true};    /// This would probably be best if it was saved per tab
 
 
     /// Runtime (not to be persisted)
     QString currentNameFilter{defaultNameFilter};
     QDir currentDir{QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)};
+
+
+    struct Persistables
+    {
+        /// Background
+        unsigned int startupCounter{0};
+        QByteArray windowGeometry{};
+        QStringList sessionTabs{};
+
+        /// User editables
+
+
+        /// \brief Loads from persistent storage
+        void fromQSettings(const QSettings& settings);
+        /// \brief Saves to persistent storage
+        void toQSettings(QSettings& settings);
+
+    } pers;
 
 };
 

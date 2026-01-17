@@ -25,9 +25,14 @@ public:
 private:
     void closeEvent(QCloseEvent* event) override;
 
+    void saveSettings();
+    void loadSettings();
     void handleArguments();
 
+    void persistCurrentTabs();
     bool closeAllTabs();
+    bool saveOrCloseTab(Editor* editor);
+    bool cleanupModifiedTabs();
 
     void setupSignals();
     void setupMenu();
@@ -39,6 +44,7 @@ private:
     void messageOpenStatus(const File::Status& status);
     void messageSaveStatus(const File::Status& status);
 
+    void openFiles(const QStringList &fileNameList);
     bool openFile(const QString &fileName);
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     bool save();

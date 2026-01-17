@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QCloseEvent>
+#include <QSettings>
 
 
 
@@ -32,7 +33,15 @@ NotPad::NotPad(QWidget *parent)
     connect(m_tabManager, &TabManager::currentChanged, this, &NotPad::onCurrentTabChanged);
     connect(m_tabManager, &TabManager::tabCloseRequested, this, &NotPad::onTabCloseRequested);
 
-    setWindowTitle(QString("%1 v%2").arg(PROJECT_NAME, PROJECT_VERSION));
+    QString project_name{PROJECT_NAME};
+#if defined(QT_DEBUG)
+    project_name.append("_dbg");
+#endif
+    setWindowTitle(QString("%1 v%2").arg(project_name, PROJECT_VERSION));
+
+    QCoreApplication::setOrganizationName(ORGANIZATION_NAME);
+    QCoreApplication::setOrganizationDomain(ORGANIZATION_DOMAIN);
+    QCoreApplication::setApplicationName(project_name);
 
     QFile styleFile(":/forms/styles.css");
     if(styleFile.open(QFile::ReadOnly))
@@ -58,6 +67,9 @@ NotPad::NotPad(QWidget *parent)
 
 
     /// Setup open tabs
+    loadSettings();
+    SETTINGS.pers.startupCounter++;
+    qDebug() << "startups" << SETTINGS.pers.startupCounter;
     /// Check command line arguments
     handleArguments();
     /// Add empty tab if there is none
@@ -77,6 +89,7 @@ void NotPad::closeEvent(QCloseEvent* event)
     if((!SETTINGS.confirmAppClose || confirmAppClose(tr("Quitting")))
         && closeAllTabs())
     {
+        saveSettings();
         QMainWindow::closeEvent(event);
     }
     else
@@ -86,6 +99,30 @@ void NotPad::closeEvent(QCloseEvent* event)
     }
 }
 
+void NotPad::saveSettings()
+{
+    SETTINGS.pers.windowGeometry = saveGeometry();
+
+    QSettings settings;
+    SETTINGS.pers.toQSettings(settings);
+}
+
+void NotPad::loadSettings()
+{
+    /// Load settings from persistent storage
+    const QSettings settings;
+    SETTINGS.pers.fromQSettings(settings);
+
+    /// Apply settings
+    if(!SETTINGS.pers.windowGeometry.isEmpty()) restoreGeometry(SETTINGS.pers.windowGeometry); /// Seems to work even if the data is something weird
+
+    /// Load previous session
+    /// TODO: restore the active tab?
+    qDebug() << "sessionTabs" << SETTINGS.pers.sessionTabs;
+    /// Check if the files exist?
+    openFiles(SETTINGS.pers.sessionTabs);
+}
+
 void NotPad::handleArguments()
 {
     /// arg0    = path to this executable
@@ -93,6 +130,7 @@ void NotPad::handleArguments()
     /// Note that Qt automatically removes it's own supported args such as -widgetcount
     const auto arguments = qApp->arguments();
 //    qDebug() << "args" << arguments;
+    QStringList files;
     for(int i = 1; i < arguments.size(); ++i)
     {
         /// Check if we have files
@@ -100,25 +138,122 @@ void NotPad::handleArguments()
         if(arg.isFile())
         {
             qInfo() << "Got file argument" << arg.filePath();
-            if(openFile(arg.absoluteFilePath()))
-            {
-                /// If multiple file arguments, the last one will dictate the current dir
-                SETTINGS.currentDir = arg.dir();
-            }
+            files.append(arg.absoluteFilePath());
         }
     }
+    openFiles(files);
+}
+
+void NotPad::persistCurrentTabs()
+{
+    QStringList files;
+    const auto count = m_tabManager->count();
+    qDebug() << "persistCurrentTabs" << count;
+    for(int i = 0; i < count; ++i)
+    {
+        const QFile* file_p = m_tabManager->widget(i)->file();
+        if(file_p == nullptr) continue;
+
+        QFileInfo fi{*file_p};
+        files.append(fi.absoluteFilePath());
+    }
+    qDebug() << files;
+    SETTINGS.pers.sessionTabs = files;
 }
 
 bool NotPad::closeAllTabs()
 {
-    const auto count = m_tabManager->count();
+    /// 1. Save or discard modified tabs
+    if(!cleanupModifiedTabs())
+    {
+        qDebug() << "closeAllTabs abort";
+        return false;
+    }
+
+    /// TODO: Pitäisi ehkä olla sittenkin niin että jos tabilla on tiedosto, niin se persistoidaan silti vaikka olisi laitettu discard
+    /// 2. Persist remaining (saved) tabs as a session
+    persistCurrentTabs();
+
+    /// 3. Close all remaining tabs
+    auto count = m_tabManager->count();
     for(int i = 0; i < count; ++i)
     {
         /// Always close the active tab
-        if(!onTabCloseRequested(m_tabManager->currentIndex()))
+        if(onTabCloseRequested(m_tabManager->currentIndex()))
+        {
+            qApp->processEvents(); /// So that the UI briefly displays the new state before the whole window closes if this was the last tab
+        }
+        else
         {
             qDebug() << "closeAllTabs abort";
             return false;
+        }
+    }
+
+    return true;
+}
+
+bool NotPad::saveOrCloseTab(Editor* editor)
+{
+    Q_ASSERT(editor != nullptr);
+    /// If file is modified, ask save or discard
+    /// Note special case: empty tab (not modified and no file)
+    if(editor->isModified() || editor->file() == nullptr)
+    {
+        const int index = m_tabManager->indexOf(editor);
+        m_tabManager->setCurrentIndex(index); /// Bring the tab to foreground for the user to see
+
+        /// This will save the file and return true
+        /// OR discard it and return true
+        /// OR cancel and return false
+        if(confirmFileClose(editor, editor->name()))
+        {
+            /// If the tab still isModified OR does not have a file, means permission to discard
+            if(editor->isModified() || editor->file() == nullptr) m_tabManager->closeTab(index);
+            return true;
+        }
+        else
+        {
+            return false; /// abort (Cancel pressed)
+        }
+    }
+    /// Did not need saving or closing (was unmodified)
+    return true;
+}
+
+bool NotPad::cleanupModifiedTabs()
+{
+    if(m_tabManager->count() == 0)
+    {
+        return true;
+    }
+
+    /// Ask whether to save or discard modified unsaved tabs
+    ///  Discarded will be closed, saved will be left open
+    /// Unmodified tabs will be left open and untouched
+
+    /// Process the active tab first
+    {
+        if(saveOrCloseTab(m_tabManager->currentWidget()))
+        {
+            qApp->processEvents(); /// So that the UI briefly displays the new state before the whole window closes if this was the last tab
+        }
+        else
+        {
+            return false; /// abort (Cancel pressed)
+        }
+    }
+    /// Process all remaining tabs
+    auto count = m_tabManager->count();
+    for(int i = count-1; i >= 0; --i)
+    {
+        if(saveOrCloseTab(m_tabManager->widget(i)))
+        {
+            qApp->processEvents(); /// So that the UI briefly displays the new state before the whole window closes if this was the last tab
+        }
+        else
+        {
+            return false; /// abort (Cancel pressed)
         }
     }
     return true;
@@ -263,6 +398,20 @@ void NotPad::messageOpenStatus(const File::Status& status)
         msg = tr("File open/read failed.");
     }
     statusBar()->showMessage(msg);
+}
+
+void NotPad::openFiles(const QStringList &fileNameList)
+{
+//    qDebug() << "fileNameList" << fileNameList;
+    for(const auto& fname : fileNameList)
+    {
+        if(openFile(fname))
+        {
+            /// The last one in the list will dictate the current dir
+            SETTINGS.currentDir = fname;
+        }
+    }
+    /// TODO: Check if a file is already open? Or allow multiple same files?
 }
 
 bool NotPad::openFile(const QString &fileName)
@@ -485,7 +634,10 @@ void NotPad::on_actionAbout_triggered()
 {
     qDebug() << "on_actionAbout_triggered";
     QString text = tr("A lightweight and small notepad application, "
-                      "concentrating on plain text files. ");
+                      "concentrating on plain text files. \n"
+                      "\n"
+                      "© %1 @ github\n"
+                      ).arg(ORGANIZATION_NAME);
 
     QMessageBox::about(this, tr("About %1 v%2").arg(PROJECT_NAME, PROJECT_VERSION), text);
 }

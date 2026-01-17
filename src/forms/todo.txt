@@ -48,10 +48,12 @@ x Tabs
   - Spaces or tab
   - Tab width
 - Save settings to file
-  - Window size
+  x Window size
   - Settings
-- Save session ?
+- Save session
+  x Reopen files that are saved to disk
   - Autosave curently edited file ?
+  - Activate previously active tab
 - Highlighting
   - Colorize current row
   - Highlight matches of selected text
@@ -63,7 +65,7 @@ x Tabs
   - Word wrap etc extra?
 - Improve about page
   - www address
-  - creator
+  x creator
 x License file
 
 ## Tuning
@@ -75,3 +77,4 @@ x License file
   x File manager class
   - Settings class
   - etc
+- Qt static linking

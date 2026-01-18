@@ -338,11 +338,11 @@ void NotPad::setupMenu()
     {
         onUndoAvailable(false);
         onRedoAvailable(false);
-        ui->actionWord_wrap->setChecked(SETTINGS.wordWrap);
+        ui->actionWord_wrap->setChecked(SETTINGS.pers.wordWrap);
     }
 }
 
-void NotPad::incrementFontSize(int increment)
+int NotPad::incrementFontSize(int increment)
 {
     auto font = m_editor->font();
     auto size = font.pointSize();
@@ -362,15 +362,18 @@ void NotPad::incrementFontSize(int increment)
     font.setPointSize(size);
     m_editor->setFont(font);
     updateTabWidth(); /// TODO: Implement using QEvent::FontChange
+    return size;
 }
 
-void NotPad::restoreFontSize()
+int NotPad::restoreFontSize()
 {
     auto font = m_editor->font();
-    font.setPointSize(SETTINGS.fontSizeDefault);
+    auto size = SETTINGS.fontSizeDefault;
+    font.setPointSize(size);
     qDebug() << "pointSize" << font.pointSize();
     m_editor->setFont(font);
     updateTabWidth();
+    return size;
 }
 
 void NotPad::updateTabWidth()
@@ -696,23 +699,25 @@ void NotPad::on_find_findButton_clicked()
 
 void NotPad::on_actionWord_wrap_triggered(bool enabled)
 {
-    qDebug() << "on_actionWord_wrap_triggered" << enabled;
+//    qDebug() << "on_actionWord_wrap_triggered" << enabled;
     m_editor->setWordWrap(enabled);
+    /// Latest choice by user is persisted
+    SETTINGS.pers.wordWrap = enabled;
 }
 
 void NotPad::on_actionFontSmaller_triggered()
 {
-    incrementFontSize(-1);
+    SETTINGS.pers.zoomFontSize = incrementFontSize(-1);
 }
 
 void NotPad::on_actionFontLarger_triggered()
 {
-    incrementFontSize(1);
+    SETTINGS.pers.zoomFontSize = incrementFontSize(1);
 }
 
 void NotPad::on_actionRestoreFontSize_triggered()
 {
-    restoreFontSize();
+    SETTINGS.pers.zoomFontSize = restoreFontSize();
 }
 
 void NotPad::on_actionFind_triggered(bool checked)

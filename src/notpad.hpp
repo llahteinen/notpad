@@ -37,8 +37,8 @@ private:
     void setupSignals();
     void setupMenu();
 
-    void incrementFontSize(int increment);
-    void restoreFontSize();
+    int incrementFontSize(int increment);
+    int restoreFontSize();
     void updateTabWidth();
 
     void messageOpenStatus(const File::Status& status);

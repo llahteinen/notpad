@@ -30,8 +30,10 @@ void TabManager::setupEditor(Editor* editor)
     editor->setUndoRedoEnabled(true);
 
     /// Dynamic global settings
-    editor->setFont(SETTINGS.font);
-    editor->setWordWrap(SETTINGS.wordWrap);
+    auto font = SETTINGS.font;
+    font.setPointSize(SETTINGS.pers.zoomFontSize);
+    editor->setFont(font);
+    editor->setWordWrap(SETTINGS.pers.wordWrap);
 }
 
 TabManager::TabManager(QWidget* parent)

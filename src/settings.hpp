@@ -46,11 +46,9 @@ public:
 
     /// Editables
     QFont font{"Consolas", fontSizeDefault};
-//    int selectedFontSize{};
     int tabWidthChars{4};  /// Measured in characters or multiples of avg character width
     bool confirmAppClose{false};
     QString defaultDocName{"Untitled"};
-    bool wordWrap{true};    /// This would probably be best if it was saved per tab
 
 
     /// Runtime (not to be persisted)
@@ -66,6 +64,9 @@ public:
         QStringList sessionTabs{};
 
         /// User editables
+        /// Options (menu bar choices)
+        bool wordWrap{true};    /// This would probably be best if it was saved per tab
+        int zoomFontSize{fontSizeDefault}; /// The font point size after user has been fiddling with the "zoom" controls
 
 
         /// \brief Loads from persistent storage

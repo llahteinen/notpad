@@ -32,4 +32,5 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 
 add_subdirectory(src)
+add_subdirectory(test)
 

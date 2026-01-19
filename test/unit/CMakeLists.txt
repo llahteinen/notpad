@@ -1,7 +1,7 @@
 set(TARGET_NAME unittest)
 
 set(PROJECT_SOURCES
-
+    test_namefilterlist.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

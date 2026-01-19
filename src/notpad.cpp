@@ -411,7 +411,7 @@ void NotPad::openFiles(const QStringList &fileNameList)
         if(openFile(fname))
         {
             /// The last one in the list will dictate the current dir
-            SETTINGS.currentDir = fname;
+            SETTINGS.currentDir = QFileInfo(fname).dir();
         }
     }
     /// TODO: Check if a file is already open? Or allow multiple same files?
@@ -470,14 +470,32 @@ bool NotPad::save(Editor* const editor)
 bool NotPad::saveAs()
 {
     qDebug() << "NotPad::saveAs";
-    QFileDialog fileDialog(this, tr("Save Document"), SETTINGS.currentDir.absolutePath());
+    QString start_path = SETTINGS.currentDir.absolutePath();
+    QString name_filter = SETTINGS.currentNameFilter;
+    if(m_editor->file() != nullptr) /// TODO: duplikaattikoodia openissa
+    {
+        const auto fi = QFileInfo(*m_editor->file());
+        start_path = fi.absoluteFilePath(); /// Path including file name
+        name_filter = SETTINGS.nameFilters.getFilter(fi.suffix(), SETTINGS.nameFilters.first());
+    }
+//    qDebug() << "start_path name_filter" << start_path << name_filter;
+
+    QFileDialog fileDialog(this, tr("Save Document"), start_path);
     fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
+    /// Native dialog automatically appends file extension, but the Qt dialog doesn't unless setDefaultSuffix is set
+    /// "Do you want to overwrite?" we need to have the suffix set here already -> use setDefaultSuffix
     fileDialog.setAcceptMode(QFileDialog::AcceptSave);
-    fileDialog.setViewMode(QFileDialog::ViewMode::Detail);
-//    fileDialog.setDefaultSuffix("txt");   /// TODO: Make selectable?
+    fileDialog.setViewMode(QFileDialog::ViewMode::Detail); /// TODO: tallenna (voi varmaan käyttää saveState())
     fileDialog.setFileMode(QFileDialog::FileMode::AnyFile);
     fileDialog.setNameFilters(SETTINGS.nameFilters);
-    fileDialog.selectNameFilter(SETTINGS.currentNameFilter);
+    fileDialog.selectNameFilter(name_filter);
+    fileDialog.setDefaultSuffix(NameFilterList::getSuffix(name_filter));
+
+    connect(&fileDialog, &QFileDialog::filterSelected, this,
+            [&fileDialog](const QString& filter)
+            {
+                fileDialog.setDefaultSuffix(NameFilterList::getSuffix(filter));
+            });
 
     File::Status status{File::Status::UNKNOWN};
     if(fileDialog.exec() == QDialog::Accepted)
@@ -608,9 +626,22 @@ void NotPad::on_actionNewTab_triggered()
 void NotPad::on_actionOpen_triggered()
 {
     qDebug() << "on_actionOpen_triggered";
-    QFileDialog fileDialog(this, tr("Open Document"), SETTINGS.currentDir.absolutePath());
+
+    QString start_path = SETTINGS.currentDir.absolutePath();
+    QString name_filter = SETTINGS.currentNameFilter;
+    /// If there is a tab open that has a saved file, use that file path and suffix
+    if(m_editor->file() != nullptr)
+    {
+        const auto fi = QFileInfo(*m_editor->file());
+        start_path = fi.absolutePath(); /// Path not including file name
+        name_filter = SETTINGS.nameFilters.getFilter(fi.suffix(), SETTINGS.nameFilters.first());
+    }
+//    qDebug() << "start_path name_filter" << start_path << name_filter;
+
+    QFileDialog fileDialog(this, tr("Open Document"), start_path);
     fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
     fileDialog.setNameFilters(SETTINGS.nameFilters);
+    fileDialog.selectNameFilter(name_filter);
 
     if(fileDialog.exec() == QDialog::Accepted)
     {

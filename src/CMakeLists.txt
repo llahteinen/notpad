@@ -13,6 +13,8 @@ set(PROJECT_SOURCES
         editor.cpp
         file.hpp
         file.cpp
+        utils/namefilterlist.hpp
+        utils/namefilterlist.cpp
 )
 
 set(RESOURCE_FILES

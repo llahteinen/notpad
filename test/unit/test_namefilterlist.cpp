@@ -126,5 +126,5 @@ void Test_NameFilterList::getSuffix()
     QCOMPARE(suffix, "");
 }
 
-QTEST_MAIN(Test_NameFilterList)
+QTEST_APPLESS_MAIN(Test_NameFilterList)
 #include "test_namefilterlist.moc"

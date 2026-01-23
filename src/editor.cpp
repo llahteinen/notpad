@@ -1,4 +1,5 @@
 #include "editor.hpp"
+#include "utils/textstream.h"
 #include "settings.hpp"
 #include <QFileDialog>
 #include <QFileInfo>
@@ -8,6 +9,8 @@ Editor::Editor(QWidget *parent)
     : QPlainTextEdit(parent)
     , m_name{SETTINGS.defaultDocName}
     , m_file{}
+    , m_encoding{QStringConverter::Utf8}
+    , m_hasBom{false}
 {}
 
 Editor::Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent)
@@ -28,8 +31,16 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
         return nullptr;
     }
 
-    QTextStream fileStream(file_p.get());
+    TextStream fileStream(file_p.get());
+    fileStream.setEncoding(QStringConverter::Encoding::Utf8);
+    fileStream.setAutoDetectUnicode(true);
+    fileStream.setAutoDetectBom(true);
+    fileStream.setValidateUtf(true);
+    fileStream.setValidateLatin(true);
     Editor* editor = new Editor(fileStream.readAll(), std::move(file_p), parent);
+    editor->m_encoding = fileStream.encoding();
+    editor->m_hasBom = fileStream.hasBom();
+    qDebug() << "encoding" << QStringConverter::nameForEncoding(editor->m_encoding);
     /// file_p is nullptr now
     fileStream.device()->close();
     return editor;
@@ -88,6 +99,13 @@ QString Editor::name() const
 const QFile* Editor::file() const
 {
     return m_file.get();
+}
+
+QString Editor::encodingName() const
+{
+    QString name = QStringConverter::nameForEncoding(m_encoding);
+    if(m_hasBom) name.append(" BOM");
+    return name;
 }
 
 bool Editor::isModified() const

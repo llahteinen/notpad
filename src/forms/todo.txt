@@ -46,6 +46,7 @@ x Tabs
   - No editing ?
 - Tab character
   - Spaces or tab
+    - QUICK setting for this
   - Tab width
 - Save settings to file
   x Window size

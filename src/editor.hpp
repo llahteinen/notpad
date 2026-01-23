@@ -27,6 +27,7 @@ public:
     void setName(const QString& name);
     QString name() const;
     const QFile* file() const;
+    QString encodingName() const;
     bool isModified() const;
 
     void setWordWrap(bool enabled);
@@ -37,6 +38,8 @@ public:
 private:
     QString m_name;
     std::unique_ptr<QFile> m_file;
+    QStringConverter::Encoding m_encoding;
+    bool m_hasBom;
 
 signals:
     void nameChanged(const QString& new_name);

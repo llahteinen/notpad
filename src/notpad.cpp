@@ -17,6 +17,7 @@
 NotPad::NotPad(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
+    , m_statusEncodingLabel{}
     , m_tabManager{}
     , m_editor{}
     , m_prevEditor{}
@@ -26,6 +27,10 @@ NotPad::NotPad(QWidget *parent)
     ui->setupUi(this);
     m_tabManager = ui->tabWidget;
     m_tabManager->setupUi();
+
+    m_statusEncodingLabel = new QLabel();
+    statusBar()->addPermanentWidget(m_statusEncodingLabel, 0);
+
     /// Close the template tabs
     while(m_tabManager->count() > 0)
         m_tabManager->removeTab(0);
@@ -306,6 +311,7 @@ void NotPad::onCurrentTabChanged(int index)
 
     setupSignals();
     setupMenu();
+    setupStatusBar();
 }
 
 void NotPad::setupSignals()
@@ -339,6 +345,18 @@ void NotPad::setupMenu()
         onUndoAvailable(false);
         onRedoAvailable(false);
         ui->actionWord_wrap->setChecked(SETTINGS.pers.wordWrap);
+    }
+}
+
+void NotPad::setupStatusBar()
+{
+    if(m_editor)
+    {
+        m_statusEncodingLabel->setText(m_editor->encodingName());
+    }
+    else
+    {
+        m_statusEncodingLabel->setText("");
     }
 }
 

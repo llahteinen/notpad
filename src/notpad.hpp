@@ -6,6 +6,7 @@
 
 class TabManager;
 class Editor;
+class QLabel;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -36,6 +37,7 @@ private:
 
     void setupSignals();
     void setupMenu();
+    void setupStatusBar();
 
     int incrementFontSize(int increment);
     int restoreFontSize();
@@ -94,6 +96,8 @@ private slots:
 private:
 
     Ui::NotPad *ui;
+
+    QLabel* m_statusEncodingLabel;  //!< The rightmost text box in status bar
 
     TabManager* m_tabManager;
     Editor* m_editor;       //!< Editor that is currently selected in the active tab

@@ -57,7 +57,7 @@ File::Status Editor::save()
     Q_ASSERT(m_file != nullptr && "m_file can't be nullptr when saving");
 
     /// Note: toPlainText() creates a copy of all the text inside the QPlainTextEdit
-    File::Status saved = File::saveFile(toPlainText(), *m_file);
+    File::Status saved = File::saveFile(toPlainText(), *m_file, m_encoding, m_hasBom);
 
     if(saved == File::Status::SUCCESS_WRITE)
     {
@@ -71,7 +71,7 @@ File::Status Editor::saveAs(const QString& fileName)
     qDebug() << "Editor::saveAs" << fileName;
     m_file.reset();
     auto file = std::make_unique<QFile>(fileName);
-    File::Status saved = File::saveFile(toPlainText(), *file);
+    File::Status saved = File::saveFile(toPlainText(), *file, m_encoding, m_hasBom);
 
     if(saved == File::Status::SUCCESS_WRITE)
     {

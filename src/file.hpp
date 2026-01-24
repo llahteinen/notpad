@@ -52,7 +52,7 @@ namespace File
     /// \param text Text to be saved to the file
     /// \param file File to be saved to. Must have filename already set
     /// \return Success status object
-    Status saveFile(QStringView text, QFile& file);
+    Status saveFile(QStringView text, QFile& file, QStringConverter::Encoding enc, bool bom);
 
     /// \brief Open a file for reading, but don't read anything.
     /// \param file File to be opened

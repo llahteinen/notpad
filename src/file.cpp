@@ -4,7 +4,7 @@
 #include <QDebug>
 
 
-File::Status File::saveFile(QStringView text, QFile& file)
+File::Status File::saveFile(QStringView text, QFile& file, QStringConverter::Encoding enc, bool bom)
 {
     qDebug() << "File::saveFile";
     Q_ASSERT(!file.fileName().isEmpty() && "Filename can't be empty");
@@ -29,7 +29,8 @@ File::Status File::saveFile(QStringView text, QFile& file)
     }
 
     QTextStream fstream{&file};
-    fstream.setEncoding(QStringConverter::Utf8);
+    fstream.setEncoding(enc);
+    fstream.setGenerateByteOrderMark(bom);
     fstream << text;
     if(fstream.status() != QTextStream::Ok)
     {

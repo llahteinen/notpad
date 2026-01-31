@@ -636,12 +636,29 @@ void NotPad::keyPressEvent(QKeyEvent* event)
                     ui->main_find_widget->setVisible(false);
                     ui->actionFind->setChecked(false);
                 }
+                return;
             }
             break;
         }
+    case Qt::Key_Return:
+    case Qt::Key_Enter:
+    case Qt::Key_F3:
+        {
+            /// F3 works always, enter only when find is active
+            if(event->key() != Qt::Key_F3 && ui->main_find_widget->isHidden())
+            {
+                break;
+            }
+            const auto has_shift = event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier);
+            const auto is_repeat = event->isAutoRepeat();
+            const auto btn = has_shift ? ui->find_findPrevButton : ui->find_findButton;
+            is_repeat ? btn->click() : btn->animateClick();
+            return;
+        }
     default:
-        QMainWindow::keyPressEvent(event);
+        break;
     }
+    QMainWindow::keyPressEvent(event);
 }
 
 /// SLOTS ================================================
@@ -873,8 +890,15 @@ void NotPad::on_actionFind_triggered(bool checked)
     }
     ui->actionFind->setChecked(show);
     ui->main_find_widget->setVisible(show);
-    ui->find_lineEdit->setFocus(Qt::OtherFocusReason);
-    ui->find_lineEdit->selectAll();
+    if(show)
+    {
+        ui->find_lineEdit->setFocus(Qt::OtherFocusReason);
+        ui->find_lineEdit->selectAll();
+    }
+    else
+    {
+        if(m_editor) m_editor->setFocus(Qt::OtherFocusReason);
+    }
 }
 
 void NotPad::on_actionUndo_triggered()
@@ -902,13 +926,5 @@ void NotPad::onRedoAvailable(bool available)
 void NotPad::onTextChanged()
 {
 //    qDebug() << "onTextChanged" << sender();
-}
-
-void NotPad::on_find_lineEdit_returnPressed()
-{
-    QFlags modifiers = qApp->keyboardModifiers();
-    const auto has_shift = modifiers.testFlag(Qt::KeyboardModifier::ShiftModifier);
-    (has_shift ? ui->find_findPrevButton: ui->find_findButton)->animateClick();
-    /// Pohjassa pito ei toimi
 }
 

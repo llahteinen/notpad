@@ -97,7 +97,6 @@ private slots:
     /// FIND ================================
     void on_find_findButton_clicked();
     void on_find_findPrevButton_clicked();
-    void on_find_lineEdit_returnPressed();
     /// /FIND ================================
 
 private:

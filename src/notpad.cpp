@@ -615,6 +615,35 @@ const QFile* NotPad::currentFile()
     return nullptr;
 }
 
+/// EVENT HANDLERS =======================================
+
+void NotPad::keyPressEvent(QKeyEvent* event)
+{
+//    qDebug() << "keyPressEvent" << event;
+    switch(event->key())
+    {
+    case Qt::Key_Escape:
+        {
+//            qDebug() << "Escape";
+            if(ui->main_find_widget->isVisible())
+            {
+                if(ui->find_lineEdit->hasFocus() && m_editor)
+                {
+                    m_editor->setFocus(Qt::OtherFocusReason);
+                }
+                else
+                {
+                    ui->main_find_widget->setVisible(false);
+                    ui->actionFind->setChecked(false);
+                }
+            }
+            break;
+        }
+    default:
+        QMainWindow::keyPressEvent(event);
+    }
+}
+
 /// SLOTS ================================================
 
 void NotPad::on_actionNew_triggered()
@@ -702,12 +731,66 @@ void NotPad::on_actionAboutQt_triggered()
 
 void NotPad::on_find_findButton_clicked()
 {
+    find({});
+}
+void NotPad::on_find_findPrevButton_clicked()
+{
+    find(QTextDocument::FindFlag::FindBackward);
+}
+
+void NotPad::find(QTextDocument::FindFlags flags, int recursion)
+{
+    qDebug() << "find" << flags;
     QString searchString = ui->find_lineEdit->text();
     QTextDocument *document = m_editor->document();
 
+    if(searchString.isEmpty())
+    {
+        statusBar()->showMessage(tr("Empty Search Field"), 1000);
+    }
+    else
+    {
+        QTextCursor result = document->find(searchString, m_editor->textCursor(), flags);
+        qDebug() << "result.isNull" << result.isNull();
+        if(!result.isNull()) /// Found, jump
+        {
+            m_editor->setTextCursor(result);
+        }
+        else /// Not found
+        {
+            if(!recursion)
+            {
+                qDebug() << "not recursion";
+                qDebug() << "atEnd" << result.atEnd();
+                qDebug() << "atStart" << result.atStart();
+                if(!flags.testFlag(QTextDocument::FindFlag::FindBackward))
+                {
+                    qDebug() << "FindForward";
+                    m_editor->moveCursor(QTextCursor::Start);
+                    qInfo() << "Find jumped to start";
+                    statusBar()->showMessage(tr("Jumped to start"), 1000);
+                    find(flags, ++recursion);
+                }
+                else if(flags.testFlag(QTextDocument::FindFlag::FindBackward))
+                {
+                    qDebug() << "FindBackward";
+                    m_editor->moveCursor(QTextCursor::End);
+                    qInfo() << "Find jumped to end";
+                    statusBar()->showMessage(tr("Jumped to end"), 1000);
+                    find(flags, ++recursion);
+                }
+            }
+
+        }
+        /// Jump ei toimi oikein jos ei löydy mitään koko dokkarista (hyppii silti)
+        /// Pitää varmaan refaktoroida niin että find etsii kaikki osumat kerralla listaksi
+    }
+
+#if 0 /// Code for word highlight
     bool found = false;
 
     // undo previous change (if any)
+    /// ainakin tää oli kai buginen
     document->undo();
 
     if (searchString.isEmpty()) {
@@ -728,12 +811,16 @@ void NotPad::on_find_findButton_clicked()
         while (!highlightCursor.isNull() && !highlightCursor.atEnd()) {
             highlightCursor = document->find(searchString, highlightCursor,
                                              QTextDocument::FindWholeWords);
+            /// QTextDocument::FindWholeWords ei tätä
 
             if (!highlightCursor.isNull()) {
                 found = true;
                 highlightCursor.movePosition(QTextCursor::WordRight,
                                              QTextCursor::KeepAnchor);
+                /// QTextCursor::KeepAnchor /// Tämä lisää värjäykseen spacen
                 highlightCursor.mergeCharFormat(colorFormat);
+                /// mergeCharFormat triggaa modifiedin ja värjäyksen
+                /// HUOM värjäys toimii van koko sanoille
             }
         }
 
@@ -744,6 +831,7 @@ void NotPad::on_find_findButton_clicked()
                                      tr("Sorry, the word cannot be found."));
         }
     }
+#endif
 }
 
 void NotPad::on_actionWord_wrap_triggered(bool enabled)
@@ -771,7 +859,22 @@ void NotPad::on_actionRestoreFontSize_triggered()
 
 void NotPad::on_actionFind_triggered(bool checked)
 {
-    ui->main_find_widget->setHidden(!checked);
+    bool show = checked;
+    if(m_editor && m_editor->textCursor().hasSelection()) /// hasComplexSelection ?
+    {
+        qDebug() << "hasSelection" << m_editor->textCursor().selectedText();
+        const auto selected_text = m_editor->textCursor().selectedText();
+        if(selected_text.compare(ui->find_lineEdit->text(), Qt::CaseInsensitive) != 0) /// Should match search setting?
+        {
+            /// User has selected something else, probably wants to search for it and not close the search
+            show = true;
+            ui->find_lineEdit->setText(selected_text);
+        }
+    }
+    ui->actionFind->setChecked(show);
+    ui->main_find_widget->setVisible(show);
+    ui->find_lineEdit->setFocus(Qt::OtherFocusReason);
+    ui->find_lineEdit->selectAll();
 }
 
 void NotPad::on_actionUndo_triggered()
@@ -799,5 +902,13 @@ void NotPad::onRedoAvailable(bool available)
 void NotPad::onTextChanged()
 {
 //    qDebug() << "onTextChanged" << sender();
+}
+
+void NotPad::on_find_lineEdit_returnPressed()
+{
+    QFlags modifiers = qApp->keyboardModifiers();
+    const auto has_shift = modifiers.testFlag(Qt::KeyboardModifier::ShiftModifier);
+    (has_shift ? ui->find_findPrevButton: ui->find_findButton)->animateClick();
+    /// Pohjassa pito ei toimi
 }
 

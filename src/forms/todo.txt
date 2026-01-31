@@ -6,7 +6,7 @@
     - Add a tab instead of a new instance
   - Sessionless mode / single file mode
 - Find
-  - Find next and prev
+  x Find next and prev
   - Highlight all
   - Count matches ?
 - Statusbar

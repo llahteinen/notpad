@@ -3,6 +3,7 @@
 
 #include "file.hpp"
 #include <QMainWindow>
+#include <QTextDocument>
 
 class TabManager;
 class Editor;
@@ -59,6 +60,8 @@ private:
     /// \return true for permission to close file, false for no permission
     bool confirmFileClose(Editor* editor, const QString& messageTitle = tr("Confirmation"));
 
+    void find(QTextDocument::FindFlags flags, int recursion = 0);
+
     const QFile* currentFile();
 
 private slots:
@@ -91,9 +94,14 @@ private slots:
     void on_actionRestoreFontSize_triggered();
     /// /MENU ================================
 
+    /// FIND ================================
     void on_find_findButton_clicked();
+    void on_find_findPrevButton_clicked();
+    void on_find_lineEdit_returnPressed();
+    /// /FIND ================================
 
 private:
+    void keyPressEvent(QKeyEvent* event) override;
 
     Ui::NotPad *ui;
 

@@ -38,7 +38,7 @@
     </property>
     <item>
      <widget class="QWidget" name="main_find_widget" native="true">
-      <layout class="QGridLayout" name="main_find_gridLayout" columnstretch="1,0,2,0">
+      <layout class="QGridLayout" name="main_find_gridLayout" columnstretch="1,0,2,0,0">
        <property name="leftMargin">
         <number>4</number>
        </property>
@@ -54,6 +54,29 @@
        <property name="horizontalSpacing">
         <number>0</number>
        </property>
+       <item row="0" column="0">
+        <spacer name="find_horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Policy::MinimumExpanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="4">
+        <widget class="QPushButton" name="find_findButton">
+         <property name="text">
+          <string>Next</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="2">
         <widget class="QLineEdit" name="find_lineEdit">
          <property name="sizePolicy">
@@ -73,13 +96,6 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="3">
-        <widget class="QPushButton" name="find_findButton">
-         <property name="text">
-          <string>&amp;Find</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="1">
         <widget class="QLabel" name="find_label">
          <property name="text">
@@ -90,21 +106,12 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="0">
-        <spacer name="find_horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Orientation::Horizontal</enum>
+       <item row="0" column="3">
+        <widget class="QPushButton" name="find_findPrevButton">
+         <property name="text">
+          <string>Prev.</string>
          </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Policy::MinimumExpanding</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-        </spacer>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -429,22 +436,6 @@
     <hint type="destinationlabel">
      <x>399</x>
      <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>find_lineEdit</sender>
-   <signal>returnPressed()</signal>
-   <receiver>find_findButton</receiver>
-   <slot>animateClick()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>375</x>
-     <y>43</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>752</x>
-     <y>43</y>
     </hint>
    </hints>
   </connection>

@@ -9,6 +9,7 @@
   x Find next and prev
   - Highlight all
   - Count matches ?
+  - Replace
 - Statusbar
   - Current encoding
   - Length of file
@@ -54,6 +55,7 @@ x Tabs
 - Save session
   x Reopen files that are saved to disk
   - Autosave curently edited file ?
+  - Incognito tabs ?
   - Activate previously active tab
 - Highlighting
   - Colorize current row
@@ -78,4 +80,5 @@ x License file
   x File manager class
   - Settings class
   - etc
-- Qt static linking
+x Qt static linking
+- Exe signing

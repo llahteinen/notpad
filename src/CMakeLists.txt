@@ -1,6 +1,7 @@
-set(TARGET_NAME lib${PROJECT_NAME})
-set(EXE_TARGET_NAME ${PROJECT_NAME})
+set(TARGET_NAME lib${PROJECT_NAME})     # Build bulk of the app as a static library (to enable unit testing etc)
+set(EXE_TARGET_NAME ${PROJECT_NAME})    # Exe target of the app, should only include main.cpp
 
+# LIBRARY TARGET ===========
 set(PROJECT_SOURCES
         forms/notpad.ui
         notpad.hpp
@@ -58,15 +59,9 @@ target_compile_definitions(${TARGET_NAME} PRIVATE
         QT_NO_DEBUG_OUTPUT   # Disable qDebug output
     >
 )
-target_compile_options(${TARGET_NAME} PRIVATE
-    $<$<CONFIG:Release>:
-        $<$<CXX_COMPILER_ID:MSVC>:
-            /O1
-            /MD
-        >
-    >
-)
 
+
+# EXECUTABLE TARGET ===========
 set(EXE_SOURCES
         main.cpp
 )
@@ -87,6 +82,19 @@ endif()
 
 target_link_libraries(${EXE_TARGET_NAME} PRIVATE
     ${TARGET_NAME}
+)
+
+target_compile_options(${EXE_TARGET_NAME} PRIVATE
+    $<$<CONFIG:Debug>:
+        $<$<CXX_COMPILER_ID:MSVC>:
+            /MDd # dynamic C/C++ runtime
+        >
+    >
+    $<$<CONFIG:Release>:
+        $<$<CXX_COMPILER_ID:MSVC>:
+            /MD # dynamic C/C++ runtime
+        >
+    >
 )
 
 # When this property is set to true the executable when linked on Windows will be created with a WinMain() entry point

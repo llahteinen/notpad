@@ -100,8 +100,13 @@ void TabManager::closeTab(int index)
 {
     qDebug() << "closeTab" << index;
     QWidget* tabContent = QTabWidget::widget(index);
-    QTabWidget::removeTab(index);
-    tabContent->deleteLater(); /// Not sure if this is needed
+    QTabWidget::removeTab(index); /// "The page widget itself is not deleted."
+    tabContent->deleteLater(); /// Delete tab content
+}
+
+void TabManager::closeCurrentTab()
+{
+    closeTab(currentIndex());
 }
 
 void TabManager::resetTab(int index)

@@ -169,35 +169,30 @@ void NotPad::persistCurrentTabs()
 bool NotPad::closeAllTabs()
 {
     /// 1. Save or discard modified tabs
+    /// This closes tabs that were untitled and not saved,
+    /// but does not close tabs that have a file even if they were not saved
     if(!cleanupModifiedTabs())
     {
         qDebug() << "closeAllTabs abort";
         return false;
     }
 
-    /// TODO: Pitäisi ehkä olla sittenkin niin että jos tabilla on tiedosto, niin se persistoidaan silti vaikka olisi laitettu discard
-    /// 2. Persist remaining (saved) tabs as a session
+    /// 2. Persist remaining tabs, those that have a file whether saved or unsaved, as a session
     persistCurrentTabs();
 
     /// 3. Close all remaining tabs
-    auto count = m_tabManager->count();
-    for(int i = 0; i < count; ++i)
+    /// No need to ask permissions here anymore, since cleanupModifiedTabs already did
+    while(m_tabManager->count())
     {
         /// Always close the active tab
-        if(onTabCloseRequested(m_tabManager->currentIndex()))
-        {
-            qApp->processEvents(); /// So that the UI briefly displays the new state before the whole window closes if this was the last tab
-        }
-        else
-        {
-            qDebug() << "closeAllTabs abort";
-            return false;
-        }
+        m_tabManager->closeCurrentTab();
+        qApp->processEvents(); /// So that the UI briefly displays the new state before the whole window closes if this was the last tab
     }
 
     return true;
 }
 
+/// Closes tabs that don't have a file after asking user to save them (untitled discarded tabs)
 bool NotPad::saveOrCloseTab(Editor* editor)
 {
     Q_ASSERT(editor != nullptr);
@@ -213,8 +208,11 @@ bool NotPad::saveOrCloseTab(Editor* editor)
         /// OR cancel and return false
         if(confirmFileClose(editor, editor->name()))
         {
-            /// If the tab still isModified OR does not have a file, means permission to discard
-            if(editor->isModified() || editor->file() == nullptr) m_tabManager->closeTab(index);
+            /// If the tab still does not have a file, means permission to close tab
+            if(editor->file() == nullptr)
+            {
+                m_tabManager->closeTab(index);
+            }
             return true;
         }
         else
@@ -234,27 +232,36 @@ bool NotPad::cleanupModifiedTabs()
     }
 
     /// Ask whether to save or discard modified unsaved tabs
-    ///  Discarded will be closed, saved will be left open
+    ///  Discarded untitled will be closed, all that have a file will be left open
     /// Unmodified tabs will be left open and untouched
 
-    /// Process the active tab first
+    /// Create a list of the tabs in the order we want to process them
+    /// Processing order is similar like QTabWidget uses when selecting the active tab after closing tabs
+    /// Active tab first, then rightward till the end, and lastly leftward from the active tab
+    /// Similar to QTabBar::SelectRightTab
+    QList<Editor*> tabs;
+    const auto current = m_tabManager->currentIndex();
+    const auto last = m_tabManager->count() - 1;
+    for(int i = current; i <= last; ++i)
     {
-        if(saveOrCloseTab(m_tabManager->currentWidget()))
-        {
-            qApp->processEvents(); /// So that the UI briefly displays the new state before the whole window closes if this was the last tab
-        }
-        else
-        {
-            return false; /// abort (Cancel pressed)
-        }
+        auto* editor = m_tabManager->widget(i);
+        if(tabs.contains(editor)) continue;
+        tabs.append(editor);
     }
-    /// Process all remaining tabs
-    auto count = m_tabManager->count();
-    for(int i = count-1; i >= 0; --i)
+    for(int i = current - 1; i >= 0; --i)
     {
-        if(saveOrCloseTab(m_tabManager->widget(i)))
+        auto* editor = m_tabManager->widget(i);
+        if(tabs.contains(editor)) continue;
+        tabs.append(editor);
+    }
+
+    for(auto* editor : tabs)
+    {
+        if(saveOrCloseTab(editor))
         {
-            qApp->processEvents(); /// So that the UI briefly displays the new state before the whole window closes if this was the last tab
+            /// Update so that the UI briefly displays the new state before the whole window closes,
+            /// if this was the last tab and the user saved it
+            qApp->processEvents();
         }
         else
         {

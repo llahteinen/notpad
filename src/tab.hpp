@@ -18,6 +18,7 @@ public:
     File::Status addTabFromFile(const QString& fileName);
 
     void closeTab(int index);
+    void closeCurrentTab();
     void resetTab(int index);
     void updateTabText(const Editor* editor);
 

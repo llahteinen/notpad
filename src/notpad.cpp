@@ -234,41 +234,22 @@ bool NotPad::cleanupModifiedTabs()
     /// Ask whether to save or discard modified unsaved tabs
     ///  Discarded untitled will be closed, all that have a file will be left open
     /// Unmodified tabs will be left open and untouched
-
-    /// Create a list of the tabs in the order we want to process them
-    /// Processing order is similar like QTabWidget uses when selecting the active tab after closing tabs
-    /// Active tab first, then rightward till the end, and lastly leftward from the active tab
-    /// Similar to QTabBar::SelectRightTab
-    QList<Editor*> tabs;
-    const auto current = m_tabManager->currentIndex();
-    const auto last = m_tabManager->count() - 1;
-    for(int i = current; i <= last; ++i)
-    {
-        auto* editor = m_tabManager->widget(i);
-        if(tabs.contains(editor)) continue;
-        tabs.append(editor);
-    }
-    for(int i = current - 1; i >= 0; --i)
-    {
-        auto* editor = m_tabManager->widget(i);
-        if(tabs.contains(editor)) continue;
-        tabs.append(editor);
-    }
-
-    for(auto* editor : tabs)
-    {
+    bool success = false;
+    m_tabManager->iterateTabs([this, &success](Editor* editor) {
         if(saveOrCloseTab(editor))
         {
             /// Update so that the UI briefly displays the new state before the whole window closes,
             /// if this was the last tab and the user saved it
             qApp->processEvents();
+            success = true;
         }
         else
         {
-            return false; /// abort (Cancel pressed)
+            success = false; /// abort (Cancel pressed)
         }
-    }
-    return true;
+    });
+
+    return success;
 }
 
 bool NotPad::onTabCloseRequested(int index)

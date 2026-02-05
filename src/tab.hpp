@@ -25,6 +25,8 @@ public:
     Editor* currentWidget() const;
     Editor* widget(int index) const;
 
+    void iterateTabs(std::function<void(Editor* editor)> processor);
+
     using QTabWidget::addTab;
 
 public slots:
@@ -37,6 +39,8 @@ public slots:
 private:
     /// \brief Adds a tab and sets it active
     void addTab(Editor* editor);
+
+    QList<Editor*> getProcessingOrder();
 
     static Editor* createEmptyEditor();
     static Editor* createEditorFromFile(File::Status& o_status, const QString& fileName);

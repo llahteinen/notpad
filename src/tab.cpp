@@ -142,6 +142,51 @@ Editor* TabManager::widget(int index) const
     return editor;
 }
 
+void TabManager::iterateTabs(std::function<void(Editor* editor)> processor)
+{
+    Q_ASSERT(processor);
+    for(auto* editor : getProcessingOrder())
+    {
+        processor(editor);
+    }
+}
+
+QList<Editor*> TabManager::getProcessingOrder()
+{
+    QList<Editor*> tabs;
+
+    const auto add = [this, &tabs](int i) {
+        auto* editor = widget(i);
+        if(!tabs.contains(editor)) { tabs.append(editor); }
+    };
+
+    /// Similar like QTabWidget uses when selecting the active tab after closing tabs with QTabBar::SelectRightTab
+    /// Current tab first, then rightward till the end, and
+    /// lastly leftward from the original current tab
+    const auto current = currentIndex();
+    const auto last = count() - 1;
+    for(int i = current; i <= last; ++i)
+    {
+        add(i);
+    }
+    for(int i = current - 1; i >= 0; --i)
+    {
+        add(i);
+    }
+
+//    /// Current tab first, then rest of them backwards starting from end
+//    {
+//        add(currentIndex());
+//        const auto last = count() - 1;
+//        for(int i = last; i >= 0; --i)
+//        {
+//            add(i);
+//        }
+//    }
+
+    return tabs;
+}
+
 void TabManager::onTabBarDoubleClicked(int index)
 {
     qDebug() << "onTabBarDoubleClicked" << index;

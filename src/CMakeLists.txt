@@ -48,6 +48,7 @@ target_link_libraries(${TARGET_NAME} PUBLIC Qt${QT_VERSION_MAJOR}::Widgets)
 
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_FULL_VERSION="${PROJECT_FULL_VERSION}")
 target_compile_definitions(${TARGET_NAME} PRIVATE ORGANIZATION_NAME="${ORGANIZATION_NAME}")
 target_compile_definitions(${TARGET_NAME} PRIVATE ORGANIZATION_DOMAIN="${ORGANIZATION_DOMAIN}")
 

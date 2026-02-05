@@ -42,7 +42,7 @@ NotPad::NotPad(QWidget *parent)
 #if defined(QT_DEBUG)
     project_name.append("_dbg");
 #endif
-    setWindowTitle(QString("%1 v%2").arg(project_name, PROJECT_VERSION));
+    setWindowTitle(QString("%1 v%2").arg(project_name, PROJECT_FULL_VERSION));
 
     QCoreApplication::setOrganizationName(ORGANIZATION_NAME);
     QCoreApplication::setOrganizationDomain(ORGANIZATION_DOMAIN);

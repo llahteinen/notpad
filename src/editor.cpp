@@ -15,11 +15,14 @@ Editor::Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *pare
     , m_file{std::move(file_p)}
     , m_encoding{QStringConverter::Utf8}
     , m_hasBom{false}
+    , m_search{}
 {
     if(m_file)
     {
         m_name = QFileInfo(*m_file).fileName();
     }
+
+    connect(this, &Editor::textChanged, this, &Editor::invalidateSearchResults);
 }
 
 /// static
@@ -83,6 +86,20 @@ File::Status Editor::saveAs(const QString& fileName)
     return saved;
 }
 
+const QList<QTextCursor>& Editor::getSearchResults(const QString& sterm, QTextDocument::FindFlags flags)
+{
+    qDebug() << "getSearchResults" << sterm;
+    flags.setFlag(QTextDocument::FindBackward, false); /// Don't store search direction
+
+    if(m_search.results.isEmpty() || sterm != m_search.term || flags != m_search.flags)
+    {
+        m_search.term = sterm;
+        m_search.flags = flags;
+        m_search.results = findAll(sterm, flags);
+    }
+    return m_search.results;
+}
+
 void Editor::setName(const QString& name)
 {
     if(name != m_name)
@@ -136,4 +153,31 @@ void Editor::setFont(const QFont& font)
 {
     QPlainTextEdit::setFont(font);
     updateTabWidth();
+}
+
+void Editor::invalidateSearchResults()
+{
+//    qDebug() << "invalidateSearchResults";
+    m_search = {};
+}
+
+QList<QTextCursor> Editor::findAll(const QString& sterm, QTextDocument::FindFlags flags)
+{
+    qDebug() << "findAll";
+    flags.setFlag(QTextDocument::FindBackward, false); /// Always search forward, but respect the other flags
+    QList<QTextCursor> results;
+    QTextCursor result;
+    int pos = 0;
+
+    do
+    {
+        result = document()->find(sterm, pos, flags);
+        if(!result.isNull())
+        {
+            pos = result.position(); /// must be position(), not position() + 1
+            results.append(result);
+        }
+    } while(!result.isNull());
+
+    return results;
 }

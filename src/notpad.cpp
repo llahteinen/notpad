@@ -745,7 +745,8 @@ void NotPad::on_find_findPrevButton_clicked()
 
 void NotPad::find(QTextDocument::FindFlags flags, int recursion)
 {
-    qDebug() << "find" << flags;
+//    qDebug() << "find" << flags;
+    qDebug() << "recursion" << recursion;
     QString searchString = ui->find_lineEdit->text();
     QTextDocument *document = m_editor->document();
 
@@ -755,6 +756,17 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
     }
     else
     {
+        if(!recursion)
+        {
+            const auto& results = m_editor->getSearchResults(searchString, flags);
+            statusBar()->showMessage(tr("%1 matches").arg(results.size()));
+            if(results.isEmpty())
+            {
+                QApplication::beep();
+                return; /// Don't jump anywhere
+            }
+        }
+
         QTextCursor result = document->find(searchString, m_editor->textCursor(), flags);
         qDebug() << "result.isNull" << result.isNull();
         if(!result.isNull()) /// Found, jump
@@ -765,12 +777,11 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
         {
             if(!recursion)
             {
-                qDebug() << "not recursion";
-                qDebug() << "atEnd" << result.atEnd();
-                qDebug() << "atStart" << result.atStart();
+//                qDebug() << "atEnd" << result.atEnd();
+//                qDebug() << "atStart" << result.atStart();
                 if(!flags.testFlag(QTextDocument::FindFlag::FindBackward))
                 {
-                    qDebug() << "FindForward";
+//                    qDebug() << "FindForward";
                     m_editor->moveCursor(QTextCursor::Start);
                     qInfo() << "Find jumped to start";
                     statusBar()->showMessage(tr("Jumped to start"), 1000);
@@ -778,17 +789,14 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
                 }
                 else if(flags.testFlag(QTextDocument::FindFlag::FindBackward))
                 {
-                    qDebug() << "FindBackward";
+//                    qDebug() << "FindBackward";
                     m_editor->moveCursor(QTextCursor::End);
                     qInfo() << "Find jumped to end";
                     statusBar()->showMessage(tr("Jumped to end"), 1000);
                     find(flags, ++recursion);
                 }
             }
-
         }
-        /// Jump ei toimi oikein jos ei löydy mitään koko dokkarista (hyppii silti)
-        /// Pitää varmaan refaktoroida niin että find etsii kaikki osumat kerralla listaksi
     }
 
 #if 0 /// Code for word highlight

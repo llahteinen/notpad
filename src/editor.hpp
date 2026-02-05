@@ -24,6 +24,8 @@ public:
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     File::Status saveAs(const QString& fileName);
 
+    const QList<QTextCursor>& getSearchResults(const QString& sterm, QTextDocument::FindFlags flags);
+
     void setName(const QString& name);
     QString name() const;
     const QFile* file() const;
@@ -35,11 +37,23 @@ public:
     void updateTabWidth();
     void setFont(const QFont&);     //!< Hide base class setFont
 
+private slots:
+    void invalidateSearchResults();
+
 private:
+    QList<QTextCursor> findAll(const QString& sterm, QTextDocument::FindFlags flags);
+
     QString m_name;
     std::unique_ptr<QFile> m_file;
     QStringConverter::Encoding m_encoding;
     bool m_hasBom;
+
+    struct Search
+    {
+        QList<QTextCursor> results{};
+        QString term{};
+        QTextDocument::FindFlags flags{};
+    } m_search;
 
 signals:
     void nameChanged(const QString& new_name);

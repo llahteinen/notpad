@@ -24,7 +24,7 @@ public:
     /// Constants
     static constexpr int fontSizeDefault{10};
     const QList<int> standardFontSizes{3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72};
-    const NameFilterList nameFilters;
+    const NameFilterList nameFilters{};
     const QString defaultNameFilter{nameFilters.at(1)};
 //    const QStringList mimeTypeFilters{ /// This is alternative to nameFilters, both can't be used together
 //        "text/plain", /// Returns a huge amount of suffixes
@@ -65,7 +65,7 @@ public:
         /// \brief Saves to persistent storage
         void toQSettings(QSettings& settings);
 
-    } pers;
+    } pers{};
 
 };
 

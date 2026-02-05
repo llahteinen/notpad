@@ -23,6 +23,8 @@ class NotPad : public QMainWindow
 public:
     NotPad(QWidget *parent = nullptr);
     ~NotPad();
+    NotPad(const NotPad&) = delete;
+    NotPad& operator=(const NotPad&) = delete;
 
 private:
     void closeEvent(QCloseEvent* event) override;

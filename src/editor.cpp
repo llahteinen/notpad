@@ -6,19 +6,20 @@
 
 
 Editor::Editor(QWidget *parent)
-    : QPlainTextEdit(parent)
-    , m_name{SETTINGS.defaultDocName}
-    , m_file{}
-    , m_encoding{QStringConverter::Utf8}
-    , m_hasBom{false}
+    : Editor({}, {nullptr}, parent)
 {}
 
 Editor::Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent)
     : QPlainTextEdit(text, parent)
     , m_name{SETTINGS.defaultDocName}
     , m_file{std::move(file_p)}
+    , m_encoding{QStringConverter::Utf8}
+    , m_hasBom{false}
 {
-    m_name = QFileInfo(*m_file).fileName();
+    if(m_file)
+    {
+        m_name = QFileInfo(*m_file).fileName();
+    }
 }
 
 /// static

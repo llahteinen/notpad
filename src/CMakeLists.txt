@@ -21,7 +21,6 @@ set(PROJECT_SOURCES
 )
 
 set(RESOURCE_FILES
-    forms/todo.txt
     forms/styles.css
     res/icon.ico
 )

@@ -3,6 +3,7 @@
 #include "settings.hpp"
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QRegularExpression>
 
 
 Editor::Editor(QWidget *parent)
@@ -86,18 +87,18 @@ File::Status Editor::saveAs(const QString& fileName)
     return saved;
 }
 
-const QList<QTextCursor>& Editor::getSearchResults(const QString& sterm, QTextDocument::FindFlags flags)
+qsizetype Editor::getMatchCount(const QString& sterm, QTextDocument::FindFlags flags)
 {
-    qDebug() << "getSearchResults" << sterm;
+    qDebug() << "getMatchCount" << sterm;
     flags.setFlag(QTextDocument::FindBackward, false); /// Don't store search direction
 
-    if(m_search.results.isEmpty() || sterm != m_search.term || flags != m_search.flags)
+    if(m_search.matchCount < 0 || sterm != m_search.term || flags != m_search.flags)
     {
         m_search.term = sterm;
         m_search.flags = flags;
-        m_search.results = findAll(sterm, flags);
+        m_search.matchCount = countMatches(sterm, flags);
     }
-    return m_search.results;
+    return m_search.matchCount;
 }
 
 void Editor::setName(const QString& name)
@@ -157,8 +158,56 @@ void Editor::setFont(const QFont& font)
 
 void Editor::invalidateSearchResults()
 {
-//    qDebug() << "invalidateSearchResults";
+    qDebug() << "invalidateSearchResults";
     m_search = {};
+}
+
+qsizetype Editor::countMatches(const QString& sterm, QTextDocument::FindFlags flags)
+{
+    qDebug() << "countMatches";
+    QRegularExpression::PatternOptions reg_opt{};
+    /// NOTE: Case insensitive is default for QTextDocument::FindFlags
+    if(!flags.testFlag(QTextDocument::FindFlag::FindCaseSensitively))
+    {
+        reg_opt.setFlag(QRegularExpression::PatternOption::CaseInsensitiveOption);
+    }
+    /// Else find case sensitively
+    qDebug() << "regex flags" << reg_opt;
+
+    const auto doc = document()->toRawText();
+//    const auto doc = document()->toPlainText(); /// Check later if should use this if toRawText has issues with unicode or something
+
+    /// Regex method (this is faster than QString::count(QString))
+    const QRegularExpression reg{QRegularExpression::escape(sterm), reg_opt}; /// Normal string-like search using regex
+//    const QRegularExpression reg{sterm}; /// Full regex pattern search. Should check PatternOptions at some point
+//    reg.optimize(); /// Not sure what this does, does not seem to affect performance
+    if(!reg.isValid())
+    {
+        qInfo() << "Invalid regexp:" << reg.errorString();
+        return -1;
+    }
+
+    const auto matchIterator = reg.globalMatch(doc);
+    if(!matchIterator.isValid())
+    {
+        return -1;
+    }
+
+    qsizetype count = 0;
+    static constexpr auto max_val = std::numeric_limits<decltype(count)>::max();
+    for([[maybe_unused]]const auto& _ : matchIterator)
+    {
+        if(count == max_val)
+        {
+            count = -2;
+            qInfo() << "Too many search results: >" << max_val;
+            break;
+        }
+        ++count;
+    }
+
+    qDebug() << "resultCount" << count;
+    return count;
 }
 
 QList<QTextCursor> Editor::findAll(const QString& sterm, QTextDocument::FindFlags flags)

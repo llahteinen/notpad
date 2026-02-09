@@ -73,6 +73,7 @@ x License file
 
 ## Tuning
 - Rename the project
+- Large file open optimizing
 - File extension
   x Appending the extension
   - Keeping track of selected file types

@@ -758,9 +758,11 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
     {
         if(!recursion)
         {
-            const auto& results = m_editor->getSearchResults(searchString, flags);
-            statusBar()->showMessage(tr("%1 matches").arg(results.size()));
-            if(results.isEmpty())
+            const auto count = m_editor->getMatchCount(searchString, flags);
+            qInfo() << "Matches count" << count;
+            statusBar()->showMessage(tr("%1 matches").arg(count));
+
+            if(count <= 0)
             {
                 QApplication::beep();
                 return; /// Don't jump anywhere

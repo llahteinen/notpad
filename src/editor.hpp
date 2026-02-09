@@ -24,6 +24,7 @@ public:
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     File::Status saveAs(const QString& fileName);
 
+    qsizetype getMatchCount(const QString& sterm, QTextDocument::FindFlags flags);
     const QList<QTextCursor>& getSearchResults(const QString& sterm, QTextDocument::FindFlags flags);
 
     void setName(const QString& name);
@@ -41,6 +42,12 @@ private slots:
     void invalidateSearchResults();
 
 private:
+    /// \param sterm Search term, can be regexp
+    /// \param flags Find options
+    /// \return -1 on errors, -2 on overflow, otherwise number of matches in the document
+    qsizetype countMatches(const QString& sterm, QTextDocument::FindFlags flags);
+
+    /// NOTE: This function is very slow and memory intensive on large files!
     QList<QTextCursor> findAll(const QString& sterm, QTextDocument::FindFlags flags);
 
     QString m_name;
@@ -50,7 +57,7 @@ private:
 
     struct Search
     {
-        QList<QTextCursor> results{};
+        qsizetype matchCount{-1};   /// qsizetype is signed
         QString term{};
         QTextDocument::FindFlags flags{};
     } m_search;

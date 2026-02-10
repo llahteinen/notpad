@@ -774,6 +774,7 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
         if(!result.isNull()) /// Found, jump
         {
             m_editor->setTextCursor(result);
+            qApp->processEvents(); /// So that the cursor gets updated before highLighter starts
         }
         else /// Not found
         {
@@ -799,54 +800,10 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
                 }
             }
         }
+
+        /// This must not be in if(!recursion) if it is called after the document->find stuff
+        m_editor->highLighter->setRegex(searchString, flags);
     }
-
-#if 0 /// Code for word highlight
-    bool found = false;
-
-    // undo previous change (if any)
-    /// ainakin tää oli kai buginen
-    document->undo();
-
-    if (searchString.isEmpty()) {
-        QMessageBox::information(this, tr("Empty Search Field"),
-                                 tr("The search field is empty. "
-                                    "Please enter a word and click Find."));
-    } else {
-        QTextCursor highlightCursor(document);
-        QTextCursor cursor(document);
-
-        cursor.beginEditBlock();
-
-        QTextCharFormat plainFormat(highlightCursor.charFormat());
-        QTextCharFormat colorFormat = plainFormat;
-//        colorFormat.setForeground(Qt::red);
-        colorFormat.setBackground(Qt::yellow);
-
-        while (!highlightCursor.isNull() && !highlightCursor.atEnd()) {
-            highlightCursor = document->find(searchString, highlightCursor,
-                                             QTextDocument::FindWholeWords);
-            /// QTextDocument::FindWholeWords ei tätä
-
-            if (!highlightCursor.isNull()) {
-                found = true;
-                highlightCursor.movePosition(QTextCursor::WordRight,
-                                             QTextCursor::KeepAnchor);
-                /// QTextCursor::KeepAnchor /// Tämä lisää värjäykseen spacen
-                highlightCursor.mergeCharFormat(colorFormat);
-                /// mergeCharFormat triggaa modifiedin ja värjäyksen
-                /// HUOM värjäys toimii van koko sanoille
-            }
-        }
-
-        cursor.endEditBlock();
-
-        if (found == false) {
-            QMessageBox::information(this, tr("Word Not Found"),
-                                     tr("Sorry, the word cannot be found."));
-        }
-    }
-#endif
 }
 
 void NotPad::on_actionWord_wrap_triggered(bool enabled)

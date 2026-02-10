@@ -18,6 +18,9 @@ set(PROJECT_SOURCES
         utils/namefilterlist.cpp
         utils/textstream.h
         utils/textstream.cpp
+        utils/highlighter.hpp
+        utils/highlighter.cpp
+        utils/regex.hpp
 )
 
 set(RESOURCE_FILES

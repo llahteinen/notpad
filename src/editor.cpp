@@ -1,5 +1,6 @@
 #include "editor.hpp"
 #include "utils/textstream.h"
+#include "utils/regex.hpp"
 #include "settings.hpp"
 #include <QFileDialog>
 #include <QFileInfo>
@@ -12,6 +13,7 @@ Editor::Editor(QWidget *parent)
 
 Editor::Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent)
     : QPlainTextEdit(text, parent)
+    , highLighter{new Highlighter(this->document())}
     , m_name{SETTINGS.defaultDocName}
     , m_file{std::move(file_p)}
     , m_encoding{QStringConverter::Utf8}
@@ -23,7 +25,9 @@ Editor::Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *pare
         m_name = QFileInfo(*m_file).fileName();
     }
 
-    connect(this, &Editor::textChanged, this, &Editor::invalidateSearchResults);
+    /// QSyntaxHighlighter::rehighlight() does emit contentsChanged for some reason but not contentsChange
+    /// We want contentsChange because only real edits should trigger it
+    connect(document(), &QTextDocument::contentsChange, this, &Editor::onContentsChange);
 }
 
 /// static
@@ -156,6 +160,12 @@ void Editor::setFont(const QFont& font)
     updateTabWidth();
 }
 
+void Editor::onContentsChange([[maybe_unused]]int position, [[maybe_unused]]int charsRemoved, [[maybe_unused]]int charsAdded)
+{
+//    qDebug() << "onContentsChange" << position << "" << charsRemoved << "" << charsAdded;
+    invalidateSearchResults();
+}
+
 void Editor::invalidateSearchResults()
 {
     qDebug() << "invalidateSearchResults";
@@ -165,25 +175,14 @@ void Editor::invalidateSearchResults()
 qsizetype Editor::countMatches(const QString& sterm, QTextDocument::FindFlags flags)
 {
     qDebug() << "countMatches";
-    QRegularExpression::PatternOptions reg_opt{};
-    /// NOTE: Case insensitive is default for QTextDocument::FindFlags
-    if(!flags.testFlag(QTextDocument::FindFlag::FindCaseSensitively))
-    {
-        reg_opt.setFlag(QRegularExpression::PatternOption::CaseInsensitiveOption);
-    }
-    /// Else find case sensitively
-    qDebug() << "regex flags" << reg_opt;
 
     const auto doc = document()->toRawText();
 //    const auto doc = document()->toPlainText(); /// Check later if should use this if toRawText has issues with unicode or something
 
     /// Regex method (this is faster than QString::count(QString))
-    const QRegularExpression reg{QRegularExpression::escape(sterm), reg_opt}; /// Normal string-like search using regex
-//    const QRegularExpression reg{sterm}; /// Full regex pattern search. Should check PatternOptions at some point
-//    reg.optimize(); /// Not sure what this does, does not seem to affect performance
+    const auto reg = Regex::stringToRegex(sterm, flags);
     if(!reg.isValid())
     {
-        qInfo() << "Invalid regexp:" << reg.errorString();
         return -1;
     }
 

@@ -2,6 +2,7 @@
 #define EDITOR_HPP
 
 #include "file.hpp"
+#include "utils/highlighter.hpp"
 #include <QPlainTextEdit>
 #include <QFile>
 
@@ -38,7 +39,10 @@ public:
     void updateTabWidth();
     void setFont(const QFont&);     //!< Hide base class setFont
 
+    Highlighter* highLighter;
+
 private slots:
+    void onContentsChange(int position, int charsRemoved, int charsAdded);
     void invalidateSearchResults();
 
 private:

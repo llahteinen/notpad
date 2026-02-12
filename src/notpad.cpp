@@ -21,6 +21,7 @@ NotPad::NotPad(QWidget *parent)
     , m_tabManager{}
     , m_editor{}
     , m_prevEditor{}
+    , m_argumentFiles{}
 {
     qInfo() << PROJECT_NAME << "starting";
 
@@ -48,6 +49,9 @@ NotPad::NotPad(QWidget *parent)
     QCoreApplication::setOrganizationDomain(ORGANIZATION_DOMAIN);
     QCoreApplication::setApplicationName(project_name);
 
+    /// Check command line arguments
+    handleArguments();
+
     QFile styleFile(":/forms/styles.css");
     if(styleFile.open(QFile::ReadOnly))
     {
@@ -70,17 +74,10 @@ NotPad::NotPad(QWidget *parent)
     qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
     qDebug() << "Current theme:" << QIcon::themeName();
 
-
-    /// Setup open tabs
-    loadSettings();
+    /// Load persisted data
+    loadSettings(); /// Must be before QMainWindow::show() because it loads window size etc
     SETTINGS.pers.startupCounter++;
     qDebug() << "startups" << SETTINGS.pers.startupCounter;
-    /// Check command line arguments
-    handleArguments();
-    /// Add empty tab if there is none
-    if(m_tabManager->count() == 0) m_tabManager->addEmptyTab();
-
-//    SETTINGS.currentDir = QDir("../../../testifiles"); /// Set save/load dialog starting location
 }
 
 NotPad::~NotPad()
@@ -104,6 +101,34 @@ void NotPad::closeEvent(QCloseEvent* event)
     }
 }
 
+/// Triggers always when window is restored from minimized to taskbar
+/// What happens here happens just before the window is actually shown
+void NotPad::showEvent(QShowEvent* event)
+{
+    qDebug() << "showEvent" << event << "spontaneous" << event->spontaneous();
+}
+
+void NotPad::show()
+{
+    qDebug() << "show";
+    QMainWindow::show();
+    qApp->processEvents(); /// Without this it starts with white screen
+
+    /// Setup open tabs
+    /// Load previous session
+    /// TODO: restore the active tab?
+    qDebug() << "sessionTabs" << SETTINGS.pers.sessionTabs;
+    /// Check if the files exist?
+    openFiles(SETTINGS.pers.sessionTabs);
+    /// Argument files will be opened as last tabs
+    openFiles(m_argumentFiles);
+
+    /// Add empty tab if there is none
+    if(m_tabManager->count() == 0) m_tabManager->addEmptyTab();
+
+//    SETTINGS.currentDir = QDir("../../../testifiles"); /// Set save/load dialog starting location
+}
+
 void NotPad::saveSettings()
 {
     SETTINGS.pers.windowGeometry = saveGeometry();
@@ -120,12 +145,6 @@ void NotPad::loadSettings()
 
     /// Apply settings
     if(!SETTINGS.pers.windowGeometry.isEmpty()) restoreGeometry(SETTINGS.pers.windowGeometry); /// Seems to work even if the data is something weird
-
-    /// Load previous session
-    /// TODO: restore the active tab?
-    qDebug() << "sessionTabs" << SETTINGS.pers.sessionTabs;
-    /// Check if the files exist?
-    openFiles(SETTINGS.pers.sessionTabs);
 }
 
 void NotPad::handleArguments()
@@ -135,7 +154,7 @@ void NotPad::handleArguments()
     /// Note that Qt automatically removes it's own supported args such as -widgetcount
     const auto arguments = qApp->arguments();
 //    qDebug() << "args" << arguments;
-    QStringList files;
+    m_argumentFiles.clear();
     for(int i = 1; i < arguments.size(); ++i)
     {
         /// Check if we have files
@@ -143,10 +162,9 @@ void NotPad::handleArguments()
         if(arg.isFile())
         {
             qInfo() << "Got file argument" << arg.filePath();
-            files.append(arg.absoluteFilePath());
+            m_argumentFiles.append(arg.absoluteFilePath());
         }
     }
-    openFiles(files);
 }
 
 void NotPad::persistCurrentTabs()

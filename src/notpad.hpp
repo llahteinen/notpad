@@ -26,8 +26,12 @@ public:
     NotPad(const NotPad&) = delete;
     NotPad& operator=(const NotPad&) = delete;
 
+public slots:
+    void show();    /// Hide base class show()
+
 private:
     void closeEvent(QCloseEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
     void saveSettings();
     void loadSettings();
@@ -111,6 +115,9 @@ private:
     TabManager* m_tabManager;
     Editor* m_editor;       //!< Editor that is currently selected in the active tab
     Editor* m_prevEditor;   //!< Editor that was selected before the current one
+
+    QStringList m_argumentFiles;
+
 };
 
 

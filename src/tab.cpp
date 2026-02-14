@@ -24,11 +24,9 @@ Editor* TabManager::createEditorFromFile(File::Status& o_status, const QString& 
     return editor;
 }
 
+/// NOTE: Only do things here that can be done before the editor text loading is finished
 void TabManager::setupEditor(Editor* editor)
 {
-    /// Basic settings
-    editor->setUndoRedoEnabled(true);
-
     /// Dynamic global settings
     auto font = SETTINGS.font;
     font.setPointSize(SETTINGS.pers.zoomFontSize);

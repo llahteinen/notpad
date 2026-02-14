@@ -16,7 +16,7 @@ set(PROJECT_SOURCES
         file.cpp
         utils/namefilterlist.hpp
         utils/namefilterlist.cpp
-        utils/textstream.h
+        utils/textstream.hpp
         utils/textstream.cpp
         utils/highlighter.hpp
         utils/highlighter.cpp

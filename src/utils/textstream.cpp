@@ -1,11 +1,21 @@
-#include "textstream.h"
+#include "textstream.hpp"
+#include "file.hpp"
 #include <QIODevice>
+#include <QFileInfo>
 #include <QDebug>
 
 
-TextStream::TextStream(QIODevice* device) : QTextStream(device) {}
+TextStream::TextStream(QFileDevice* device) : TextStream(device->fileName()) {}
 
-QString TextStream::readAll()
+TextStream::TextStream(const QString& fileName) : QTextStream(), m_file{fileName, this}
+{
+    qRegisterMetaType<MetaData>();
+    /// Crash if QTextStream constructor is called with m_file
+    setDevice(&m_file);
+}
+
+/// NOTE device has to be set before calling this
+void TextStream::doValidations()
 {
     /// Qt encoding detection works by simply reading a BOM. If BOM is not found, encoding is not changed.
     /// So we can use that to infer the possible BOM in the file.
@@ -21,6 +31,9 @@ QString TextStream::readAll()
     }
 
     /// Don't validate utf if encoding is set to something else than utf
+    /// By default we have set utf8 and detecting utf16 comes later
+    /// So basically this validateUtf can't work with utf16
+    /// It causes "Encoding is Latin1 but file has BOM"
     if(m_validateUtf && QString(QStringConverter::nameForEncoding(encoding())).contains("utf", Qt::CaseInsensitive))
     {
         static constexpr qint64 max = 4096;
@@ -44,6 +57,7 @@ QString TextStream::readAll()
     }
 
     /// If encoding is Latin1, file should not contain BOM
+    /// If file does NOT contain BOM, then it's not possible to validate
     if(m_validateLatin && encoding() == QStringConverter::Encoding::Latin1)
     {
         if(m_hasBom)
@@ -51,9 +65,70 @@ QString TextStream::readAll()
             m_hasLatinError = EncodingError::TRUE;
             qWarning() << "Encoding is Latin1 but file has BOM";
         }
+        else
+        {
+            m_hasLatinError = EncodingError::UNAVAILABLE;
+        }
+    }
+}
+
+/// NOTE device has to be set before calling this
+/// because setDevice() here will reset parameters such as autodetectUnicode
+QString TextStream::readAll()
+{
+    if(File::openFile(m_file, m_file.fileName()) != File::Status::SUCCESS_READ)
+    {
+        qDebug() << "readAll openFile not successful";
+        return {};
     }
 
-    return QTextStream::readAll();
+    doValidations();
+
+    QString ret = QTextStream::readAll();
+    device()->close();
+    return ret;
+}
+
+/// NOTE device has to be set before calling this
+/// because setDevice() here will reset parameters such as autodetectUnicode
+void TextStream::readChunks()
+{
+    MetaData meta;
+
+    if(File::openFile(m_file, m_file.fileName()) != File::Status::SUCCESS_READ)
+    {
+        qDebug() << "readChunks openFile not successful";
+        meta.fileError = true;
+        meta.done = true;
+        emit dataAvailable({}, meta);
+        return;
+    }
+    qDebug() << "bytesAvailable" << device()->bytesAvailable();
+
+    doValidations();
+
+    /// 20000 is very roughly a full screen amount of text on a normal font
+    static constexpr qint64 maxChunkSize = 100000;
+    QString data;
+//    data.reserve(maxChunkSize); /// Does not seem to affect speed in meaningful way
+    while(!QTextStream::atEnd())
+    {
+        /// Seems like this is extremely faster than QTextStream::readAll()
+        /// It also reallocates readBuffer every read of QTEXTSTREAM_BUFFERSIZE
+        /// Then it seems to resize it down again when returning, calls readBuffer.remove, which shouldn't free the memory though
+        /// Both use roughly same amount of ram
+        data = QTextStream::read(maxChunkSize);
+        meta.encoding = encoding(); /// encoding might be updated in QTextStream::read()
+        meta.hasBom = m_hasBom;
+        meta.hasUtfError = m_hasUtfError;
+        meta.hasLatinError = m_hasLatinError;
+        meta.done = QTextStream::atEnd();
+        emit dataAvailable(data, meta);
+//        QThread::msleep(5); /// This allows UI to update, not overwhelming event queue
+    }
+
+    /// Is this called in case of exceptions?
+    device()->close();
 }
 
 void TextStream::setAutoDetectBom(bool enabled)

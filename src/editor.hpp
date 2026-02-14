@@ -3,8 +3,10 @@
 
 #include "file.hpp"
 #include "utils/highlighter.hpp"
+#include "utils/textstream.hpp"
 #include <QPlainTextEdit>
 #include <QFile>
+#include <QPointer>
 
 
 class Editor : public QPlainTextEdit
@@ -14,6 +16,10 @@ class Editor : public QPlainTextEdit
 public:
     explicit Editor(QWidget *parent = nullptr);
     Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent = nullptr);
+    Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *parent = nullptr);
+    ~Editor() = default;
+    Editor(const Editor&) = delete;
+    Editor& operator=(const Editor&) = delete;
 
     static Editor* createEditor(File::Status& o_status, const QString& fileName, QWidget* parent = nullptr);
 
@@ -42,6 +48,8 @@ public:
     Highlighter* highLighter;
 
 private slots:
+    void onDataAvailable(const QString& dataChunk, const TextStream::MetaData& meta);
+    void onDataAvailable(const QString& dataChunk, bool done);
     void onContentsChange(int position, int charsRemoved, int charsAdded);
     void invalidateSearchResults();
 
@@ -55,6 +63,7 @@ private:
     QList<QTextCursor> findAll(const QString& sterm, QTextDocument::FindFlags flags);
 
     QString m_name;
+    QScopedPointer<TextStream, QScopedPointerDeleteLater> m_textStream; /// Automatically calls deleteLater instead of delete
     std::unique_ptr<QFile> m_file;
     QStringConverter::Encoding m_encoding;
     bool m_hasBom;
@@ -68,6 +77,7 @@ private:
 
 signals:
     void nameChanged(const QString& new_name);
+    void dataLoadingFinished();
 };
 
 #endif // EDITOR_HPP

@@ -1,8 +1,15 @@
 
+if (MSVC)
+    add_compile_options(/wd4189) # Removes unused variable warning and error
+else()
+    add_compile_options(-Wno-error=unused-variable) # Turns unused-variable from error to warning
+endif()
+
 # Add each test cpp file here
 set(PROJECT_SOURCES
     test_namefilterlist
     test_encodings
+    test_textstream
 )
 
 # Each of them will generate a separate executable

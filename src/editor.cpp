@@ -1,20 +1,21 @@
 #include "editor.hpp"
-#include "utils/textstream.h"
 #include "utils/regex.hpp"
 #include "settings.hpp"
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <QThread>
 
 
 Editor::Editor(QWidget *parent)
-    : Editor({}, {nullptr}, parent)
+    : Editor(QString{}, {nullptr}, parent)
 {}
 
 Editor::Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent)
     : QPlainTextEdit(text, parent)
     , highLighter{new Highlighter(this->document())}
     , m_name{SETTINGS.defaultDocName}
+    , m_textStream{nullptr}
     , m_file{std::move(file_p)}
     , m_encoding{QStringConverter::Utf8}
     , m_hasBom{false}
@@ -30,6 +31,30 @@ Editor::Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *pare
     connect(document(), &QTextDocument::contentsChange, this, &Editor::onContentsChange);
 }
 
+Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *parent)
+    : QPlainTextEdit(parent)
+    , highLighter{new Highlighter(this->document())}
+    , m_name{SETTINGS.defaultDocName}
+    , m_textStream{stream}
+    , m_file{std::move(file_p)}
+    , m_encoding{QStringConverter::Utf8}
+    , m_hasBom{false}
+    , m_search{}
+{
+    if(m_file)
+    {
+        m_name = QFileInfo(*m_file).fileName();
+    }
+
+    /// QSyntaxHighlighter::rehighlight() does emit contentsChanged for some reason but not contentsChange
+    /// We want contentsChange because only real edits should trigger it
+    connect(document(), &QTextDocument::contentsChange, this, &Editor::onContentsChange);
+
+    connect(m_textStream.get(), &TextStream::dataAvailable,
+            this, qOverload<const QString&, const TextStream::MetaData&>(&Editor::onDataAvailable),
+            Qt::QueuedConnection); /// QueuedConnection just to be sure (dataAvailable and onDataAvailable are supposed to run in different threads)
+}
+
 /// static
 Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QWidget* parent)
 {
@@ -37,22 +62,128 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
     o_status = File::openFile(*file_p, fileName);
     if(o_status != File::Status::SUCCESS_READ)
     {
+        file_p->close();
         return nullptr;
     }
+    file_p->close(); /// This was just for initial check. Create and open a new QFile in the other thread since QFile is not marked thread safe.
 
-    TextStream fileStream(file_p.get());
-    fileStream.setEncoding(QStringConverter::Encoding::Utf8);
-    fileStream.setAutoDetectUnicode(true);
-    fileStream.setAutoDetectBom(true);
-    fileStream.setValidateUtf(true);
-    fileStream.setValidateLatin(true);
-    Editor* editor = new Editor(fileStream.readAll(), std::move(file_p), parent);
-    editor->m_encoding = fileStream.encoding();
-    editor->m_hasBom = fileStream.hasBom();
-    qDebug() << "encoding" << QStringConverter::nameForEncoding(editor->m_encoding);
-    /// file_p is nullptr now
-    fileStream.device()->close();
+//    /// Read synchronously in some circumstance (small files)?
+//    TextStream fileStream(file_p.get());
+//    fileStream.setEncoding(QStringConverter::Encoding::Utf8);
+//    fileStream.setAutoDetectUnicode(true);
+//    fileStream.setAutoDetectBom(true);
+//    fileStream.setValidateUtf(true); /// Does not really work for utf16
+////    fileStream.setValidateUtf(false); /// Does not detect latin and defaults to utf8
+//    fileStream.setValidateLatin(true);
+////    Editor* editor = new Editor(fileStream.readAll(), std::move(file_p), parent);
+//    /// For testing:
+//    /// Appending the string into the editor is very slow
+//    /// Takes a lot of RAM
+//    const QString str = fileStream.readAll();
+//    Editor* editor = new Editor(str, std::move(file_p), parent);
+//    editor->m_encoding = fileStream.encoding();
+//    editor->m_hasBom = fileStream.hasBom();
+//    qDebug() << "encoding" << QStringConverter::nameForEncoding(editor->m_encoding);
+//    /// file_p is nullptr now
+//    fileStream.device()->close();
+
+    /// Asynchronous, transfer the data via signals
+    TextStream* tStream = new TextStream(fileName);
+    tStream->setEncoding(QStringConverter::Encoding::Utf8);
+    tStream->setAutoDetectUnicode(true);
+    tStream->setAutoDetectBom(true);
+    tStream->setValidateUtf(true); /// Does not really work for utf16
+    tStream->setValidateLatin(true);
+
+    QThread* thread = new QThread();
+    /// Slots of tStream will be executed in the new thread's event loop
+    /// Must not call any tStream methods from the original thread
+    /// Do not give tStream a parent that lives in the main thread (Editor) "All QObjects must live in the same thread as their parent"
+    /// moveToThread is called before connect in Qt's example
+    if(const bool threadMoved = tStream->moveToThread(thread) == false)
+    {
+        qWarning() << "moveToThread failed";
+        Q_ASSERT(threadMoved);
+    }
+    /// Run readChunks as soon as the thread starts
+    connect(thread, &QThread::started, tStream, &TextStream::readChunks); /// AutoConnection?
+    /// Stop the thread's event loop when tStream is deleted
+    connect(tStream, &TextStream::destroyed, thread, &QThread::quit);
+    /// Delete the thread after it has finished
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
+
+    Editor* editor = new Editor(tStream, std::move(file_p), parent);
+
+    /// QThread enters it's own event loop here which executes until exit is called (or quit)
+    thread->start();
+
     return editor;
+}
+
+void Editor::onDataAvailable(const QString& dataChunk, const TextStream::MetaData& meta)
+{
+    if(meta.fileError)
+    {
+        qWarning() << "File error" << m_name;
+        return;
+    }
+    m_encoding = meta.encoding;
+    m_hasBom = meta.hasBom;
+    onDataAvailable(dataChunk, meta.done);
+}
+
+void Editor::onDataAvailable(const QString& dataChunk, bool done)
+{
+    /// Cancel operation maybe could be implemented to here, and "long operation" timer
+//    qDebug() << "onDataAvailable";
+
+//    QTextCursor userCursor = textCursor();
+//    int userPosition = userCursor.position();
+//    int userAnchor = userCursor.anchor();
+
+//    setUpdatesEnabled(false); /// Stops redrawing the text edit, but does not speed up the append process
+    setReadOnly(true);
+    blockSignals(true); /// En oo varma. PItäskö vikalla chunkilla olla enabled?
+    document()->blockSignals(true);
+    setUndoRedoEnabled(false);
+
+    QTextCursor cursor(document());
+    cursor.movePosition(QTextCursor::End); /// Ensure we are appending to the end
+    cursor.insertText(dataChunk); /// Sets modified flag
+
+    if(done)
+    {
+        /// 10000 = 5,3s
+        /// 20000 = 3,1s
+        /// 100000 = 1,4s
+
+//        /// Try to retrieve the user's wanted cursor position after the insert operations
+//        userCursor.setPosition(userAnchor, QTextCursor::MoveAnchor);
+//        userCursor.setPosition(userPosition, QTextCursor::KeepAnchor);
+//        setTextCursor(userCursor);
+        /// Jump the cursor to start
+        /// We would like that the cursor would be at the start of the file, but the viewport scrolling would stay where it is
+        /// document()->blockSignals(true) does not help
+        /// Workaround: Set the cursor to the top of the current viewport location
+        QTextCursor userCursor = textCursor();
+        userCursor.setPosition(firstVisibleBlock().position());
+        setTextCursor(userCursor);
+//        setFocus(); /// Tätä ei välttämättä
+
+        document()->setModified(false);
+        document()->blockSignals(false);
+        blockSignals(false);
+        setReadOnly(false);
+
+        /// Settings
+        setUndoRedoEnabled(true);
+
+        emit dataLoadingFinished();
+
+        /// Frees barely any memory though
+        m_textStream->deleteLater();
+        m_textStream.reset();
+    }
 }
 
 bool Editor::saveOrSaveAs()

@@ -1,6 +1,6 @@
 #include <QTest>
 #include <QFile>
-#include "utils/textstream.h"
+#include "utils/textstream.hpp"
 
 
 class Test_Encodings: public QObject
@@ -216,6 +216,7 @@ void Test_Encodings::validateUtf()
         QCOMPARE_NE(actual_str, expected_str);
     }
 
+    /// Validate latin
     {
         QFile f("testdata/test_utf8.txt");
         QVERIFY(f.open(QFile::ReadOnly));

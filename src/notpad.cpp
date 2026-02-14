@@ -290,6 +290,7 @@ bool NotPad::onTabCloseRequested(int index)
     return permission;
 }
 
+/// Note that when opening tabs, this fires first and the file loading in the tab finishes later
 void NotPad::onCurrentTabChanged(int index)
 {
     qDebug() << "onCurrentTabChanged" << index;
@@ -328,12 +329,14 @@ void NotPad::setupSignals()
         disconnect(m_prevEditor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
         disconnect(m_prevEditor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
         disconnect(m_prevEditor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged);
+//        disconnect(m_prevEditor, &Editor::dataLoadingFinished,   this, &NotPad::onLoadingFinished); /// Maybe this does not need to be disconnected (must ensure UniqueConnection is used then)
     }
     if(m_editor)
     {
         connect(m_editor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable, Qt::UniqueConnection);
         connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable, Qt::UniqueConnection);
         connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged,   Qt::UniqueConnection);
+        connect(m_editor, &Editor::dataLoadingFinished,   this, &NotPad::onLoadingFinished, Qt::UniqueConnection);
     }
 }
 
@@ -445,7 +448,10 @@ bool NotPad::openFile(const QString &fileName)
 {
     const auto status = m_tabManager->addTabFromFile(fileName);
     qDebug() << "openFile status" << static_cast<int>(status);
-    messageOpenStatus(status);
+    if(status != File::Status::SUCCESS_READ)
+    {
+        messageOpenStatus(status);
+    }
     return status == File::Status::SUCCESS_READ;
 }
 
@@ -700,7 +706,7 @@ void NotPad::on_actionOpen_triggered()
     QString start_path = SETTINGS.currentDir.absolutePath();
     QString name_filter = SETTINGS.currentNameFilter;
     /// If there is a tab open that has a saved file, use that file path and suffix
-    if(m_editor->file() != nullptr)
+    if(m_editor && m_editor->file() != nullptr)
     {
         const auto fi = QFileInfo(*m_editor->file());
         start_path = fi.absolutePath(); /// Path not including file name
@@ -899,5 +905,16 @@ void NotPad::onRedoAvailable(bool available)
 void NotPad::onTextChanged()
 {
 //    qDebug() << "onTextChanged" << sender();
+}
+
+void NotPad::onLoadingFinished()
+{
+    qDebug() << "onLoadingFinished" << sender();
+    const auto* editor = qobject_cast<Editor*>(sender());
+    if(editor)
+    {
+        statusBar()->showMessage(tr("Finished loading %1").arg(editor->name()), 2000);
+    }
+    setupStatusBar();
 }
 

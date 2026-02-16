@@ -84,7 +84,21 @@ QString TextStream::readAll()
 
     doValidations();
 
-    QString ret = QTextStream::readAll();
+    /// QTextStream::read(100000) seems to be more than 10x faster than QTextStream::readAll()
+    /// They both use a QTEXTSTREAM_BUFFERSIZE = 16384 for reading the raw data
+    /// They use a QString readBuffer for the parsed data
+    /// readBuffer += toUtf16 increases QString readBuffer size by QTEXTSTREAM_BUFFERSIZE leading to realloc
+    /// With readAll() readBuffer keeps growing until it can hold the whole file
+    /// It is unclear whether consecutive read() calls makes the readBuffer to shrink and inflate or if it stays the max of previous call
+    /// Maybe readAll is slower than read just because the realloc becomes more expensive as the string size grows
+    QString ret;
+//    const auto bav = device()->bytesAvailable();
+//    ret.reserve(bav); /// Might speed up a tiny bit. But this is already fast. And would need to add some logic for different utfs
+    static constexpr qint64 maxChunkSize = 100000;
+    while(!QTextStream::atEnd())
+    {
+        ret += QTextStream::read(maxChunkSize);
+    }
     device()->close();
     return ret;
 }

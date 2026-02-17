@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QThread>
+#include <QElapsedTimer>
 
 
 Editor::Editor(QWidget *parent)
@@ -50,9 +51,21 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
     /// We want contentsChange because only real edits should trigger it
     connect(document(), &QTextDocument::contentsChange, this, &Editor::onContentsChange);
 
-    connect(m_textStream.get(), &TextStream::dataAvailable,
-            this, qOverload<const QString&, const TextStream::MetaData&>(&Editor::onDataAvailable),
+    connect(m_textStream, &TextStream::dataQueued, this, &Editor::onDataQueued,
             Qt::QueuedConnection); /// QueuedConnection just to be sure (dataAvailable and onDataAvailable are supposed to run in different threads)
+}
+
+Editor::~Editor()
+{
+    m_textStream->quit();
+    bool finished = m_textStream->thread()->wait(1000);
+    qDebug() << "textStream thread finished:" << finished;
+    if(!finished)
+    {
+        qWarning() << m_name << "worker thread did not exit cleanly";
+        m_textStream->thread()->terminate();
+    }
+    /// m_textStream will be deleted by its thread's finished signal
 }
 
 /// static
@@ -109,50 +122,82 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
     connect(thread, &QThread::started, tStream, &TextStream::readChunks); /// AutoConnection?
     /// Stop the thread's event loop when tStream is deleted
     connect(tStream, &TextStream::destroyed, thread, &QThread::quit);
+    /// Delete tStream after its thread has finished
+    connect(thread, &QThread::finished, tStream, &QObject::deleteLater);
     /// Delete the thread after it has finished
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 
     Editor* editor = new Editor(tStream, std::move(file_p), parent);
 
-    /// QThread enters it's own event loop here which executes until exit is called (or quit)
+    /// QThread enters its own event loop here which executes until exit is called (or quit)
+    editor->m_start_t = std::chrono::high_resolution_clock::now(); /// DEBUG
     thread->start();
 
     return editor;
 }
 
-void Editor::onDataAvailable(const QString& dataChunk, const TextStream::MetaData& meta)
+void Editor::onDataQueued()
 {
-    if(meta.fileError)
+    QMutexLocker lock(m_textStream->queueMutex());
+
+    QElapsedTimer timer;
+    timer.start();
+
+    const auto meta = m_textStream->metaQueue().dequeue();
+    if(Q_UNLIKELY(meta.fileError))
     {
         qWarning() << "File error" << m_name;
         return;
     }
+
+    QString dataChunk = m_textStream->dataQueue().dequeue();
+    lock.unlock();
+
     m_encoding = meta.encoding;
     m_hasBom = meta.hasBom;
-    onDataAvailable(dataChunk, meta.done);
-}
 
-void Editor::onDataAvailable(const QString& dataChunk, bool done)
-{
-    /// Cancel operation maybe could be implemented to here, and "long operation" timer
-//    qDebug() << "onDataAvailable";
-
-//    QTextCursor userCursor = textCursor();
-//    int userPosition = userCursor.position();
-//    int userAnchor = userCursor.anchor();
-
-//    setUpdatesEnabled(false); /// Stops redrawing the text edit, but does not speed up the append process
     setReadOnly(true);
     blockSignals(true); /// En oo varma. PItäskö vikalla chunkilla olla enabled?
     document()->blockSignals(true);
     setUndoRedoEnabled(false);
 
     QTextCursor cursor(document());
+//    QTextCharFormat fmt = cursor.charFormat(); /// Nämä tehdään insertText:n sisällä
+//    fmt.clearProperty(QTextFormat::ObjectType);
     cursor.movePosition(QTextCursor::End); /// Ensure we are appending to the end
     cursor.insertText(dataChunk); /// Sets modified flag
+    document()->setModified(false);
 
-    if(done)
+    blockSignals(false);
+    emit dataLoadingUpdate(document()->characterCount()-1); /// Blocksignals must be false
+
+    /// Adapt the text insert amount to desired UI update rate
+    /// Insert largest possible blocks because it's faster, but without exceeding frame time
+    const qint64 elapsed = timer.elapsed();
+//    static constexpr qint64 FRAME_TIME_TARGET = 10; /// ~100 FPS Higher update rate impacts the total time but not a lot
+    static constexpr qint64 FRAME_TIME_TARGET = 17; /// ~60 FPS Feels quite smooth, though not 120Hz display smooth
+//    static constexpr qint64 FRAME_TIME_TARGET = 25; /// ~40 FPS
+
+    int batch_size = m_textStream->batchSize();
+    if(elapsed < FRAME_TIME_TARGET)
     {
+        batch_size += 5; /// Too small value here slightly slows down. Too big value does not give any benefit
+    }
+    else if(elapsed > FRAME_TIME_TARGET)
+    {
+        batch_size -= 2;
+    }
+    m_textStream->setBatchSize(batch_size);
+
+    m_textStream->decrementThrottle(lock);
+
+    /// This gets processed only when all the signals are processed, even if the data queue went empty way earlier
+    if(Q_UNLIKELY(meta.done))
+    {
+        m_end_t = std::chrono::high_resolution_clock::now(); /// DEBUG
+        qInfo() << "insertText DONE in" << std::chrono::duration_cast<std::chrono::milliseconds>(m_end_t-m_start_t).count();
+        qDebug() << "Final batchSize" << m_textStream->batchSize();
+
         /// 10000 = 5,3s
         /// 20000 = 3,1s
         /// 100000 = 1,4s
@@ -168,7 +213,7 @@ void Editor::onDataAvailable(const QString& dataChunk, bool done)
         QTextCursor userCursor = textCursor();
         userCursor.setPosition(firstVisibleBlock().position());
         setTextCursor(userCursor);
-//        setFocus(); /// Tätä ei välttämättä
+//        setFocus(); /// Not sure about this
 
         document()->setModified(false);
         document()->blockSignals(false);
@@ -179,10 +224,6 @@ void Editor::onDataAvailable(const QString& dataChunk, bool done)
         setUndoRedoEnabled(true);
 
         emit dataLoadingFinished();
-
-        /// Frees barely any memory though
-        m_textStream->deleteLater();
-        m_textStream.reset();
     }
 }
 

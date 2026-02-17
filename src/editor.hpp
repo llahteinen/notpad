@@ -17,7 +17,7 @@ public:
     explicit Editor(QWidget *parent = nullptr);
     Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent = nullptr);
     Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *parent = nullptr);
-    ~Editor() = default;
+    ~Editor();
     Editor(const Editor&) = delete;
     Editor& operator=(const Editor&) = delete;
 
@@ -48,12 +48,13 @@ public:
     Highlighter* highLighter;
 
 private slots:
-    void onDataAvailable(const QString& dataChunk, const TextStream::MetaData& meta);
-    void onDataAvailable(const QString& dataChunk, bool done);
+    void onDataQueued();
     void onContentsChange(int position, int charsRemoved, int charsAdded);
     void invalidateSearchResults();
 
 private:
+    std::chrono::high_resolution_clock::time_point m_start_t{}, m_end_t{}; /// DEBUG
+
     /// \param sterm Search term, can be regexp
     /// \param flags Find options
     /// \return -1 on errors, -2 on overflow, otherwise number of matches in the document
@@ -63,7 +64,7 @@ private:
     QList<QTextCursor> findAll(const QString& sterm, QTextDocument::FindFlags flags);
 
     QString m_name;
-    QScopedPointer<TextStream, QScopedPointerDeleteLater> m_textStream; /// Automatically calls deleteLater instead of delete
+    TextStream* m_textStream; /// This object's thread finished signal connects to deleteLater
     std::unique_ptr<QFile> m_file;
     QStringConverter::Encoding m_encoding;
     bool m_hasBom;
@@ -77,6 +78,7 @@ private:
 
 signals:
     void nameChanged(const QString& new_name);
+    void dataLoadingUpdate(int progress);
     void dataLoadingFinished();
 };
 

@@ -337,6 +337,7 @@ void NotPad::setupSignals()
         connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable, Qt::UniqueConnection);
         connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged,   Qt::UniqueConnection);
         connect(m_editor, &Editor::dataLoadingFinished,   this, &NotPad::onLoadingFinished, Qt::UniqueConnection);
+        connect(m_editor, &Editor::dataLoadingUpdate,     this, &NotPad::onLoadingUpdate, Qt::UniqueConnection);
     }
 }
 
@@ -905,6 +906,12 @@ void NotPad::onRedoAvailable(bool available)
 void NotPad::onTextChanged()
 {
 //    qDebug() << "onTextChanged" << sender();
+}
+
+void NotPad::onLoadingUpdate(int progress)
+{
+//    qDebug() << "onLoadingUpdate";
+    statusBar()->showMessage(tr("Loading %1").arg(progress), 2000);
 }
 
 void NotPad::onLoadingFinished()

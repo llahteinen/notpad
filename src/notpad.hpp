@@ -75,6 +75,7 @@ private slots:
     void onUndoAvailable(bool available);
     void onRedoAvailable(bool available);
     void onTextChanged();
+    void onLoadingUpdate(int progress);
     void onLoadingFinished();
     void onCurrentTabChanged(int index);
     bool onTabCloseRequested(int index);

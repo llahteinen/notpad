@@ -1,5 +1,6 @@
 #include <QTest>
 #include "utils/textstream.hpp"
+#include <QElapsedTimer>
 #include <QPlainTextEdit>
 #include <QThreadPool>
 
@@ -14,6 +15,7 @@ class Test_TextStream: public QObject
     quint64 signal_counter = 0;
     bool finished = false;
     const quint64 filesize10MB = 10 * 1024 * 1024;
+    TextStream* m_tStream{};
 
 private slots:
 
@@ -53,6 +55,7 @@ private slots:
         finished = false;
         start_t = std::chrono::high_resolution_clock::now();
         end_t = start_t;
+        m_tStream = nullptr;
     }
 
     void detections();
@@ -71,9 +74,12 @@ private slots:
 /// Test that the bom and encoding etc detections work with the signal-slot read
 void Test_TextStream::detections()
 {
-    auto onDataAvailable{[&](const QString& dataChunk, const TextStream::MetaData& meta) {
+    auto onDataQueued{[&]() {
         signal_counter++;
-        data_rec += dataChunk.size();
+        QMutexLocker lock(m_tStream->queueMutex());
+        data_rec += m_tStream->dataQueue().dequeue().size();
+        const auto meta = m_tStream->metaQueue().dequeue();
+        lock.unlock();
         if(meta.done)
         {
             end_t = std::chrono::high_resolution_clock::now();
@@ -89,7 +95,9 @@ void Test_TextStream::detections()
         }
 
         QScopedPointer<TextStream, QScopedPointerDeleteLater> tStream{new TextStream(fileName)};
-        connect(tStream.get(), &TextStream::dataAvailable, this, onDataAvailable);
+        m_tStream = tStream.get();
+        tStream->setThrottlingEnabled(false);
+        connect(tStream.get(), &TextStream::dataQueued, this, onDataQueued);
 
         tStream->setEncoding(QStringConverter::Encoding::Utf8);
         tStream->setAutoDetectUnicode(true);
@@ -117,7 +125,8 @@ void Test_TextStream::detections()
         }
 
         QScopedPointer<TextStream, QScopedPointerDeleteLater> tStream{new TextStream(fileName)};
-        connect(tStream.get(), &TextStream::dataAvailable, this, onDataAvailable);
+        m_tStream = tStream.get();
+        connect(tStream.get(), &TextStream::dataQueued, this, onDataQueued);
 
         tStream->setEncoding(QStringConverter::Encoding::Utf8);
         tStream->setAutoDetectUnicode(true);
@@ -145,7 +154,8 @@ void Test_TextStream::detections()
         }
 
         QScopedPointer<TextStream, QScopedPointerDeleteLater> tStream{new TextStream(fileName)};
-        connect(tStream.get(), &TextStream::dataAvailable, this, onDataAvailable);
+        m_tStream = tStream.get();
+        connect(tStream.get(), &TextStream::dataQueued, this, onDataQueued);
 
         tStream->setEncoding(QStringConverter::Encoding::Utf8);
         tStream->setAutoDetectUnicode(true);
@@ -171,9 +181,14 @@ void Test_TextStream::detections()
     auto hasBom = false;
     TextStream::EncodingError hasUtfError{TextStream::EncodingError::UNAVAILABLE};
     TextStream::EncodingError hasLatinError{TextStream::EncodingError::UNAVAILABLE};
-    auto onDataAvailableA{[&](const QString& dataChunk, const TextStream::MetaData& meta) {
+    auto onDataQueuedA{[&]() {
         signal_counter++;
-        data_rec += dataChunk.size();
+
+        QMutexLocker lock(m_tStream->queueMutex());
+        data_rec += m_tStream->dataQueue().dequeue().size();
+        const auto meta = m_tStream->metaQueue().dequeue();
+        lock.unlock();
+
         encoding = meta.encoding;
         hasBom = meta.hasBom;
         hasUtfError = meta.hasUtfError;
@@ -196,8 +211,9 @@ void Test_TextStream::detections()
         QVERIFY(file.open(QFile::ReadOnly));
 
         QScopedPointer<TextStream, QScopedPointerDeleteLater> tStream{new TextStream(fileName)};
+        m_tStream = tStream.get();
 
-        connect(tStream.get(), &TextStream::dataAvailable, this, onDataAvailableA); /// QueuedConnection?
+        connect(tStream.get(), &TextStream::dataQueued, this, onDataQueuedA);
 
         tStream->setEncoding(QStringConverter::Encoding::Utf8);
         tStream->setAutoDetectUnicode(true);
@@ -221,9 +237,16 @@ void Test_TextStream::readSpeed()
 {
     auto thisThreadId = QThread::currentThreadId();
     Qt::HANDLE otherThreadId{};
-    auto onDataAvailable{[&](const QString& dataChunk, const TextStream::MetaData& meta) {
+    auto onDataQueued{[&]() {
         signal_counter++;
-        data_rec += dataChunk.size();
+
+        QMutexLocker lock(m_tStream->queueMutex());
+        data_rec += m_tStream->dataQueue().dequeue().size();
+        const auto meta = m_tStream->metaQueue().dequeue();
+
+        m_tStream->decrementThrottle(lock);
+        lock.unlock();
+
         if(meta.done)
         {
             end_t = std::chrono::high_resolution_clock::now();
@@ -240,12 +263,15 @@ void Test_TextStream::readSpeed()
     }
 
     QScopedPointer<TextStream, QScopedPointerDeleteLater> tStream{new TextStream(fileName)};
+    m_tStream = tStream.get();
+    tStream->setThrottlingEnabled(true);
+
     QThread* thread = new QThread();
     QVERIFY(tStream->moveToThread(thread));
     connect(thread, &QThread::started, tStream.get(), &TextStream::readChunks);
     connect(tStream.get(), &TextStream::destroyed, thread, &QThread::quit);
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-    connect(tStream.get(), &TextStream::dataAvailable, this, onDataAvailable, Qt::DirectConnection);
+    connect(tStream.get(), &TextStream::dataQueued, this, onDataQueued, Qt::DirectConnection);
     start_t = std::chrono::high_resolution_clock::now();
     thread->start();
 
@@ -256,6 +282,8 @@ void Test_TextStream::readSpeed()
     }
     qInfo() << "DONE in" << std::chrono::duration_cast<std::chrono::milliseconds>(end_t-start_t).count() << "ms";
 
+    QVERIFY(thisThreadId);
+    QVERIFY(otherThreadId);
     QCOMPARE_NE(otherThreadId, thisThreadId);
     QCOMPARE_GE((end_t-start_t).count(), 0);
     QCOMPARE_GT(signal_counter, 0);
@@ -285,10 +313,19 @@ void Test_TextStream::readSpeed_readAll()
 void Test_TextStream::appendSpeed()
 {
     QString testData;
-    auto onDataAvailable{[&](const QString& dataChunk, const TextStream::MetaData& meta) {
+    auto onDataQueued{[&]() {
         signal_counter++;
-        data_rec += dataChunk.size();
+
+        QMutexLocker lock(m_tStream->queueMutex());
+        const auto meta = m_tStream->metaQueue().dequeue();
+        QString dataChunk = m_tStream->dataQueue().dequeue();
+        lock.unlock();
+
         testData.append(dataChunk);
+        data_rec += dataChunk.size();
+
+        m_tStream->decrementThrottle();
+
         if(meta.done)
         {
             end_t = std::chrono::high_resolution_clock::now();
@@ -296,7 +333,7 @@ void Test_TextStream::appendSpeed()
         }
     }};
 
-    const auto filesize = filesize10MB;
+    auto filesize = filesize10MB;
     QString fileName = "testdata/10MB.txt";
     {
         QFile file(fileName);
@@ -304,12 +341,15 @@ void Test_TextStream::appendSpeed()
     }
 
     QScopedPointer<TextStream, QScopedPointerDeleteLater> tStream{new TextStream(fileName)};
+    m_tStream = tStream.get();
+    tStream->setThrottlingEnabled(false);
+
     QThread* thread = new QThread();
     tStream->moveToThread(thread);
     connect(thread, &QThread::started, tStream.get(), &TextStream::readChunks);
     connect(tStream.get(), &TextStream::destroyed, thread, &QThread::quit);
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-    connect(tStream.get(), &TextStream::dataAvailable, this, onDataAvailable);
+    connect(tStream.get(), &TextStream::dataQueued, this, onDataQueued);
     start_t = std::chrono::high_resolution_clock::now();
     thread->start();
 
@@ -404,12 +444,44 @@ void Test_TextStream::readAndAppendSpeed()
 
     QPlainTextEdit editor;
 
-    auto onDataAvailable{[&](const QString& dataChunk, const TextStream::MetaData& meta) {
+    auto onDataQueued{[&]() {
         signal_counter++;
-        data_rec += dataChunk.size();
+
+        QMutexLocker lock(m_tStream->queueMutex());
+
+        QElapsedTimer timer;
+        timer.start();
+
+        const auto meta = m_tStream->metaQueue().dequeue();
+        QString dataChunk = m_tStream->dataQueue().dequeue();
+        lock.unlock();
+
         QTextCursor cursor(editor.document());
         cursor.movePosition(QTextCursor::End);
         cursor.insertText(dataChunk);
+
+        const qint64 elapsed = timer.elapsed();
+//        static constexpr qint64 FRAME_TIME_TARGET = 10; /// ~100 FPS
+        static constexpr qint64 FRAME_TIME_TARGET = 17; /// ~60 FPS Higher update rate impacts the total time but not a lot
+//        static constexpr qint64 FRAME_TIME_TARGET= 25; /// ~40 FPS
+//        static constexpr qint64 FRAME_TIME_TARGET= 1000;
+        int batch_size = m_tStream->batchSize();
+        if(elapsed < FRAME_TIME_TARGET)
+        {
+            batch_size += 5;
+        }
+        else
+        {
+            batch_size -= 2;
+        }
+//        qInfo() << batch_size;
+        m_tStream->setBatchSize(batch_size);
+//        qInfo() << m_tStream->batchSize();
+
+        m_tStream->decrementThrottle();
+
+        data_rec += dataChunk.size();
+
         if(meta.done)
         {
             end_t = std::chrono::high_resolution_clock::now();
@@ -418,12 +490,13 @@ void Test_TextStream::readAndAppendSpeed()
     }};
 
     QScopedPointer<TextStream, QScopedPointerDeleteLater> tStream{new TextStream(fileName)};
+    m_tStream = tStream.get();
     QThread* thread = new QThread();
     tStream->moveToThread(thread);
     connect(thread, &QThread::started, tStream.get(), &TextStream::readChunks);
     connect(tStream.get(), &TextStream::destroyed, thread, &QThread::quit);
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-    connect(tStream.get(), &TextStream::dataAvailable, this, onDataAvailable);
+    connect(tStream.get(), &TextStream::dataQueued, this, onDataQueued);
 
     /// Measure total time of concurrent read file and append to QPlainTextEdit
     start_t = std::chrono::high_resolution_clock::now();
@@ -435,6 +508,8 @@ void Test_TextStream::readAndAppendSpeed()
         qDebug() << "Timed out";
     }
     qInfo() << "DONE in" << std::chrono::duration_cast<std::chrono::milliseconds>(end_t-start_t).count() << "ms";
+
+    qInfo() << "Final batchSize" << m_tStream->batchSize();
 
     QCOMPARE_GE((end_t-start_t).count(), 0);
     QCOMPARE_GT(signal_counter, 0);
@@ -452,12 +527,21 @@ void Test_TextStream::readWithThreadPool()
 
     QPlainTextEdit editor;
 
-    auto onDataAvailable{[&](const QString& dataChunk, const TextStream::MetaData& meta) {
+    auto onDataQueued{[&]() {
         signal_counter++;
+
+        QMutexLocker lock(m_tStream->queueMutex());
+        const auto meta = m_tStream->metaQueue().dequeue();
+        QString dataChunk = m_tStream->dataQueue().dequeue();
+        lock.unlock();
+
         data_rec += dataChunk.size();
         QTextCursor cursor(editor.document());
         cursor.movePosition(QTextCursor::End);
         cursor.insertText(dataChunk);
+
+        m_tStream->decrementThrottle();
+
         if(meta.done)
         {
             end_t = std::chrono::high_resolution_clock::now();
@@ -467,20 +551,26 @@ void Test_TextStream::readWithThreadPool()
 
     /// Crash if qWaitFor goes straight thru (if finished = true early)
     QScopedPointer<TextStream, QScopedPointerDeleteLater> tStream{new TextStream(fileName)};
-    connect(tStream.get(), &TextStream::dataAvailable, this, onDataAvailable);
+    m_tStream = tStream.get();
+    connect(tStream.get(), &TextStream::dataQueued, this, onDataQueued);
 
     /// Measure total time of concurrent read file and append to QPlainTextEdit
     start_t = std::chrono::high_resolution_clock::now();
     QThreadPool::globalInstance()->start([&tStream]{tStream->readChunks();}); /// Tämäkin toimii kyllä.
 
     auto timeout = 10000ms;
-//    finished=true; /// You can cause a crash with this
-    /// Don't know how the threadpool lifetime should be managed
     if(!QTest::qWaitFor([&]{return finished;}, timeout))
     {
         qDebug() << "Timed out";
     }
+
+    /// Don't call TextStream::quit() because it assumes it's running in its own thread
+//    QMutexLocker lock(m_tStream->queueMutex());
+//    m_tStream->m_quitCalled = true;
+//    lock.unlock();
+//    m_tStream->m_dataWait.notify_all();
     qInfo() << "DONE in" << std::chrono::duration_cast<std::chrono::milliseconds>(end_t-start_t).count() << "ms";
+    QThreadPool::globalInstance()->waitForDone(1000);
 
     QCOMPARE_GE((end_t-start_t).count(), 0);
     QCOMPARE_GT(signal_counter, 0);

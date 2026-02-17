@@ -2,6 +2,7 @@
 #include "file.hpp"
 #include <QIODevice>
 #include <QFileInfo>
+#include <QThread>
 #include <QDebug>
 
 
@@ -94,7 +95,6 @@ QString TextStream::readAll()
     QString ret;
 //    const auto bav = device()->bytesAvailable();
 //    ret.reserve(bav); /// Might speed up a tiny bit. But this is already fast. And would need to add some logic for different utfs
-    static constexpr qint64 maxChunkSize = 100000;
     while(!QTextStream::atEnd())
     {
         ret += QTextStream::read(maxChunkSize);
@@ -114,15 +114,13 @@ void TextStream::readChunks()
         qDebug() << "readChunks openFile not successful";
         meta.fileError = true;
         meta.done = true;
-        emit dataAvailable({}, meta);
+        emit dataQueued();
         return;
     }
     qDebug() << "bytesAvailable" << device()->bytesAvailable();
 
     doValidations();
 
-    /// 20000 is very roughly a full screen amount of text on a normal font
-    static constexpr qint64 maxChunkSize = 100000;
     QString data;
 //    data.reserve(maxChunkSize); /// Does not seem to affect speed in meaningful way
     while(!QTextStream::atEnd())
@@ -131,19 +129,42 @@ void TextStream::readChunks()
         /// It also reallocates readBuffer every read of QTEXTSTREAM_BUFFERSIZE
         /// Then it seems to resize it down again when returning, calls readBuffer.remove, which shouldn't free the memory though
         /// Both use roughly same amount of ram
-        data = QTextStream::read(maxChunkSize);
+        Q_ASSERT(m_batchSize > 0);
+        Q_ASSERT(m_batchSize <= maxBatchSize);
+        data = QTextStream::read(m_batchSize * maxChunkSize);
         meta.encoding = encoding(); /// encoding might be updated in QTextStream::read()
         meta.hasBom = m_hasBom;
         meta.hasUtfError = m_hasUtfError;
         meta.hasLatinError = m_hasLatinError;
         meta.done = QTextStream::atEnd();
-        emit dataAvailable(data, meta);
-//        QThread::msleep(5); /// This allows UI to update, not overwhelming event queue
+
+        /// This is for allowing cpu time for the main thread to do GUI updates
+        QMutexLocker lock(&m_dataMutex);
+        while(m_updateThrottle > 0 && m_throttlingEnabled && !m_quitCalled)
+        {
+            m_dataWait.wait(lock.mutex(), 100); /// milliseconds or until notified
+        }
+        if(m_quitCalled)
+        {
+            break;
+        }
+        m_metaQueue.enqueue(meta);
+        m_dataQueue.enqueue(data);
+        m_updateThrottle++;
+        lock.unlock();
+        emit dataQueued();
     }
 
     /// Is this called in case of exceptions?
     device()->close();
 }
+
+void TextStream::quit()
+{
+    m_quitCalled = true;
+    m_dataWait.notify_all();
+    thread()->quit();
+};
 
 void TextStream::setAutoDetectBom(bool enabled)
 {
@@ -174,6 +195,27 @@ TextStream::EncodingError TextStream::hasLatinError() const
 {
     return m_hasLatinError;
 }
+
+void TextStream::decrementThrottle()
+{
+    QMutexLocker lock(&m_dataMutex);
+    m_updateThrottle--;
+    lock.unlock();
+    m_dataWait.notify_one();
+};
+void TextStream::decrementThrottle(QMutexLocker<QMutex>& lock)
+{
+    if(Q_UNLIKELY(lock.isLocked()))
+    {
+        m_updateThrottle--;
+        m_dataWait.notify_one();
+        return;
+    }
+    lock.relock();
+    m_updateThrottle--;
+    lock.unlock();
+    m_dataWait.notify_one();
+};
 
 #if 0
 /// From qstringconverter.cpp

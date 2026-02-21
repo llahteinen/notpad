@@ -4,6 +4,9 @@
 #include <QPlainTextEdit>
 #include <QThreadPool>
 
+using namespace std::chrono_literals;
+
+
 class Test_TextStream: public QObject
 {
     Q_OBJECT
@@ -58,7 +61,9 @@ private slots:
         m_tStream = nullptr;
     }
 
+    void speeeeeeeeeeeeeeed();
     void detections();
+    void invalidFile();
     void readSpeed();
     void readSpeed_readAll();
     void appendSpeed();
@@ -69,7 +74,51 @@ private slots:
     {
         qDebug("cleanupTestCase");
     }
+
+private:
+    void timerNow(std::chrono::high_resolution_clock::time_point& t)
+    {
+        t = std::chrono::high_resolution_clock::now();
+    }
 };
+
+void Test_TextStream::speeeeeeeeeeeeeeed()
+{
+    QString fileName = "testdata/test_utf8.txt";
+    QFile file(fileName);
+    QVERIFY(file.open(QFile::ReadOnly));
+    const auto ba = file.read(filesize10MB);
+    const auto str = QString::fromUtf8(ba);
+
+    QTextDocument doc1;
+    QTextDocument doc2;
+    const int iters = 2000;
+
+    timerNow(start_t);
+    for(int i = 0; i < iters; i++)
+    {
+        QTextCursor cursor(&doc1);
+        cursor.movePosition(QTextCursor::End);
+        cursor.insertText(str);
+    }
+    timerNow(end_t);
+
+    QTextCursor cursor(&doc2);
+    QTextCharFormat fmt = cursor.charFormat();
+    timerNow(start_t2);
+    for(int i = 0; i < iters; i++)
+    {
+        fmt.clearProperty(QTextFormat::ObjectType);
+        cursor.movePosition(QTextCursor::End);
+        cursor.insertText(str, fmt);
+    }
+    timerNow(end_t2);
+    const auto ms1 = std::chrono::duration_cast<std::chrono::milliseconds>(end_t-start_t).count();
+    const auto ms2 = std::chrono::duration_cast<std::chrono::milliseconds>(end_t2-start_t2).count();
+    qInfo() << "DONE1 in" << ms1 << "ms";
+    qInfo() << "DONE2 in" << ms2 << "ms";
+    qInfo() << "1 % of 2" << static_cast<double>(ms1) / ms2 * 100.0;
+}
 
 /// Test that the bom and encoding etc detections work with the signal-slot read
 void Test_TextStream::detections()
@@ -231,8 +280,65 @@ void Test_TextStream::detections()
     }
 }
 
+void Test_TextStream::invalidFile()
+{
+    bool error_logged = false;
+    auto onDataQueued{[&]() {
+        signal_counter++;
+
+        QMutexLocker lock(m_tStream->queueMutex());
+
+        QCOMPARE(m_tStream->dataQueue().size(), 1);
+        data_rec += m_tStream->dataQueue().dequeue().size();
+
+        QCOMPARE(m_tStream->metaQueue().size(), 1);
+        const auto meta = m_tStream->metaQueue().dequeue();
+        if(meta.fileError)
+        {
+            error_logged = true;
+            end_t = std::chrono::high_resolution_clock::now();
+            finished = true;
+            return;
+        }
+
+        m_tStream->decrementThrottle(lock);
+        lock.unlock();
+
+        if(meta.done)
+        {
+            end_t = std::chrono::high_resolution_clock::now();
+            finished = true;
+        }
+    }};
+
+    QString fileName = "testdata/does_not_exist.txt";
+
+    QScopedPointer<TextStream, QScopedPointerDeleteLater> tStream{new TextStream(fileName)};
+    m_tStream = tStream.get();
+
+    QThread* thread = new QThread();
+    QVERIFY(tStream->moveToThread(thread));
+    connect(thread, &QThread::started, tStream.get(), &TextStream::readChunks);
+    connect(tStream.get(), &TextStream::destroyed, thread, &QThread::quit);
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
+    connect(tStream.get(), &TextStream::dataQueued, this, onDataQueued, Qt::DirectConnection);
+    start_t = std::chrono::high_resolution_clock::now();
+    thread->start();
+
+    const auto timeout = 2000ms;
+    if(!QTest::qWaitFor([&]{return finished;}, timeout))
+    {
+        qCritical() << "Timed out";
+    }
+    qInfo() << "DONE in" << std::chrono::duration_cast<std::chrono::milliseconds>(end_t-start_t).count() << "ms";
+
+    QCOMPARE_GE((end_t-start_t).count(), 0);
+    QCOMPARE_LE(std::chrono::duration_cast<std::chrono::milliseconds>(end_t-start_t).count(), timeout.count());
+    QCOMPARE(signal_counter, 1);
+    QCOMPARE(data_rec, 0);
+}
+
 /// These tests don't assert test all that much, but they are used for testing speed of implementations
-using namespace std::chrono_literals;
 void Test_TextStream::readSpeed()
 {
     auto thisThreadId = QThread::currentThreadId();

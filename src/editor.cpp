@@ -20,6 +20,7 @@ Editor::Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *pare
     , m_file{std::move(file_p)}
     , m_encoding{QStringConverter::Utf8}
     , m_hasBom{false}
+    , m_format{}
     , m_search{}
 {
     if(m_file)
@@ -40,6 +41,7 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
     , m_file{std::move(file_p)}
     , m_encoding{QStringConverter::Utf8}
     , m_hasBom{false}
+    , m_format{}
     , m_search{}
 {
     if(m_file)
@@ -140,32 +142,41 @@ void Editor::onDataQueued()
 {
     QMutexLocker lock(m_textStream->queueMutex());
 
+    Q_ASSERT(!m_textStream->metaQueue().isEmpty());
+    Q_ASSERT(!m_textStream->dataQueue().isEmpty());
+
     QElapsedTimer timer;
     timer.start();
 
-    const auto meta = m_textStream->metaQueue().dequeue();
+    const auto [meta, dataChunk] = m_textStream->dequeue();
+
+    /// This should never happen, checks should've been done for file many times already
     if(Q_UNLIKELY(meta.fileError))
     {
         qWarning() << "File error" << m_name;
         return;
     }
 
-    QString dataChunk = m_textStream->dataQueue().dequeue();
     lock.unlock();
 
-    m_encoding = meta.encoding;
-    m_hasBom = meta.hasBom;
-
-    setReadOnly(true);
-    blockSignals(true); /// En oo varma. PItäskö vikalla chunkilla olla enabled?
-    document()->blockSignals(true);
-    setUndoRedoEnabled(false);
-
     QTextCursor cursor(document());
-//    QTextCharFormat fmt = cursor.charFormat(); /// Nämä tehdään insertText:n sisällä
-//    fmt.clearProperty(QTextFormat::ObjectType);
+
+    if(Q_UNLIKELY(meta.first))
+    {
+        m_encoding = meta.encoding;
+        m_hasBom = meta.hasBom;
+
+        setReadOnly(true);
+        blockSignals(true); /// Not 100% sure, should we set the signals enabled on the last iteration?
+        document()->blockSignals(true);
+        setUndoRedoEnabled(false);
+
+        /// Small optimization because QTextCursor::insertText(const QString &text) copies the format on every call
+        m_format = cursor.charFormat();
+    }
+
     cursor.movePosition(QTextCursor::End); /// Ensure we are appending to the end
-    cursor.insertText(dataChunk); /// Sets modified flag
+    cursor.insertText(dataChunk, m_format); /// Sets modified flag to true
     document()->setModified(false);
 
     blockSignals(false);
@@ -178,17 +189,17 @@ void Editor::onDataQueued()
     static constexpr qint64 FRAME_TIME_TARGET = 17; /// ~60 FPS Feels quite smooth, though not 120Hz display smooth
 //    static constexpr qint64 FRAME_TIME_TARGET = 25; /// ~40 FPS
 
-    int batch_size = m_textStream->batchSize();
     if(elapsed < FRAME_TIME_TARGET)
     {
-        batch_size += 5; /// Too small value here slightly slows down. Too big value does not give any benefit
+        /// Too small value here slightly slows down. Too big value does not give any benefit
+        m_textStream->setBatchSize(m_textStream->batchSize() + 5);
     }
     else if(elapsed > FRAME_TIME_TARGET)
     {
-        batch_size -= 2;
+        m_textStream->setBatchSize(m_textStream->batchSize() - 2);
     }
-    m_textStream->setBatchSize(batch_size);
 
+    /// Notify that we are ready to receive more data in gui thread
     m_textStream->decrementThrottle(lock);
 
     /// This gets processed only when all the signals are processed, even if the data queue went empty way earlier

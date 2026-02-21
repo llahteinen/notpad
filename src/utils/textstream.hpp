@@ -23,8 +23,6 @@ public:
     explicit TextStream(QFileDevice* device);
     explicit TextStream(const QString& fileName); /// Use with readChunks
 
-    QString readAll();
-
     void setAutoDetectBom(bool enabled);
     bool hasBom() const;
 
@@ -41,13 +39,19 @@ public:
         bool hasBom{false};
         EncodingError hasUtfError{EncodingError::UNAVAILABLE};
         EncodingError hasLatinError{EncodingError::UNAVAILABLE};
+        bool first{false};
         bool done{false};
     };
 
+    /// \brief dequeue Get both meta and data items as a pair
+    std::pair<MetaData, QString> dequeue() { return { m_metaQueue.dequeue(), m_dataQueue.dequeue() }; };
+
     /// \brief metaQueue Contains metadata for the data produced by readChunks()
     QQueue<MetaData>& metaQueue() { return m_metaQueue; };
+
     /// \brief dataQueue Contains the data produced by readChunks()
     QQueue<QString>& dataQueue() { return m_dataQueue; };
+
     /// \brief queueMutex Protects metaQueue and dataQueue. Lock this before accessing them.
     QMutex* queueMutex() { return &m_dataMutex; };
 
@@ -68,7 +72,10 @@ public:
     void decrementThrottle(QMutexLocker<QMutex>& lock);
 
 public slots:
-    /// \brief readChunks Opens a file with m_file, reads it and emits dataQueued periodically until the whole file is read
+    QString readAll();
+
+    /// \brief readChunks Opens a file with m_file, reads it, queues data and metadata, and emits dataQueued periodically until the whole file is read.
+    /// If there is error opening the file, dataQueued will be emitted regardless and MetaData will have fileError flag set.
     void readChunks();
 
     void quit();

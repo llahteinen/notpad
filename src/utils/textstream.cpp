@@ -77,6 +77,7 @@ void TextStream::doValidations()
 /// because setDevice() here will reset parameters such as autodetectUnicode
 QString TextStream::readAll()
 {
+    Q_ASSERT(device());
     if(File::openFile(m_file, m_file.fileName()) != File::Status::SUCCESS_READ)
     {
         qDebug() << "readAll openFile not successful";
@@ -107,13 +108,24 @@ QString TextStream::readAll()
 /// because setDevice() here will reset parameters such as autodetectUnicode
 void TextStream::readChunks()
 {
-    MetaData meta;
+//    qDebug() << "readChunks" << QThread::currentThreadId();
+    Q_ASSERT(device());
 
+    m_metaQueue.clear();
+    m_dataQueue.clear();
+
+    MetaData meta;
     if(File::openFile(m_file, m_file.fileName()) != File::Status::SUCCESS_READ)
     {
         qDebug() << "readChunks openFile not successful";
         meta.fileError = true;
         meta.done = true;
+
+        {
+            QMutexLocker lock(&m_dataMutex);
+            m_metaQueue.enqueue(meta);
+            m_dataQueue.enqueue({});
+        }
         emit dataQueued();
         return;
     }
@@ -122,20 +134,24 @@ void TextStream::readChunks()
     doValidations();
 
     QString data;
+    bool first = true;
 //    data.reserve(maxChunkSize); /// Does not seem to affect speed in meaningful way
     while(!QTextStream::atEnd())
     {
+        Q_ASSERT(m_batchSize > 0);
+        Q_ASSERT(m_batchSize <= maxBatchSize);
+
         /// Seems like this is extremely faster than QTextStream::readAll()
         /// It also reallocates readBuffer every read of QTEXTSTREAM_BUFFERSIZE
         /// Then it seems to resize it down again when returning, calls readBuffer.remove, which shouldn't free the memory though
         /// Both use roughly same amount of ram
-        Q_ASSERT(m_batchSize > 0);
-        Q_ASSERT(m_batchSize <= maxBatchSize);
         data = QTextStream::read(m_batchSize * maxChunkSize);
+
         meta.encoding = encoding(); /// encoding might be updated in QTextStream::read()
         meta.hasBom = m_hasBom;
         meta.hasUtfError = m_hasUtfError;
         meta.hasLatinError = m_hasLatinError;
+        meta.first = first;
         meta.done = QTextStream::atEnd();
 
         /// This is for allowing cpu time for the main thread to do GUI updates
@@ -153,6 +169,8 @@ void TextStream::readChunks()
         m_updateThrottle++;
         lock.unlock();
         emit dataQueued();
+
+        first = false;
     }
 
     /// Is this called in case of exceptions?

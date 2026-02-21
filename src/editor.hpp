@@ -69,6 +69,8 @@ private:
     QStringConverter::Encoding m_encoding;
     bool m_hasBom;
 
+    QTextCharFormat m_format;
+
     struct Search
     {
         qsizetype matchCount{-1};   /// qsizetype is signed

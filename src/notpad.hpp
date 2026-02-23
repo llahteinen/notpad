@@ -79,6 +79,8 @@ private slots:
     void onLoadingFinished();
     void onCurrentTabChanged(int index);
     bool onTabCloseRequested(int index);
+    void onFindResultFound(Editor* editor, QTextCursor result);
+    void onMatchCountFinished(Editor* editor, qsizetype count);
 
     /// Automatically connected slots
     /// MENU ================================
@@ -119,6 +121,10 @@ private:
     Editor* m_prevEditor;   //!< Editor that was selected before the current one
 
     QStringList m_argumentFiles;
+
+signals:
+    void findResultFound(Editor* editor, QTextCursor result);
+    void matchCountFinished(Editor* editor, qsizetype count);
 
 };
 

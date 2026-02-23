@@ -11,6 +11,8 @@
 #include <QFileDialog>
 #include <QCloseEvent>
 #include <QSettings>
+#include <QThreadPool>
+#include <QFuture>
 
 
 
@@ -38,6 +40,11 @@ NotPad::NotPad(QWidget *parent)
 
     connect(m_tabManager, &TabManager::currentChanged, this, &NotPad::onCurrentTabChanged);
     connect(m_tabManager, &TabManager::tabCloseRequested, this, &NotPad::onTabCloseRequested);
+
+    connect(this, &NotPad::findResultFound, this, &NotPad::onFindResultFound);
+    connect(this, &NotPad::matchCountFinished, this, &NotPad::onMatchCountFinished);
+
+    QThreadPool::globalInstance()->setThreadPriority(QThread::HighPriority);
 
     QString project_name{PROJECT_NAME};
 #if defined(QT_DEBUG)
@@ -82,7 +89,18 @@ NotPad::NotPad(QWidget *parent)
 
 NotPad::~NotPad()
 {
+    if(!QThreadPool::globalInstance()->waitForDone(1000))
+    {
+        qWarning() << "ThreadPool was not finished";
+    }
+
     delete ui;
+
+    if(!QThreadPool::globalInstance()->waitForDone(1000))
+    {
+        /// Abort
+        qFatal() << "ThreadPool was still not finished, crashing...";
+    }
 }
 
 void NotPad::closeEvent(QCloseEvent* event)
@@ -768,12 +786,38 @@ void NotPad::on_find_findPrevButton_clicked()
     find(QTextDocument::FindFlag::FindBackward);
 }
 
+void NotPad::onFindResultFound(Editor* editor, QTextCursor result)
+{
+    if(!editor || editor != m_editor)
+    {
+        /// Weird situation
+        return;
+    }
+    editor->setTextCursor(result);
+}
+
+void NotPad::onMatchCountFinished(Editor* editor, qsizetype count)
+{
+    if(!editor || editor != m_editor)
+    {
+        /// Weird situation
+        return;
+    }
+
+    qInfo() << "Matches count" << count;
+    statusBar()->showMessage(tr("%1 matches").arg(count));
+    if(count <= 0)
+    {
+        QApplication::beep();
+    }
+}
+
 void NotPad::find(QTextDocument::FindFlags flags, int recursion)
 {
 //    qDebug() << "find" << flags;
     qDebug() << "recursion" << recursion;
-    QString searchString = ui->find_lineEdit->text();
-    QTextDocument *document = m_editor->document();
+    const QString& searchString = ui->find_lineEdit->text();
+    const QTextDocument* document = m_editor->document();
 
     if(searchString.isEmpty())
     {
@@ -781,53 +825,69 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
     }
     else
     {
+        /// First start counting the results because it can take a while and can be done in background
+        const auto count_promise = std::make_shared<QPromise<qsizetype>>(); /// shared ptr because we might return early putting promise out of scope
+        auto count_future = count_promise->future();
         if(!recursion)
         {
-            const auto count = m_editor->getMatchCount(searchString, flags);
-            qInfo() << "Matches count" << count;
-            statusBar()->showMessage(tr("%1 matches").arg(count));
-
-            if(count <= 0)
-            {
-                QApplication::beep();
-                return; /// Don't jump anywhere
-            }
+            /// Capture by value because we might return early
+            QThreadPool::globalInstance()->start([=]{
+                count_promise->start();
+                const auto count = m_editor->getMatchCount(searchString, flags);
+                count_promise->addResult(count);
+                count_promise->finish();
+                emit matchCountFinished(m_editor, count);
+            });
         }
 
-        QTextCursor result = document->find(searchString, m_editor->textCursor(), flags);
+        /// Find the next result whether we are recursed or not
+        const QTextCursor result = document->find(searchString, m_editor->textCursor(), flags);
         qDebug() << "result.isNull" << result.isNull();
-        if(!result.isNull()) /// Found, jump
+
+        /// Found a result, jump and start hilighting
+        if(!result.isNull())
         {
-            m_editor->setTextCursor(result);
-            qApp->processEvents(); /// So that the cursor gets updated before highLighter starts
-        }
-        else /// Not found
-        {
-            if(!recursion)
-            {
-//                qDebug() << "atEnd" << result.atEnd();
-//                qDebug() << "atStart" << result.atStart();
-                if(!flags.testFlag(QTextDocument::FindFlag::FindBackward))
-                {
-//                    qDebug() << "FindForward";
-                    m_editor->moveCursor(QTextCursor::Start);
-                    qInfo() << "Find jumped to start";
-                    statusBar()->showMessage(tr("Jumped to start"), 1000);
-                    find(flags, ++recursion);
-                }
-                else if(flags.testFlag(QTextDocument::FindFlag::FindBackward))
-                {
-//                    qDebug() << "FindBackward";
-                    m_editor->moveCursor(QTextCursor::End);
-                    qInfo() << "Find jumped to end";
-                    statusBar()->showMessage(tr("Jumped to end"), 1000);
-                    find(flags, ++recursion);
-                }
-            }
+            emit findResultFound(m_editor, result);
+
+            m_editor->highLighter->setRegex(searchString, flags);
+
+            return;
         }
 
-        /// This must not be in if(!recursion) if it is called after the document->find stuff
-        m_editor->highLighter->setRegex(searchString, flags);
+        /// Result not found
+        if(!recursion)
+        {
+            /// Wait for result count to see if we should try wrapping around the document
+            count_future.waitForFinished();
+            if(count_future.result() <= 0)
+            {
+                /// Should we unhilight previous matches if the new search didn't find anything?
+                /// np++ doesn't. But it unhilights immediately when focus goes back to editor (if selection changes)
+//                m_editor->highLighter->clear();
+                return; /// Don't jump anywhere, nothing was found in the whole document
+            }
+
+            /// Not found, but result count > 0
+            /// so let's wrap around the document
+//            qDebug() << "atEnd" << result.atEnd();
+//            qDebug() << "atStart" << result.atStart();
+            if(!flags.testFlag(QTextDocument::FindFlag::FindBackward))
+            {
+//                qDebug() << "FindForward";
+                m_editor->moveCursor(QTextCursor::Start);
+                qInfo() << "Find jumped to start";
+                statusBar()->showMessage(tr("Jumped to start"), 1000);
+                find(flags, ++recursion);
+            }
+            else if(flags.testFlag(QTextDocument::FindFlag::FindBackward))
+            {
+//                qDebug() << "FindBackward";
+                m_editor->moveCursor(QTextCursor::End);
+                qInfo() << "Find jumped to end";
+                statusBar()->showMessage(tr("Jumped to end"), 1000);
+                find(flags, ++recursion);
+            }
+        }
     }
 }
 

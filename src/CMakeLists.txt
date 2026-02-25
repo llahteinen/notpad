@@ -21,8 +21,8 @@ set(PROJECT_SOURCES
         utils/highlighter.hpp
         utils/highlighter.cpp
         utils/regex.hpp
-        qtforks/qsyntaxhighlighter.cpp
-        qtforks/qsyntaxhighlighter.h
+        qtforks/lsyntaxhighlighter.cpp
+        qtforks/lsyntaxhighlighter.h
 )
 
 set(RESOURCE_FILES

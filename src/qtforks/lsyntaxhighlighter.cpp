@@ -1,12 +1,10 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Modified by llahteinen
 
-#include "qsyntaxhighlighter.h"
+#include "lsyntaxhighlighter.h"
 
-#ifndef QT_NO_SYNTAXHIGHLIGHTER
-#include <private/qobject_p.h>
 #include <qtextdocument.h>
-#include <private/qtextdocument_p.h>
 #include <qtextlayout.h>
 #include <qpointer.h>
 #include <qscopedvaluerollback.h>
@@ -15,16 +13,18 @@
 #include <qdebug.h>
 #include <qtimer.h>
 
-#include <algorithm>
 
-QT_BEGIN_NAMESPACE
 
-class QSyntaxHighlighterPrivate : public QObjectPrivate
+class LSyntaxHighlighterPrivate
 {
-    Q_DECLARE_PUBLIC(QSyntaxHighlighter)
 public:
-    inline QSyntaxHighlighterPrivate()
-        : rehighlightPending(false), inReformatBlocks(false)
+    inline explicit LSyntaxHighlighterPrivate(LSyntaxHighlighter* q_)
+        : doc{}
+        , formatChanges{}
+        , currentBlock{}
+        , rehighlightPending{false}, inReformatBlocks{false}
+        , _q_reformatBlocks_conn{}
+        , q{q_}
     {}
 
     QPointer<QTextDocument> doc;
@@ -47,7 +47,7 @@ public:
         if (!rehighlightPending)
             return;
         rehighlightPending = false;
-        q_func()->rehighlight();
+        q->rehighlight();
     }
 
     void applyFormatChanges();
@@ -55,9 +55,14 @@ public:
     QTextBlock currentBlock;
     bool rehighlightPending;
     bool inReformatBlocks;
+    QMetaObject::Connection _q_reformatBlocks_conn;
+
+    LSyntaxHighlighter* const q;
+
+    Q_DISABLE_COPY(LSyntaxHighlighterPrivate)
 };
 
-void QSyntaxHighlighterPrivate::applyFormatChanges()
+void LSyntaxHighlighterPrivate::applyFormatChanges()
 {
     bool formatsChanged = false;
 
@@ -116,13 +121,13 @@ void QSyntaxHighlighterPrivate::applyFormatChanges()
     }
 }
 
-void QSyntaxHighlighterPrivate::_q_reformatBlocks(int from, int charsRemoved, int charsAdded)
+void LSyntaxHighlighterPrivate::_q_reformatBlocks(int from, int charsRemoved, int charsAdded)
 {
     if (!inReformatBlocks && !rehighlightPending)
         reformatBlocks(from, charsRemoved, charsAdded);
 }
 
-void QSyntaxHighlighterPrivate::reformatBlocks(int from, int charsRemoved, int charsAdded)
+void LSyntaxHighlighterPrivate::reformatBlocks(int from, int charsRemoved, int charsAdded)
 {
     QTextBlock block = doc->findBlock(from);
     if (!block.isValid())
@@ -133,7 +138,7 @@ void QSyntaxHighlighterPrivate::reformatBlocks(int from, int charsRemoved, int c
     if (lastBlock.isValid())
         endPosition = lastBlock.position() + lastBlock.length();
     else
-        endPosition = QTextDocumentPrivate::get(doc)->length();
+        endPosition = doc->lastBlock().position() + doc->lastBlock().length();
 
     bool forceHighlightOfNextBlock = false;
 
@@ -150,11 +155,9 @@ void QSyntaxHighlighterPrivate::reformatBlocks(int from, int charsRemoved, int c
     formatChanges.clear();
 }
 
-void QSyntaxHighlighterPrivate::reformatBlock(const QTextBlock &block)
+void LSyntaxHighlighterPrivate::reformatBlock(const QTextBlock &block)
 {
-    Q_Q(QSyntaxHighlighter);
-
-    Q_ASSERT_X(!currentBlock.isValid(), "QSyntaxHighlighter::reformatBlock()", "reFormatBlock() called recursively");
+    Q_ASSERT_X(!currentBlock.isValid(), "LSyntaxHighlighter::reformatBlock()", "reFormatBlock() called recursively");
 
     currentBlock = block;
 
@@ -166,11 +169,11 @@ void QSyntaxHighlighterPrivate::reformatBlock(const QTextBlock &block)
 }
 
 /*!
-    \class QSyntaxHighlighter
+    \class LSyntaxHighlighter
     \reentrant
     \inmodule QtGui
 
-    \brief The QSyntaxHighlighter class allows you to define syntax
+    \brief The LSyntaxHighlighter class allows you to define syntax
     highlighting rules, and in addition you can use the class to query
     a document's current formatting or user data.
 
@@ -178,31 +181,31 @@ void QSyntaxHighlighterPrivate::reformatBlock(const QTextBlock &block)
 
     \ingroup richtext-processing
 
-    The QSyntaxHighlighter class is a base class for implementing
+    The LSyntaxHighlighter class is a base class for implementing
     QTextDocument syntax highlighters.  A syntax highligher automatically
     highlights parts of the text in a QTextDocument. Syntax highlighters are
     often used when the user is entering text in a specific format (for example source code)
     and help the user to read the text and identify syntax errors.
 
     To provide your own syntax highlighting, you must subclass
-    QSyntaxHighlighter and reimplement highlightBlock().
+    LSyntaxHighlighter and reimplement highlightBlock().
 
-    When you create an instance of your QSyntaxHighlighter subclass,
+    When you create an instance of your LSyntaxHighlighter subclass,
     pass it the QTextDocument that you want the syntax
     highlighting to be applied to. For example:
 
-    \snippet code/src_gui_text_qsyntaxhighlighter.cpp 0
+    \snippet code/src_gui_text_LSyntaxHighlighter.cpp 0
 
     After this your highlightBlock() function will be called
     automatically whenever necessary. Use your highlightBlock()
     function to apply formatting (e.g. setting the font and color) to
-    the text that is passed to it. QSyntaxHighlighter provides the
+    the text that is passed to it. LSyntaxHighlighter provides the
     setFormat() function which applies a given QTextCharFormat on
     the current text block. For example:
 
-    \snippet code/src_gui_text_qsyntaxhighlighter.cpp 1
+    \snippet code/src_gui_text_LSyntaxHighlighter.cpp 1
 
-    \target QSyntaxHighlighter multiblock
+    \target LSyntaxHighlighter multiblock
 
     Some syntaxes can have constructs that span several text
     blocks. For example, a C++ syntax highlighter should be able to
@@ -225,7 +228,7 @@ void QSyntaxHighlighterPrivate::reformatBlock(const QTextBlock &block)
     For example, if you're writing a simple C++ syntax highlighter,
     you might designate 1 to signify "in comment":
 
-    \snippet code/src_gui_text_qsyntaxhighlighter.cpp 2
+    \snippet code/src_gui_text_LSyntaxHighlighter.cpp 2
 
     In the example above, we first set the current block state to
     0. Then, if the previous block ended within a comment, we highlight
@@ -249,14 +252,14 @@ void QSyntaxHighlighterPrivate::reformatBlock(const QTextBlock &block)
 */
 
 /*!
-    Constructs a QSyntaxHighlighter with the given \a parent.
+    Constructs a LSyntaxHighlighter with the given \a parent.
 
     If the parent is a QTextEdit, it installs the syntax highlighter on the
     parents document. The specified QTextEdit also becomes the owner of
-    the QSyntaxHighlighter.
+    the LSyntaxHighlighter.
 */
-QSyntaxHighlighter::QSyntaxHighlighter(QObject *parent)
-    : QObject(*new QSyntaxHighlighterPrivate, parent)
+LSyntaxHighlighter::LSyntaxHighlighter(QObject *parent)
+    : QObject(parent), d{new LSyntaxHighlighterPrivate{this}}
 {
     if (parent && parent->inherits("QTextEdit")) {
         QTextDocument *doc = qvariant_cast<QTextDocument *>(parent->property("document"));
@@ -266,12 +269,12 @@ QSyntaxHighlighter::QSyntaxHighlighter(QObject *parent)
 }
 
 /*!
-    Constructs a QSyntaxHighlighter and installs it on \a parent.
+    Constructs a LSyntaxHighlighter and installs it on \a parent.
     The specified QTextDocument also becomes the owner of the
-    QSyntaxHighlighter.
+    LSyntaxHighlighter.
 */
-QSyntaxHighlighter::QSyntaxHighlighter(QTextDocument *parent)
-    : QObject(*new QSyntaxHighlighterPrivate, parent)
+LSyntaxHighlighter::LSyntaxHighlighter(QTextDocument *parent)
+    : QObject(parent), d{new LSyntaxHighlighterPrivate{this}}
 {
     setDocument(parent);
 }
@@ -279,21 +282,19 @@ QSyntaxHighlighter::QSyntaxHighlighter(QTextDocument *parent)
 /*!
     Destructor. Uninstalls this syntax highlighter from the text document.
 */
-QSyntaxHighlighter::~QSyntaxHighlighter()
+LSyntaxHighlighter::~LSyntaxHighlighter()
 {
     setDocument(nullptr);
 }
 
 /*!
     Installs the syntax highlighter on the given QTextDocument \a doc.
-    A QSyntaxHighlighter can only be used with one document at a time.
+    A LSyntaxHighlighter can only be used with one document at a time.
 */
-void QSyntaxHighlighter::setDocument(QTextDocument *doc)
+void LSyntaxHighlighter::setDocument(QTextDocument *doc)
 {
-    Q_D(QSyntaxHighlighter);
     if (d->doc) {
-        disconnect(d->doc, SIGNAL(contentsChange(int,int,int)),
-                   this, SLOT(_q_reformatBlocks(int,int,int)));
+        disconnect(d->_q_reformatBlocks_conn);
 
         QTextCursor cursor(d->doc);
         cursor.beginEditBlock();
@@ -303,11 +304,11 @@ void QSyntaxHighlighter::setDocument(QTextDocument *doc)
     }
     d->doc = doc;
     if (d->doc) {
-        connect(d->doc, SIGNAL(contentsChange(int,int,int)),
-                this, SLOT(_q_reformatBlocks(int,int,int)));
+        d->_q_reformatBlocks_conn = connect(d->doc, &QTextDocument::contentsChange,
+            this, [this](int from, int charsRemoved, int charsAdded){ d->_q_reformatBlocks(from, charsRemoved, charsAdded); });
         if (!d->doc->isEmpty()) {
             d->rehighlightPending = true;
-            QTimer::singleShot(0, this, SLOT(_q_delayedRehighlight()));
+            QMetaObject::invokeMethod(this, [this]{ d->_q_delayedRehighlight(); });
         }
     }
 }
@@ -316,9 +317,8 @@ void QSyntaxHighlighter::setDocument(QTextDocument *doc)
     Returns the QTextDocument on which this syntax highlighter is
     installed.
 */
-QTextDocument *QSyntaxHighlighter::document() const
+QTextDocument *LSyntaxHighlighter::document() const
 {
-    Q_D(const QSyntaxHighlighter);
     return d->doc;
 }
 
@@ -329,9 +329,8 @@ QTextDocument *QSyntaxHighlighter::document() const
 
     \sa rehighlightBlock()
 */
-void QSyntaxHighlighter::rehighlight()
+void LSyntaxHighlighter::rehighlight()
 {
-    Q_D(QSyntaxHighlighter);
     if (!d->doc)
         return;
 
@@ -347,9 +346,8 @@ void QSyntaxHighlighter::rehighlight()
 
     \sa rehighlight()
 */
-void QSyntaxHighlighter::rehighlightBlock(const QTextBlock &block)
+void LSyntaxHighlighter::rehighlightBlock(const QTextBlock &block)
 {
-    Q_D(QSyntaxHighlighter);
     if (!d->doc || !block.isValid() || block.document() != d->doc)
         return;
 
@@ -363,21 +361,21 @@ void QSyntaxHighlighter::rehighlightBlock(const QTextBlock &block)
 }
 
 /*!
-    \fn void QSyntaxHighlighter::highlightBlock(const QString &text)
+    \fn void LSyntaxHighlighter::highlightBlock(const QString &text)
 
     Highlights the given text block. This function is called when
     necessary by the rich text engine, i.e. on text blocks which have
     changed.
 
     To provide your own syntax highlighting, you must subclass
-    QSyntaxHighlighter and reimplement highlightBlock(). In your
+    LSyntaxHighlighter and reimplement highlightBlock(). In your
     reimplementation you should parse the block's \a text and call
     setFormat() as often as necessary to apply any font and color
     changes that you require. For example:
 
-    \snippet code/src_gui_text_qsyntaxhighlighter.cpp 1
+    \snippet code/src_gui_text_LSyntaxHighlighter.cpp 1
 
-    See the \l{QSyntaxHighlighter multiblock}{Detailed Description} for
+    See the \l{LSyntaxHighlighter multiblock}{Detailed Description} for
     examples of using setCurrentBlockState(), currentBlockState()
     and previousBlockState() to handle syntaxes with constructs that
     span several text blocks
@@ -400,9 +398,8 @@ void QSyntaxHighlighter::rehighlightBlock(const QTextBlock &block)
 
     \sa format(), highlightBlock()
 */
-void QSyntaxHighlighter::setFormat(int start, int count, const QTextCharFormat &format)
+void LSyntaxHighlighter::setFormat(int start, int count, const QTextCharFormat &format)
 {
-    Q_D(QSyntaxHighlighter);
     if (start < 0 || start >= d->formatChanges.size())
         return;
 
@@ -422,7 +419,7 @@ void QSyntaxHighlighter::setFormat(int start, int count, const QTextCharFormat &
 
     \sa format(), highlightBlock()
 */
-void QSyntaxHighlighter::setFormat(int start, int count, const QColor &color)
+void LSyntaxHighlighter::setFormat(int start, int count, const QColor &color)
 {
     QTextCharFormat format;
     format.setForeground(color);
@@ -440,7 +437,7 @@ void QSyntaxHighlighter::setFormat(int start, int count, const QColor &color)
 
     \sa format(), highlightBlock()
 */
-void QSyntaxHighlighter::setFormat(int start, int count, const QFont &font)
+void LSyntaxHighlighter::setFormat(int start, int count, const QFont &font)
 {
     QTextCharFormat format;
     format.setFont(font);
@@ -448,14 +445,13 @@ void QSyntaxHighlighter::setFormat(int start, int count, const QFont &font)
 }
 
 /*!
-    \fn QTextCharFormat QSyntaxHighlighter::format(int position) const
+    \fn QTextCharFormat LSyntaxHighlighter::format(int position) const
 
     Returns the format at \a position inside the syntax highlighter's
     current text block.
 */
-QTextCharFormat QSyntaxHighlighter::format(int pos) const
+QTextCharFormat LSyntaxHighlighter::format(int pos) const
 {
-    Q_D(const QSyntaxHighlighter);
     if (pos < 0 || pos >= d->formatChanges.size())
         return QTextCharFormat();
     return d->formatChanges.at(pos);
@@ -468,9 +464,8 @@ QTextCharFormat QSyntaxHighlighter::format(int pos) const
 
     \sa highlightBlock(), setCurrentBlockState()
 */
-int QSyntaxHighlighter::previousBlockState() const
+int LSyntaxHighlighter::previousBlockState() const
 {
-    Q_D(const QSyntaxHighlighter);
     if (!d->currentBlock.isValid())
         return -1;
 
@@ -485,9 +480,8 @@ int QSyntaxHighlighter::previousBlockState() const
     Returns the state of the current text block. If no value is set,
     the returned value is -1.
 */
-int QSyntaxHighlighter::currentBlockState() const
+int LSyntaxHighlighter::currentBlockState() const
 {
-    Q_D(const QSyntaxHighlighter);
     if (!d->currentBlock.isValid())
         return -1;
 
@@ -499,9 +493,8 @@ int QSyntaxHighlighter::currentBlockState() const
 
     \sa highlightBlock()
 */
-void QSyntaxHighlighter::setCurrentBlockState(int newState)
+void LSyntaxHighlighter::setCurrentBlockState(int newState)
 {
-    Q_D(QSyntaxHighlighter);
     if (!d->currentBlock.isValid())
         return;
 
@@ -524,7 +517,7 @@ void QSyntaxHighlighter::setCurrentBlockState(int newState)
     and store their relative position and the actual QChar in a simple
     class derived from QTextBlockUserData:
 
-    \snippet code/src_gui_text_qsyntaxhighlighter.cpp 3
+    \snippet code/src_gui_text_LSyntaxHighlighter.cpp 3
 
     During cursor navigation in the associated editor, you can ask the
     current QTextBlock (retrieved using the QTextCursor::block()
@@ -542,9 +535,8 @@ void QSyntaxHighlighter::setCurrentBlockState(int newState)
 
     \sa QTextBlock::setUserData()
 */
-void QSyntaxHighlighter::setCurrentBlockUserData(QTextBlockUserData *data)
+void LSyntaxHighlighter::setCurrentBlockUserData(QTextBlockUserData *data)
 {
-    Q_D(QSyntaxHighlighter);
     if (!d->currentBlock.isValid())
         return;
 
@@ -557,9 +549,8 @@ void QSyntaxHighlighter::setCurrentBlockUserData(QTextBlockUserData *data)
 
     \sa QTextBlock::userData(), setCurrentBlockUserData()
 */
-QTextBlockUserData *QSyntaxHighlighter::currentBlockUserData() const
+QTextBlockUserData *LSyntaxHighlighter::currentBlockUserData() const
 {
-    Q_D(const QSyntaxHighlighter);
     if (!d->currentBlock.isValid())
         return nullptr;
 
@@ -571,14 +562,7 @@ QTextBlockUserData *QSyntaxHighlighter::currentBlockUserData() const
 
     Returns the current text block.
 */
-QTextBlock QSyntaxHighlighter::currentBlock() const
+QTextBlock LSyntaxHighlighter::currentBlock() const
 {
-    Q_D(const QSyntaxHighlighter);
     return d->currentBlock;
 }
-
-QT_END_NAMESPACE
-
-#include "moc_qsyntaxhighlighter.cpp"
-
-#endif // QT_NO_SYNTAXHIGHLIGHTER

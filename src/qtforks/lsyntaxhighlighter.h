@@ -1,34 +1,31 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Modified by llahteinen
 
-#ifndef QSYNTAXHIGHLIGHTER_H
-#define QSYNTAXHIGHLIGHTER_H
+#ifndef LSYNTAXHIGHLIGHTER_H
+#define LSYNTAXHIGHLIGHTER_H
 
-#include <QtGui/qtguiglobal.h>
-
-#ifndef QT_NO_SYNTAXHIGHLIGHTER
-
-#include <QtCore/qobject.h>
-#include <QtGui/qtextobject.h>
+#include <QObject>
+#include <QTextObject>
 
 QT_BEGIN_NAMESPACE
-
-
 class QTextDocument;
-class QSyntaxHighlighterPrivate;
+class LSyntaxHighlighterPrivate;
 class QTextCharFormat;
 class QFont;
 class QColor;
 class QTextBlockUserData;
+QT_END_NAMESPACE
 
-class Q_GUI_EXPORT QSyntaxHighlighter : public QObject
+
+class LSyntaxHighlighter : public QObject
 {
     Q_OBJECT
-    Q_DECLARE_PRIVATE(QSyntaxHighlighter)
+    friend class LSyntaxHighlighterPrivate;
 public:
-    explicit QSyntaxHighlighter(QObject *parent);
-    explicit QSyntaxHighlighter(QTextDocument *parent);
-    ~QSyntaxHighlighter();
+    explicit LSyntaxHighlighter(QObject *parent);
+    explicit LSyntaxHighlighter(QTextDocument *parent);
+    ~LSyntaxHighlighter();
 
     void setDocument(QTextDocument *doc);
     QTextDocument *document() const;
@@ -55,13 +52,10 @@ protected:
     QTextBlock currentBlock() const;
 
 private:
-    Q_DISABLE_COPY(QSyntaxHighlighter)
-    Q_PRIVATE_SLOT(d_func(), void _q_reformatBlocks(int from, int charsRemoved, int charsAdded))
-    Q_PRIVATE_SLOT(d_func(), void _q_delayedRehighlight())
+    Q_DISABLE_COPY(LSyntaxHighlighter)
+
+    std::unique_ptr<LSyntaxHighlighterPrivate> const d;
 };
 
-QT_END_NAMESPACE
 
-#endif // QT_NO_SYNTAXHIGHLIGHTER
-
-#endif // QSYNTAXHIGHLIGHTER_H
+#endif // LSYNTAXHIGHLIGHTER_H

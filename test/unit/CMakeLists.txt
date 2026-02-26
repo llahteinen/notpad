@@ -10,6 +10,7 @@ set(PROJECT_SOURCES
     test_namefilterlist
     test_encodings
     test_textstream
+    test_highlighter
 )
 
 # Each of them will generate a separate executable

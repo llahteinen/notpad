@@ -47,7 +47,7 @@ void Highlighter::rehighlight()
 
     m_running = true;
     m_counter = -1;
-    QSyntaxHighlighter::rehighlight();
+    LSyntaxHighlighter::rehighlight();
 //    m_abort = false;
     m_running = false;
 }
@@ -70,11 +70,5 @@ void Highlighter::highlightBlock(const QString& text)
 
     ++m_counter;
 
-    /// Update UI periodically if our highlighting takes a long time
-    /// Maybe should use some kind of timer here
-    if(m_counter % 10000 == 0)
-    {
-        qApp->processEvents();
-    }
 }
 

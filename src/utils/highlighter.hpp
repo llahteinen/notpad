@@ -1,19 +1,19 @@
 #ifndef HIGHLIGHTER_HPP
 #define HIGHLIGHTER_HPP
 
-#include <QSyntaxHighlighter>
+#include "qtforks/lsyntaxhighlighter.h"
 #include <QRegularExpression>
 
 class Editor;
 
 
-class Highlighter : public QSyntaxHighlighter
+class Highlighter : public LSyntaxHighlighter
 {
 public:
 
-    Highlighter() : QSyntaxHighlighter(static_cast<QObject*>(nullptr)) {};
+    Highlighter() : LSyntaxHighlighter(static_cast<QObject*>(nullptr)) {};
     explicit Highlighter(QTextDocument* parent)
-        : QSyntaxHighlighter(parent)
+        : LSyntaxHighlighter(parent)
     {
         m_highlightFormat.setBackground(Qt::yellow);
 //        m_highlightFormat.setForeground(Qt::black);
@@ -23,11 +23,11 @@ public:
 
     void highlightBlock(const QString& text) override;
 
-    void rehighlight(); /// reimplement of QSyntaxHighlighter::rehighlight()
+    void rehighlight(); /// reimplement of LSyntaxHighlighter::rehighlight()
 
     void setSearchTerm(const QString& sterm);
 
-    void setRegex(const QString& regexStr, QTextDocument::FindFlags flags);
+    void setRegex(const QString& regexStr, QTextDocument::FindFlags flags = {});
 
     QString m_searchTerm{};
     QString m_regexStr{};

@@ -32,7 +32,12 @@ public:
 
 public Q_SLOTS:
     void rehighlight();
+    void continueRehighlight();
     void rehighlightBlock(const QTextBlock &block);
+    void abort(bool abort = true);
+
+signals:
+    void rehighlightFinished();
 
 protected:
     virtual void highlightBlock(const QString &text) = 0;
@@ -53,6 +58,9 @@ protected:
 
 private:
     Q_DISABLE_COPY(LSyntaxHighlighter)
+
+    static constexpr int m_blockSize = 1'000'000;
+    int m_rehighlightProgress{-1};
 
     std::unique_ptr<LSyntaxHighlighterPrivate> const d;
 };

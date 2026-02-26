@@ -24,6 +24,7 @@ public:
         , currentBlock{}
         , rehighlightPending{false}, inReformatBlocks{false}
         , _q_reformatBlocks_conn{}
+        , m_abort{false}
         , q{q_}
     {}
 
@@ -56,6 +57,8 @@ public:
     bool rehighlightPending;
     bool inReformatBlocks;
     QMetaObject::Connection _q_reformatBlocks_conn;
+
+    std::atomic_bool m_abort;
 
     LSyntaxHighlighter* const q;
 
@@ -142,7 +145,8 @@ void LSyntaxHighlighterPrivate::reformatBlocks(int from, int charsRemoved, int c
 
     bool forceHighlightOfNextBlock = false;
 
-    while (block.isValid() && (block.position() < endPosition || forceHighlightOfNextBlock)) {
+    while(!m_abort && block.isValid() && (block.position() < endPosition || forceHighlightOfNextBlock))
+    {
         const int stateBeforeHighlight = block.userState();
 
         reformatBlock(block);
@@ -153,6 +157,7 @@ void LSyntaxHighlighterPrivate::reformatBlocks(int from, int charsRemoved, int c
     }
 
     formatChanges.clear();
+    q->m_rehighlightProgress = block.position();
 }
 
 void LSyntaxHighlighterPrivate::reformatBlock(const QTextBlock &block)
@@ -334,9 +339,46 @@ void LSyntaxHighlighter::rehighlight()
     if (!d->doc)
         return;
 
-    QTextCursor cursor(d->doc);
-    d->rehighlight(cursor, QTextCursor::End);
-    d->rehighlightPending = false; // user manually did a full rehighlight
+    /// Qt implementation:
+//    QTextCursor cursor(d->doc);
+//    d->rehighlight(cursor, QTextCursor::End);
+//    d->rehighlightPending = false; // user manually did a full rehighlight
+
+    /// Start rehighlighting process in chunks
+    /// Last argument of reformatBlocks should be length of the job
+    const auto total_length = d->doc->lastBlock().position() + d->doc->lastBlock().length() - 1; /// Not sure if -1 is great
+    const auto todo = qMin(total_length, m_blockSize);
+    d->reformatBlocks(0, 0, todo);
+    if(!d->m_abort && m_rehighlightProgress > 0 && m_rehighlightProgress < total_length)
+    {
+        QMetaObject::invokeMethod(this, &LSyntaxHighlighter::continueRehighlight, Qt::QueuedConnection);
+    }
+}
+
+void LSyntaxHighlighter::continueRehighlight()
+{
+    if (!d->doc)
+        return;
+
+    const auto total_length = d->doc->lastBlock().position() + d->doc->lastBlock().length() - 1;
+    const auto length = total_length - m_rehighlightProgress;
+    const auto todo = qMin(length, m_blockSize);
+    d->reformatBlocks(m_rehighlightProgress, 0, todo);
+    if(!d->m_abort && m_rehighlightProgress > 0 && m_rehighlightProgress < total_length)
+    {
+        QMetaObject::invokeMethod(this, &LSyntaxHighlighter::continueRehighlight, Qt::QueuedConnection);
+    }
+    else if(d->m_abort)
+    {
+        qDebug() << "rehighlight aborted";
+        emit rehighlightFinished();
+    }
+    else
+    {
+        qDebug() << "rehighlight ended";
+        d->rehighlightPending = false;
+        emit rehighlightFinished();
+    }
 }
 
 /*!
@@ -358,6 +400,11 @@ void LSyntaxHighlighter::rehighlightBlock(const QTextBlock &block)
 
     if (rehighlightPending)
         d->rehighlightPending = rehighlightPending;
+}
+
+void LSyntaxHighlighter::abort(bool abort)
+{
+    d->m_abort = abort;
 }
 
 /*!

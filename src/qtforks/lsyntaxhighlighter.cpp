@@ -12,6 +12,7 @@
 #include <qtextcursor.h>
 #include <qdebug.h>
 #include <qtimer.h>
+#include <QElapsedTimer>
 
 
 
@@ -343,16 +344,12 @@ void LSyntaxHighlighter::rehighlight()
 //    QTextCursor cursor(d->doc);
 //    d->rehighlight(cursor, QTextCursor::End);
 //    d->rehighlightPending = false; // user manually did a full rehighlight
+    /// NOTE the Qt method emits contentsChanged after the rehighlight, but this method does not
 
     /// Start rehighlighting process in chunks
-    /// Last argument of reformatBlocks should be length of the job
-    const auto total_length = d->doc->lastBlock().position() + d->doc->lastBlock().length() - 1; /// Not sure if -1 is great
-    const auto todo = qMin(total_length, m_blockSize);
-    d->reformatBlocks(0, 0, todo);
-    if(!d->m_abort && m_rehighlightProgress > 0 && m_rehighlightProgress < total_length)
-    {
-        QMetaObject::invokeMethod(this, &LSyntaxHighlighter::continueRehighlight, Qt::QueuedConnection);
-    }
+    m_rehighlightProgress = 0;
+
+    continueRehighlight();
 }
 
 void LSyntaxHighlighter::continueRehighlight()
@@ -360,10 +357,29 @@ void LSyntaxHighlighter::continueRehighlight()
     if (!d->doc)
         return;
 
+    /// Last argument of reformatBlocks should be length of the job
     const auto total_length = d->doc->lastBlock().position() + d->doc->lastBlock().length() - 1;
     const auto length = total_length - m_rehighlightProgress;
-    const auto todo = qMin(length, m_blockSize);
+    const auto todo = qMin(length, m_batchSize);
+
+    QElapsedTimer timer;
+    timer.start();
+
     d->reformatBlocks(m_rehighlightProgress, 0, todo);
+
+    const int elapsed = timer.elapsed();
+    if(elapsed < m_frameTimeTarget)
+    {
+        /// Too small value here slightly slows down. Too big value does not give any benefit
+        const int batch_size = m_batchSize * 1.3f;
+        m_batchSize = qMin(m_maxBatchSize, batch_size);
+    }
+    else if(elapsed > m_frameTimeTarget)
+    {
+        const int batch_size = m_batchSize * 0.9f;
+        m_batchSize = qMax(m_minBatchSize, batch_size);
+    }
+
     if(!d->m_abort && m_rehighlightProgress > 0 && m_rehighlightProgress < total_length)
     {
         QMetaObject::invokeMethod(this, &LSyntaxHighlighter::continueRehighlight, Qt::QueuedConnection);

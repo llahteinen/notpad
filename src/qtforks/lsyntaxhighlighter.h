@@ -59,7 +59,10 @@ protected:
 private:
     Q_DISABLE_COPY(LSyntaxHighlighter)
 
-    static constexpr int m_blockSize = 1'000'000;
+    static constexpr int m_maxBatchSize = 1'000'000'000;
+    static constexpr int m_minBatchSize = 10'000;
+    static constexpr int m_frameTimeTarget = 16;
+    int m_batchSize = 100'000; /// Start a bit low to ensure smooth GUI updates
     int m_rehighlightProgress{-1};
 
     std::unique_ptr<LSyntaxHighlighterPrivate> const d;

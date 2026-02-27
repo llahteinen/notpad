@@ -15,7 +15,6 @@ class Editor : public QPlainTextEdit
 
 public:
     explicit Editor(QWidget *parent = nullptr);
-    Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent = nullptr);
     Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *parent = nullptr);
     ~Editor();
     Editor(const Editor&) = delete;
@@ -45,7 +44,7 @@ public:
     void updateTabWidth();
     void setFont(const QFont&);     //!< Hide base class setFont
 
-    Highlighter* highLighter;
+    Highlighter* highLighter;   /// This is destroyed by its parent document
 
 private slots:
     void onDataQueued();

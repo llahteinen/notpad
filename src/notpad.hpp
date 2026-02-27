@@ -116,7 +116,7 @@ private:
 
     QLabel* m_statusEncodingLabel;  //!< The rightmost text box in status bar
 
-    TabManager* m_tabManager;
+    TabManager* m_tabManager;   /// Parent is an ui widget
     Editor* m_editor;       //!< Editor that is currently selected in the active tab
     Editor* m_prevEditor;   //!< Editor that was selected before the current one
 

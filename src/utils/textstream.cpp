@@ -181,7 +181,6 @@ void TextStream::quit()
 {
     m_quitCalled = true;
     m_dataWait.notify_all();
-    thread()->quit();
 };
 
 void TextStream::setAutoDetectBom(bool enabled)

@@ -7,14 +7,14 @@
 
 Editor* TabManager::createEmptyEditor()
 {
-    auto* editor = new Editor();
+    auto* editor = new Editor(); /// Ownership goes later to QTabWidget::addTab
     setupEditor(editor);
     return editor;
 }
 
 Editor* TabManager::createEditorFromFile(File::Status& o_status, const QString& fileName)
 {
-    auto* editor = Editor::createEditor(o_status, fileName);
+    auto* editor = Editor::createEditor(o_status, fileName); /// Ownership goes later to QTabWidget::addTab
     if(editor == nullptr)
     {
         return nullptr;
@@ -128,7 +128,7 @@ void TabManager::updateTabText(const Editor* editor)
 Editor* TabManager::currentWidget() const
 {
     auto* widget = QTabWidget::currentWidget();
-    qDebug() << "widget" << widget;
+    qDebug() << "currentWidget" << widget;
     return qobject_cast<Editor*>(widget);
 }
 

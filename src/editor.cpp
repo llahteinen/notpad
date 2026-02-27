@@ -9,29 +9,8 @@
 
 
 Editor::Editor(QWidget *parent)
-    : Editor(QString{}, {nullptr}, parent)
+    : Editor(nullptr, {nullptr}, parent)
 {}
-
-Editor::Editor(const QString& text, std::unique_ptr<QFile> file_p, QWidget *parent)
-    : QPlainTextEdit(text, parent)
-    , highLighter{new Highlighter(this->document())}
-    , m_name{SETTINGS.defaultDocName}
-    , m_textStream{nullptr}
-    , m_file{std::move(file_p)}
-    , m_encoding{QStringConverter::Utf8}
-    , m_hasBom{false}
-    , m_format{}
-    , m_search{}
-{
-    if(m_file)
-    {
-        m_name = QFileInfo(*m_file).fileName();
-    }
-
-    /// QSyntaxHighlighter::rehighlight() does emit contentsChanged for some reason but not contentsChange
-    /// We want contentsChange because only real edits should trigger it
-    connect(document(), &QTextDocument::contentsChange, this, &Editor::onContentsChange);
-}
 
 Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *parent)
     : QPlainTextEdit(parent)
@@ -53,21 +32,30 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
     /// We want contentsChange because only real edits should trigger it
     connect(document(), &QTextDocument::contentsChange, this, &Editor::onContentsChange);
 
-    connect(m_textStream, &TextStream::dataQueued, this, &Editor::onDataQueued,
-            Qt::QueuedConnection); /// QueuedConnection just to be sure (dataAvailable and onDataAvailable are supposed to run in different threads)
+    if(m_textStream)
+    {
+        connect(m_textStream, &TextStream::dataQueued, this, &Editor::onDataQueued,
+                Qt::QueuedConnection); /// QueuedConnection just to be sure (dataAvailable and onDataAvailable are supposed to run in different threads)
+    }
 }
 
 Editor::~Editor()
 {
-    m_textStream->quit();
-    bool finished = m_textStream->thread()->wait(1000);
-    qDebug() << "textStream thread finished:" << finished;
-    if(!finished)
+    /// In case destroyed while file loading was in progress
+    if(m_textStream)
     {
-        qWarning() << m_name << "worker thread did not exit cleanly";
-        m_textStream->thread()->terminate();
+        m_textStream->quit();
+        m_textStream->deleteLater();
+        m_textStream->thread()->quit();
+        const bool finished = m_textStream->thread()->wait(1000);
+        qDebug() << "textStream thread finished:" << finished;
+        if(!finished)
+        {
+            qWarning() << m_name << "worker thread did not exit cleanly";
+            m_textStream->thread()->terminate();
+        }
+        /// m_textStream will be deleted by its thread's finished signal
     }
-    /// m_textStream will be deleted by its thread's finished signal
 }
 
 /// static
@@ -103,6 +91,7 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
 //    fileStream.device()->close();
 
     /// Asynchronous, transfer the data via signals
+    /// This TextStream will be deleted when the file loading is finished
     TextStream* tStream = new TextStream(fileName);
     tStream->setEncoding(QStringConverter::Encoding::Utf8);
     tStream->setAutoDetectUnicode(true);
@@ -110,6 +99,7 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
     tStream->setValidateUtf(true); /// Does not really work for utf16
     tStream->setValidateLatin(true);
 
+    /// This thread will be deleted when the file loading is finished
     QThread* thread = new QThread();
     /// Slots of tStream will be executed in the new thread's event loop
     /// Must not call any tStream methods from the original thread
@@ -124,8 +114,6 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
     connect(thread, &QThread::started, tStream, &TextStream::readChunks); /// AutoConnection?
     /// Stop the thread's event loop when tStream is deleted
     connect(tStream, &TextStream::destroyed, thread, &QThread::quit);
-    /// Delete tStream after its thread has finished
-    connect(thread, &QThread::finished, tStream, &QObject::deleteLater);
     /// Delete the thread after it has finished
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 
@@ -235,6 +223,9 @@ void Editor::onDataQueued()
         setUndoRedoEnabled(true);
 
         emit dataLoadingFinished();
+
+        m_textStream->deleteLater();
+        m_textStream = nullptr;
     }
 }
 

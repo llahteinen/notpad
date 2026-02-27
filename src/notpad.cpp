@@ -271,7 +271,7 @@ bool NotPad::cleanupModifiedTabs()
     ///  Discarded untitled will be closed, all that have a file will be left open
     /// Unmodified tabs will be left open and untouched
     bool success = false;
-    m_tabManager->iterateTabs([this, &success](Editor* editor) {
+    m_tabManager->iterateTabs([this, &success](Editor* editor) -> bool {
         if(saveOrCloseTab(editor))
         {
             /// Update so that the UI briefly displays the new state before the whole window closes,
@@ -283,6 +283,7 @@ bool NotPad::cleanupModifiedTabs()
         {
             success = false; /// abort (Cancel pressed)
         }
+        return !success; /// Return whether should break
     });
 
     return success;

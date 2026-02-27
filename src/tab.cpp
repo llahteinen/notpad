@@ -140,12 +140,13 @@ Editor* TabManager::widget(int index) const
     return editor;
 }
 
-void TabManager::iterateTabs(std::function<void(Editor* editor)> processor)
+void TabManager::iterateTabs(std::function<bool(Editor* editor)> processor)
 {
     Q_ASSERT(processor);
     for(auto* editor : getProcessingOrder())
     {
-        processor(editor);
+        const auto abort = processor(editor);
+        if(abort) break;
     }
 }
 

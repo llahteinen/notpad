@@ -25,7 +25,8 @@ public:
     Editor* currentWidget() const;
     Editor* widget(int index) const;
 
-    void iterateTabs(std::function<void(Editor* editor)> processor);
+    /// processor return value is abort/break flag
+    void iterateTabs(std::function<bool(Editor* editor)> processor);
 
     using QTabWidget::addTab;
 

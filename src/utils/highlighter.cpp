@@ -40,7 +40,6 @@ void Highlighter::rehighlight()
 {
     if(m_running)
     {
-//        m_abort = true; /// Even our abort path is a bit slow. Probably need to reimplement parts of QSyntaxHighlighter if want to be better.
         qInfo() << "rehighlight already running";
         return;
     }
@@ -48,14 +47,12 @@ void Highlighter::rehighlight()
     m_running = true;
     m_counter = -1;
     LSyntaxHighlighter::rehighlight();
-//    m_abort = false;
     m_running = false;
 }
 
 /// Jostain syystä tätä kutsutaan automaattisesti bootissa
 void Highlighter::highlightBlock(const QString& text)
 {
-//    if(m_abort) return;
     if(text.isEmpty()) return;
     if(m_searchTerm.isEmpty() && m_regexStr.isEmpty()) return;
     if(!m_regex.isValid()) return;

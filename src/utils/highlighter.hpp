@@ -35,7 +35,6 @@ public:
     QTextCharFormat m_highlightFormat{};
     int m_counter{-1};
     std::atomic<bool> m_running{false};
-//    std::atomic<bool> m_abort{false};
 };
 
 #endif // HIGHLIGHTER_HPP

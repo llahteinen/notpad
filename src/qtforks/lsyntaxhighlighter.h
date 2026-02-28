@@ -34,7 +34,7 @@ public Q_SLOTS:
     void rehighlight();
     void continueRehighlight();
     void rehighlightBlock(const QTextBlock &block);
-    void abort(bool abort = true);
+    virtual void abort(bool abort = true);
 
 signals:
     void rehighlightFinished();

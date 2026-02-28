@@ -204,6 +204,12 @@ void NotPad::persistCurrentTabs()
 
 bool NotPad::closeAllTabs()
 {
+    /// Speed up shutdown a little bit if there are ongoing tasks running
+    m_tabManager->iterateTabs([](Editor* editor) -> bool {
+        editor->abortTasks();
+        return false;
+    });
+
     /// 1. Save or discard modified tabs
     /// This closes tabs that were untitled and not saved,
     /// but does not close tabs that have a file even if they were not saved

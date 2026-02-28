@@ -44,6 +44,8 @@ public:
     void updateTabWidth();
     void setFont(const QFont&);     //!< Hide base class setFont
 
+    void abortTasks();
+
     Highlighter* highLighter;   /// This is destroyed by its parent document
 
 private slots:
@@ -63,7 +65,8 @@ private:
     QList<QTextCursor> findAll(const QString& sterm, QTextDocument::FindFlags flags);
 
     QString m_name;
-    TextStream* m_textStream; /// This object's thread finished signal connects to deleteLater
+    QPointer<QThread> m_textStreamThread;   /// Thread finished signal connects to deleteLater
+    QPointer<TextStream> m_textStream;      /// QPointers become null automatically when the QObject is deleted
     std::unique_ptr<QFile> m_file;
     QStringConverter::Encoding m_encoding;
     bool m_hasBom;
@@ -76,6 +79,8 @@ private:
         QString term{};
         QTextDocument::FindFlags flags{};
     } m_search;
+
+    std::atomic_bool m_aborted;
 
 signals:
     void nameChanged(const QString& new_name);

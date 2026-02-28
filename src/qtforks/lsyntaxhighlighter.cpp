@@ -146,7 +146,8 @@ void LSyntaxHighlighterPrivate::reformatBlocks(int from, int charsRemoved, int c
 
     bool forceHighlightOfNextBlock = false;
 
-    while(!m_abort && block.isValid() && (block.position() < endPosition || forceHighlightOfNextBlock))
+    /// m_abort only really would have effect here if abort was called from another thread
+    while(block.isValid() && (block.position() < endPosition || forceHighlightOfNextBlock))
     {
         const int stateBeforeHighlight = block.userState();
 
@@ -347,6 +348,7 @@ void LSyntaxHighlighter::rehighlight()
     /// NOTE the Qt method emits contentsChanged after the rehighlight, but this method does not
 
     /// Start rehighlighting process in chunks
+    d->m_abort = false;
     m_rehighlightProgress = 0;
 
     continueRehighlight();
@@ -354,8 +356,17 @@ void LSyntaxHighlighter::rehighlight()
 
 void LSyntaxHighlighter::continueRehighlight()
 {
-    if (!d->doc)
+    if(!d->doc)
+    {
+        qDebug() << "rehighlight no doc";
         return;
+    }
+    if(d->m_abort)
+    {
+        qDebug() << "rehighlight aborted";
+        emit rehighlightFinished();
+        return;
+    }
 
     /// Last argument of reformatBlocks should be length of the job
     const auto total_length = d->doc->lastBlock().position() + d->doc->lastBlock().length() - 1;
@@ -380,14 +391,10 @@ void LSyntaxHighlighter::continueRehighlight()
         m_batchSize = qMax(m_minBatchSize, batch_size);
     }
 
-    if(!d->m_abort && m_rehighlightProgress > 0 && m_rehighlightProgress < total_length)
+    /// m_abort can't have been updated at this point unless abort was called from another thread
+    if(m_rehighlightProgress > 0 && m_rehighlightProgress < total_length)
     {
         QMetaObject::invokeMethod(this, &LSyntaxHighlighter::continueRehighlight, Qt::QueuedConnection);
-    }
-    else if(d->m_abort)
-    {
-        qDebug() << "rehighlight aborted";
-        emit rehighlightFinished();
     }
     else
     {

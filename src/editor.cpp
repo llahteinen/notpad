@@ -16,12 +16,14 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
     : QPlainTextEdit(parent)
     , highLighter{new Highlighter(this->document())}
     , m_name{SETTINGS.defaultDocName}
+    , m_textStreamThread{nullptr}
     , m_textStream{stream}
     , m_file{std::move(file_p)}
     , m_encoding{QStringConverter::Utf8}
     , m_hasBom{false}
     , m_format{}
     , m_search{}
+    , m_aborted{false}
 {
     if(m_file)
     {
@@ -34,27 +36,53 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
 
     if(m_textStream)
     {
-        connect(m_textStream, &TextStream::dataQueued, this, &Editor::onDataQueued,
-                Qt::QueuedConnection); /// QueuedConnection just to be sure (dataAvailable and onDataAvailable are supposed to run in different threads)
+        auto conn_type = Qt::AutoConnection;
+        if(m_textStream->thread() != thread())
+        {
+            m_textStreamThread = m_textStream->thread();
+            conn_type = Qt::QueuedConnection;
+        }
+
+        connect(m_textStream, &TextStream::dataQueued, this, &Editor::onDataQueued, conn_type);
     }
 }
 
 Editor::~Editor()
 {
     /// In case destroyed while file loading was in progress
-    if(m_textStream)
+    if(!m_aborted)
     {
-        m_textStream->quit();
-        m_textStream->deleteLater();
-        m_textStream->thread()->quit();
-        const bool finished = m_textStream->thread()->wait(1000);
+        abortTasks();
+    }
+    if(m_textStreamThread)
+    {
+        /// No need to ask isRunning() before calling wait()
+        const bool finished = m_textStreamThread->wait(1000);
         qDebug() << "textStream thread finished:" << finished;
         if(!finished)
         {
             qWarning() << m_name << "worker thread did not exit cleanly";
-            m_textStream->thread()->terminate();
+            m_textStreamThread->terminate();
         }
-        /// m_textStream will be deleted by its thread's finished signal
+    }
+}
+
+void Editor::abortTasks()
+{
+    qDebug() << "abortTasks";
+    m_aborted = true;
+
+    highLighter->abort();
+
+    if(m_textStream)
+    {
+        /// m_textStream QPointer will be automatically set to null after it was destroyed
+        m_textStream->quit();
+        m_textStream->deleteLater();
+    }
+    if(m_textStreamThread)
+    {
+        m_textStreamThread->quit();
     }
 }
 
@@ -111,8 +139,9 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
         Q_ASSERT(threadMoved);
     }
     /// Run readChunks as soon as the thread starts
-    connect(thread, &QThread::started, tStream, &TextStream::readChunks); /// AutoConnection?
+    connect(thread, &QThread::started, tStream, &TextStream::readChunks);
     /// Stop the thread's event loop when tStream is deleted
+    /// The thread must outlive the objects it owns
     connect(tStream, &TextStream::destroyed, thread, &QThread::quit);
     /// Delete the thread after it has finished
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
@@ -128,6 +157,11 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
 
 void Editor::onDataQueued()
 {
+    if(m_aborted || !m_textStream)
+    {
+        return;
+    }
+
     QMutexLocker lock(m_textStream->queueMutex());
 
     Q_ASSERT(!m_textStream->metaQueue().isEmpty());
@@ -224,8 +258,8 @@ void Editor::onDataQueued()
 
         emit dataLoadingFinished();
 
+        /// The purpose is completed
         m_textStream->deleteLater();
-        m_textStream = nullptr;
     }
 }
 

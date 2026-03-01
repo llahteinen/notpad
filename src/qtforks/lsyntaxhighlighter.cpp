@@ -338,6 +338,7 @@ QTextDocument *LSyntaxHighlighter::document() const
 */
 void LSyntaxHighlighter::rehighlight()
 {
+    qDebug() << "rehighlight";
     if (!d->doc)
         return;
 
@@ -349,6 +350,7 @@ void LSyntaxHighlighter::rehighlight()
 
     /// Start rehighlighting process in chunks
     d->m_abort = false;
+    m_batchSize = m_startingBatchSize;
     m_rehighlightProgress = 0;
 
     continueRehighlight();
@@ -399,6 +401,7 @@ void LSyntaxHighlighter::continueRehighlight()
     else
     {
         qDebug() << "rehighlight ended";
+        qDebug() << "final batch" << m_batchSize;
         d->rehighlightPending = false;
         emit rehighlightFinished();
     }

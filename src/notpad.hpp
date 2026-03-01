@@ -125,6 +125,7 @@ private:
 signals:
     void findResultFound(Editor* editor, QTextCursor result);
     void matchCountFinished(Editor* editor, qsizetype count);
+    void findBoxVisibleChanged(bool visible);
 
 };
 

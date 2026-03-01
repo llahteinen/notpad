@@ -50,7 +50,6 @@ void Highlighter::rehighlight()
     m_running = false;
 }
 
-/// Jostain syystä tätä kutsutaan automaattisesti bootissa
 void Highlighter::highlightBlock(const QString& text)
 {
     if(text.isEmpty()) return;

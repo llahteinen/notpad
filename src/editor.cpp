@@ -208,7 +208,7 @@ void Editor::onDataQueued()
     /// Insert largest possible blocks because it's faster, but without exceeding frame time
     const qint64 elapsed = timer.elapsed();
 //    static constexpr qint64 FRAME_TIME_TARGET = 10; /// ~100 FPS Higher update rate impacts the total time but not a lot
-    static constexpr qint64 FRAME_TIME_TARGET = 17; /// ~60 FPS Feels quite smooth, though not 120Hz display smooth
+    static constexpr qint64 FRAME_TIME_TARGET = 16; /// ~60 FPS Feels quite smooth, though not 120Hz display smooth
 //    static constexpr qint64 FRAME_TIME_TARGET = 25; /// ~40 FPS
 
     if(elapsed < FRAME_TIME_TARGET)
@@ -366,6 +366,16 @@ void Editor::setFont(const QFont& font)
 {
     QPlainTextEdit::setFont(font);
     updateTabWidth();
+}
+
+void Editor::setHighlighterEnabled(bool enabled)
+{
+    qDebug() << "setHighlighterEnabled" << enabled;
+    highLighter->setDocument(enabled ? document() : nullptr);
+    if(!enabled)
+    {
+        highLighter->setRegex("");
+    }
 }
 
 void Editor::onContentsChange([[maybe_unused]]int position, [[maybe_unused]]int charsRemoved, [[maybe_unused]]int charsAdded)

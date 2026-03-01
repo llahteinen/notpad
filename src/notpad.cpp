@@ -354,15 +354,18 @@ void NotPad::setupSignals()
         disconnect(m_prevEditor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
         disconnect(m_prevEditor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
         disconnect(m_prevEditor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged);
-//        disconnect(m_prevEditor, &Editor::dataLoadingFinished,   this, &NotPad::onLoadingFinished); /// Maybe this does not need to be disconnected (must ensure UniqueConnection is used then)
     }
     if(m_editor)
     {
+        /// Signals for active tab only (disconnect on every tab switch)
         connect(m_editor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable, Qt::UniqueConnection);
         connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable, Qt::UniqueConnection);
         connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged,   Qt::UniqueConnection);
+
+        /// Signals for active and background tabs, not supposed to get disconnected on tab switch
         connect(m_editor, &Editor::dataLoadingFinished,   this, &NotPad::onLoadingFinished, Qt::UniqueConnection);
         connect(m_editor, &Editor::dataLoadingUpdate,     this, &NotPad::onLoadingUpdate, Qt::UniqueConnection);
+        connect(this, &NotPad::findBoxVisibleChanged, m_editor, &Editor::setHighlighterEnabled, Qt::UniqueConnection);
     }
 }
 
@@ -665,14 +668,15 @@ void NotPad::keyPressEvent(QKeyEvent* event)
 //            qDebug() << "Escape";
             if(ui->main_find_widget->isVisible())
             {
+                /// First press pops focus off find box,
+                /// second press hides find ui
                 if(ui->find_lineEdit->hasFocus() && m_editor)
                 {
                     m_editor->setFocus(Qt::OtherFocusReason);
                 }
                 else
                 {
-                    ui->main_find_widget->setVisible(false);
-                    ui->actionFind->setChecked(false);
+                    on_actionFind_triggered(false);
                 }
                 return;
             }
@@ -923,8 +927,24 @@ void NotPad::on_actionRestoreFontSize_triggered()
 
 void NotPad::on_actionFind_triggered(bool checked)
 {
+    qDebug() << "on_actionFind_triggered" << checked;
+    if(!m_editor)
+    {
+        ui->actionFind->setChecked(checked);
+        ui->main_find_widget->setVisible(checked);
+        return;
+    }
+
+    /// Three scenarios:
+    /// Find widget is not currently visible
+    ///  -> show
+    /// Find widget is already visible, but the selected text is different than what is in the search input box
+    ///  -> set new search text
+    /// Find widget is already visible and the selected text has stayed the same
+    ///  -> hide
+
     bool show = checked;
-    if(m_editor && m_editor->textCursor().hasSelection()) /// hasComplexSelection ?
+    if(m_editor->textCursor().hasSelection()) /// hasComplexSelection ?
     {
         qDebug() << "hasSelection" << m_editor->textCursor().selectedText();
         const auto selected_text = m_editor->textCursor().selectedText();
@@ -935,6 +955,10 @@ void NotPad::on_actionFind_triggered(bool checked)
             ui->find_lineEdit->setText(selected_text);
         }
     }
+
+    const bool raising_edge = !ui->main_find_widget->isVisible() && show;
+    const bool falling_edge = ui->main_find_widget->isVisible() && !show;
+
     ui->actionFind->setChecked(show);
     ui->main_find_widget->setVisible(show);
     if(show)
@@ -944,7 +968,13 @@ void NotPad::on_actionFind_triggered(bool checked)
     }
     else
     {
-        if(m_editor) m_editor->setFocus(Qt::OtherFocusReason);
+        m_editor->setFocus(Qt::OtherFocusReason);
+        statusBar()->clearMessage(); /// Maybe we should use a dedicated text info box for search
+    }
+
+    if(raising_edge || falling_edge)
+    {
+        emit findBoxVisibleChanged(show);
     }
 }
 

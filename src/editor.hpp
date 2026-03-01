@@ -48,6 +48,9 @@ public:
 
     Highlighter* highLighter;   /// This is destroyed by its parent document
 
+public slots:
+    void setHighlighterEnabled(bool enabled);
+
 private slots:
     void onDataQueued();
     void onContentsChange(int position, int charsRemoved, int charsAdded);

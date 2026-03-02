@@ -24,10 +24,11 @@ public:
     void highlightBlock(const QString& text) override;
 
     void rehighlight(); /// reimplement of LSyntaxHighlighter::rehighlight()
+    void rehighlight(int topPos); /// reimplement of LSyntaxHighlighter::rehighlight(int)
 
     void setSearchTerm(const QString& sterm);
 
-    void setRegex(const QString& regexStr, QTextDocument::FindFlags flags = {});
+    void setRegex(const QString& regexStr, QTextDocument::FindFlags flags = {}, int topPos = 0);
 
     QString m_searchTerm{};
     QString m_regexStr{};

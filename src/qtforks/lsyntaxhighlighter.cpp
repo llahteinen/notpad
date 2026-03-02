@@ -356,6 +356,34 @@ void LSyntaxHighlighter::rehighlight()
     continueRehighlight();
 }
 
+void LSyntaxHighlighter::rehighlight(int topPos)
+{
+    qDebug() << "rehighlight" << topPos;
+    if(topPos <= 0)
+    {
+        rehighlight();
+    }
+    if(!d->doc)
+    {
+        return;
+    }
+
+    /// Start rehighlighting process in chunks from a given spot
+    /// The idea is to fill the visible screen + some above and below for the first batch
+    d->m_abort = false;
+    m_batchSize = m_startingBatchSize;
+
+    const int total_length = d->doc->lastBlock().position() + d->doc->lastBlock().length() - 1;
+    const int batch = qMin(total_length, m_batchSize);
+    const int startPos = qMax(0, topPos - batch / 3);
+    qDebug() << "startPos" << startPos;
+    d->reformatBlocks(startPos, 0, batch);
+
+    /// Then start from the beginning again
+    m_rehighlightProgress = 0;
+    QMetaObject::invokeMethod(this, &LSyntaxHighlighter::continueRehighlight, Qt::QueuedConnection);
+}
+
 void LSyntaxHighlighter::continueRehighlight()
 {
     if(!d->doc)

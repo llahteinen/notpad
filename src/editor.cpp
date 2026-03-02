@@ -14,7 +14,6 @@ Editor::Editor(QWidget *parent)
 
 Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *parent)
     : QPlainTextEdit(parent)
-    , highLighter{new Highlighter(this->document())}
     , m_name{SETTINGS.defaultDocName}
     , m_textStreamThread{nullptr}
     , m_textStream{stream}
@@ -23,6 +22,7 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
     , m_hasBom{false}
     , m_format{}
     , m_search{}
+    , highLighter{new Highlighter(this->document())}
     , m_aborted{false}
 {
     if(m_file)
@@ -366,6 +366,11 @@ void Editor::setFont(const QFont& font)
 {
     QPlainTextEdit::setFont(font);
     updateTabWidth();
+}
+
+void Editor::setHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags)
+{
+    highLighter->setRegex(regexStr, flags, firstVisibleBlock().position());
 }
 
 void Editor::setHighlighterEnabled(bool enabled)

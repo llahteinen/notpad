@@ -17,7 +17,7 @@ void Highlighter::setSearchTerm(const QString& sterm)
     rehighlight();
 }
 
-void Highlighter::setRegex(const QString& regexStr, QTextDocument::FindFlags flags)
+void Highlighter::setRegex(const QString& regexStr, QTextDocument::FindFlags flags, int topPos)
 {
     if(regexStr == m_regexStr)
     {
@@ -33,10 +33,15 @@ void Highlighter::setRegex(const QString& regexStr, QTextDocument::FindFlags fla
     m_regexStr = regexStr;
     m_searchTerm = "";
 
-    rehighlight();
+    rehighlight(topPos);
 }
 
 void Highlighter::rehighlight()
+{
+    rehighlight(0);
+}
+
+void Highlighter::rehighlight(int topPos)
 {
     if(m_running)
     {
@@ -46,7 +51,7 @@ void Highlighter::rehighlight()
 
     m_running = true;
     m_counter = -1;
-    LSyntaxHighlighter::rehighlight();
+    LSyntaxHighlighter::rehighlight(topPos);
     m_running = false;
 }
 

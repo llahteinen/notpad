@@ -32,6 +32,7 @@ public:
 
 public Q_SLOTS:
     void rehighlight();
+    void rehighlight(int topPos);
     void continueRehighlight();
     void rehighlightBlock(const QTextBlock &block);
     virtual void abort(bool abort = true);

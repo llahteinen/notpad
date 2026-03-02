@@ -860,7 +860,7 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
         {
             emit findResultFound(m_editor, result);
 
-            m_editor->highLighter->setRegex(searchString, flags);
+            m_editor->setHighlightRegex(searchString, flags);
 
             return;
         }

@@ -44,9 +44,9 @@ public:
     void updateTabWidth();
     void setFont(const QFont&);     //!< Hide base class setFont
 
-    void abortTasks();
+    void setHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags = {});
 
-    Highlighter* highLighter;   /// This is destroyed by its parent document
+    void abortTasks();
 
 public slots:
     void setHighlighterEnabled(bool enabled);
@@ -82,6 +82,8 @@ private:
         QString term{};
         QTextDocument::FindFlags flags{};
     } m_search;
+
+    Highlighter* highLighter;   /// This is destroyed by its parent document
 
     std::atomic_bool m_aborted;
 

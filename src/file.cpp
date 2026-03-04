@@ -65,7 +65,7 @@ File::Status File::openFile(QFile& file, const QString& fileName)
     file.setFileName(fileName);
     if(!file.exists())
     {
-        qWarning() << "Does not exist";
+        qWarning() << "Does not exist:" << fileName;
         status.code = Status::FAIL_OPEN_NOTFOUND;
         status.errorString = "File not found";
         return status;

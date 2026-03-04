@@ -29,7 +29,8 @@ x Tabs
   - Right click tab
     - open in explorer
     - copy path / name
-- Drag & drop files
+x Drag & drop files
+  - Better visualization ?
 - Unified titlebar / tab bar / menu bar ?
 - Encodings support
   x Detection of encoding when opening

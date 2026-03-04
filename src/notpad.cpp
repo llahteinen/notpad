@@ -3,6 +3,7 @@
 #include "tab.hpp"
 #include "editor.hpp"
 #include "file.hpp"
+#include "utils/utils.hpp"
 #include "settings.hpp"
 #include <QString>
 #include <QFile>
@@ -145,6 +146,25 @@ void NotPad::show()
     if(m_tabManager->count() == 0) m_tabManager->addEmptyTab();
 
 //    SETTINGS.currentDir = QDir("../../../testifiles"); /// Set save/load dialog starting location
+}
+
+void NotPad::dragEnterEvent(QDragEnterEvent* e)
+{
+    qDebug() << "dragEnterEvent";
+    /// "A widget must accept this event in order to receive the drag move events"
+    /// Must accept to show the OK cursor and for the possibly upcoming drop event to fire
+    e->setAccepted(Utils::hasValidFiles(e->mimeData()));
+}
+
+void NotPad::dropEvent(QDropEvent* e)
+{
+    qDebug() << "dropEvent";
+    const QStringList filenames = Utils::toFilelist(e->mimeData());
+    for(auto& filename : filenames)
+    {
+        const auto status = m_tabManager->addTabFromFile(filename);
+        messageOpenStatus(status);
+    }
 }
 
 void NotPad::saveSettings()

@@ -31,6 +31,8 @@ public slots:
 
 private:
     void closeEvent(QCloseEvent* event) override;
+    void dragEnterEvent(QDragEnterEvent* e) override;
+    void dropEvent(QDropEvent* e) override;
     void showEvent(QShowEvent* event) override;
 
     void saveSettings();

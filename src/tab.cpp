@@ -32,6 +32,10 @@ void TabManager::setupEditor(Editor* editor)
     font.setPointSize(SETTINGS.pers.zoomFontSize);
     editor->setFont(font);
     editor->setWordWrap(SETTINGS.pers.wordWrap);
+
+    /// Hard coded stuff
+    /// Setting this to false will let dragEnterEvent etc pass through to the underneath widget / main window
+    editor->setAcceptDrops(false);
 }
 
 TabManager::TabManager(QWidget* parent)

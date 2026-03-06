@@ -7,9 +7,11 @@
   - Sessionless mode / single file mode
 - Find
   x Find next and prev
-  - Highlight all
-  - Count matches ?
+  x Highlight all
+  - Highlight matches over scrollbar
+  x Count matches
   - Replace
+  - Better GUI
 - Statusbar
   x Current encoding
   - Length of file
@@ -73,10 +75,11 @@ x License file
 
 ## Tuning
 - Rename the project
-- Large file open optimizing
+x Large file open optimizing
 - File extension
   x Appending the extension
   - Keeping track of selected file types
+    - I have forgot what this is supposed to do
 - Better architecture
   x File manager class
   - Settings class

@@ -11,7 +11,7 @@
   - Count matches ?
   - Replace
 - Statusbar
-  - Current encoding
+  x Current encoding
   - Length of file
   - Length of selection (chars and lines)
 - Titlebar
@@ -30,7 +30,7 @@ x Tabs
 - Drag & drop files
 - Unified titlebar / tab bar / menu bar ?
 - Encodings support
-  - Detection of encoding when opening
+  x Detection of encoding when opening
   - Changing encoding ?
   - Selecting encoding when saving
 - Large file warning
@@ -74,7 +74,7 @@ x License file
 ## Tuning
 - Rename the project
 - File extension
-  - Appending the extension
+  x Appending the extension
   - Keeping track of selected file types
 - Better architecture
   x File manager class

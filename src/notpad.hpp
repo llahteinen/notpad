@@ -67,6 +67,8 @@ private:
     bool confirmAppClose(const QString& messageTitle = tr("Confirmation"));
     /// \return true for permission to close file, false for no permission
     bool confirmFileClose(Editor* editor, const QString& messageTitle = tr("Confirmation"));
+    /// \return true for permission to discard file, false for no permission
+    bool confirmFileReload(Editor* editor, const QString& messageTitle = tr("Confirmation"));
 
     void find(QTextDocument::FindFlags flags, int recursion = 0);
 
@@ -76,6 +78,7 @@ private slots:
     /// Custom slots
     void onUndoAvailable(bool available);
     void onRedoAvailable(bool available);
+    void onHasFileChanged(bool has);
     void onTextChanged();
     void onLoadingUpdate(int progress);
     void onLoadingFinished();
@@ -90,6 +93,7 @@ private slots:
     void on_actionNew_triggered();
     void on_actionNewTab_triggered();
     void on_actionOpen_triggered();
+    void on_actionReload_from_disk_triggered();
     void on_actionSave_triggered();
     void on_actionSave_as_triggered();
     /// Edit menu

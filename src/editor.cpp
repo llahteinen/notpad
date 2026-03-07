@@ -6,6 +6,7 @@
 #include <QRegularExpression>
 #include <QThread>
 #include <QElapsedTimer>
+#include <QScrollBar>
 
 
 Editor::Editor(QWidget *parent)
@@ -24,6 +25,9 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
     , m_search{}
     , highLighter{new Highlighter(this->document())}
     , m_aborted{false}
+    , m_loadingInProgress{false}
+    , m_reloading{false}
+    , m_loadingPos{0}
 {
     if(m_file)
     {
@@ -118,6 +122,21 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
 //    /// file_p is nullptr now
 //    fileStream.device()->close();
 
+    auto [tStream, thread] = createStreamAndThread(fileName);
+    Editor* editor = new Editor(tStream, std::move(file_p), parent);
+
+    editor->m_loadingInProgress = true;
+
+    /// QThread enters its own event loop here which executes until exit is called (or quit)
+    editor->m_start_t = std::chrono::high_resolution_clock::now(); /// DEBUG
+    thread->start();
+
+    return editor;
+}
+
+/// static
+std::pair<TextStream*, QThread*> Editor::createStreamAndThread(const QString& fileName)
+{
     /// Asynchronous, transfer the data via signals
     /// This TextStream will be deleted when the file loading is finished
     TextStream* tStream = new TextStream(fileName);
@@ -146,13 +165,7 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
     /// Delete the thread after it has finished
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 
-    Editor* editor = new Editor(tStream, std::move(file_p), parent);
-
-    /// QThread enters its own event loop here which executes until exit is called (or quit)
-    editor->m_start_t = std::chrono::high_resolution_clock::now(); /// DEBUG
-    thread->start();
-
-    return editor;
+    return { tStream, thread };
 }
 
 void Editor::onDataQueued()
@@ -188,6 +201,14 @@ void Editor::onDataQueued()
         m_encoding = meta.encoding;
         m_hasBom = meta.hasBom;
 
+        if(document()->isModified())
+        {
+            document()->setModified(false);
+            emit modificationChanged(false);
+        }
+        emit undoAvailable(false);
+        emit redoAvailable(false);
+
         setReadOnly(true);
         blockSignals(true); /// Not 100% sure, should we set the signals enabled on the last iteration?
         document()->blockSignals(true);
@@ -197,12 +218,34 @@ void Editor::onDataQueued()
         m_format = cursor.charFormat();
     }
 
-    cursor.movePosition(QTextCursor::End); /// Ensure we are appending to the end
-    cursor.insertText(dataChunk, m_format); /// Sets modified flag to true
-    document()->setModified(false);
+    /// Store user's cursor location before we do edits
+    auto userCursor = textCursor();
+    const auto userAnchor = userCursor.anchor();
+    const auto userPosition = userCursor.position();
+    /// Scrollbar position needs to be saved because setTextCursor will reset the scrolling to make cursor visible.
+    /// Probably would need to hack QPlainTextEdit to prevent it.
+    const auto scrollbarPrevValue = verticalScrollBar()->value();
 
+    if(!m_reloading)
+    {
+        cursor.movePosition(QTextCursor::End); /// Ensure we are appending to the end
+        cursor.insertText(dataChunk, m_format);
+    }
+    else
+    {
+        const int chunkEnd = qMin(m_loadingPos + dataChunk.length(), document()->characterCount() - 1);
+        cursor.setPosition(m_loadingPos, QTextCursor::MoveAnchor);
+        cursor.setPosition(chunkEnd, QTextCursor::KeepAnchor);
+//        if(cursor.selectedText() != dataChunk) /// This check is a bit slow
+        {
+            cursor.insertText(dataChunk, m_format);
+        }
+    }
+    document()->setModified(false); /// insertText sets modified flag to true
+
+    m_loadingPos += dataChunk.length();
     blockSignals(false);
-    emit dataLoadingUpdate(document()->characterCount()-1); /// Blocksignals must be false
+    emit dataLoadingUpdate(m_loadingPos); /// Blocksignals must be false
 
     /// Adapt the text insert amount to desired UI update rate
     /// Insert largest possible blocks because it's faster, but without exceeding frame time
@@ -224,9 +267,27 @@ void Editor::onDataQueued()
     /// Notify that we are ready to receive more data in gui thread
     m_textStream->decrementThrottle(lock);
 
+    /// Retrieve the user's wanted cursor position after the insert operations
+    userCursor.setPosition(userAnchor, QTextCursor::MoveAnchor);
+    userCursor.setPosition(userPosition, QTextCursor::KeepAnchor);
+    setTextCursor(userCursor); /// calls ensureCursorVisible()
+    verticalScrollBar()->setValue(scrollbarPrevValue);
+
     /// This gets processed only when all the signals are processed, even if the data queue went empty way earlier
     if(Q_UNLIKELY(meta.done))
     {
+        if(m_reloading)
+        {
+            /// Truncate excess text from the doc if the reloaded text was shorter
+            QTextCursor cursor_trunc(document());
+            cursor_trunc.setPosition(m_loadingPos);
+            if(!cursor_trunc.atEnd())
+            {
+                cursor_trunc.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+                cursor_trunc.removeSelectedText();
+            }
+        }
+
         m_end_t = std::chrono::high_resolution_clock::now(); /// DEBUG
         qInfo() << "insertText DONE in" << std::chrono::duration_cast<std::chrono::milliseconds>(m_end_t-m_start_t).count();
         qDebug() << "Final batchSize" << m_textStream->batchSize();
@@ -234,19 +295,6 @@ void Editor::onDataQueued()
         /// 10000 = 5,3s
         /// 20000 = 3,1s
         /// 100000 = 1,4s
-
-//        /// Try to retrieve the user's wanted cursor position after the insert operations
-//        userCursor.setPosition(userAnchor, QTextCursor::MoveAnchor);
-//        userCursor.setPosition(userPosition, QTextCursor::KeepAnchor);
-//        setTextCursor(userCursor);
-        /// Jump the cursor to start
-        /// We would like that the cursor would be at the start of the file, but the viewport scrolling would stay where it is
-        /// document()->blockSignals(true) does not help
-        /// Workaround: Set the cursor to the top of the current viewport location
-        QTextCursor userCursor = textCursor();
-        userCursor.setPosition(firstVisibleBlock().position());
-        setTextCursor(userCursor);
-//        setFocus(); /// Not sure about this
 
         document()->setModified(false);
         document()->blockSignals(false);
@@ -260,6 +308,8 @@ void Editor::onDataQueued()
 
         /// The purpose is completed
         m_textStream->deleteLater();
+
+        m_loadingInProgress = false;
     }
 }
 
@@ -286,6 +336,7 @@ File::Status Editor::save()
 File::Status Editor::saveAs(const QString& fileName)
 {
     qDebug() << "Editor::saveAs" << fileName;
+    const bool had_file = m_file != nullptr;
     m_file.reset();
     auto file = std::make_unique<QFile>(fileName);
     File::Status saved = File::saveFile(toPlainText(), *file, m_encoding, m_hasBom);
@@ -296,7 +347,40 @@ File::Status Editor::saveAs(const QString& fileName)
         setName(QFileInfo(*m_file).fileName());
         document()->setModified(false);
     }
+    const bool has_file = m_file != nullptr;
+    if(had_file != has_file)
+    {
+        emit hasFileChanged(has_file);
+    }
     return saved;
+}
+
+void Editor::reload()
+{
+    qDebug() << "reload";
+    if(m_file == nullptr)
+    {
+        qDebug() << "No file";
+        return;
+    }
+    if(m_loadingInProgress)
+    {
+        qDebug() << "Already reloading";
+        return;
+    }
+    m_loadingInProgress = true;
+
+    std::tie(m_textStream, m_textStreamThread) = createStreamAndThread(m_file->fileName());
+
+    connect(m_textStream, &TextStream::dataQueued, this, &Editor::onDataQueued,
+            m_textStream->thread() == this->thread() ? Qt::AutoConnection : Qt::QueuedConnection);
+
+    m_reloading = true;
+    m_loadingPos = 0;
+
+    /// QThread enters its own event loop here which executes until exit is called (or quit)
+    m_start_t = std::chrono::high_resolution_clock::now(); /// DEBUG
+    m_textStreamThread->start();
 }
 
 qsizetype Editor::getMatchCount(const QString& sterm, QTextDocument::FindFlags flags)

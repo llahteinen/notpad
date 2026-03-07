@@ -63,7 +63,7 @@ x Drag & drop files
 - Highlighting
   - Colorize current row
   - Highlight matches of selected text
-- Reload current file
+x Reload current file
 - Recent files list
 - File finder select OS Native / Qt
 - Key shortcuts

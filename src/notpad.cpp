@@ -375,6 +375,7 @@ void NotPad::setupSignals()
         disconnect(m_prevEditor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
         disconnect(m_prevEditor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
         disconnect(m_prevEditor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged);
+        disconnect(m_prevEditor, &Editor::hasFileChanged,        this, &NotPad::onHasFileChanged);
     }
     if(m_editor)
     {
@@ -382,6 +383,7 @@ void NotPad::setupSignals()
         connect(m_editor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable, Qt::UniqueConnection);
         connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable, Qt::UniqueConnection);
         connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged,   Qt::UniqueConnection);
+        connect(m_editor, &Editor::hasFileChanged,        this, &NotPad::onHasFileChanged, Qt::UniqueConnection);
 
         /// Signals for active and background tabs, not supposed to get disconnected on tab switch
         connect(m_editor, &Editor::dataLoadingFinished,   this, &NotPad::onLoadingFinished, Qt::UniqueConnection);
@@ -396,6 +398,7 @@ void NotPad::setupMenu()
     {
         onUndoAvailable(m_editor->document()->isUndoAvailable());
         onRedoAvailable(m_editor->document()->isRedoAvailable());
+        onHasFileChanged(m_editor->file() != nullptr);
         ui->actionWord_wrap->setChecked(m_editor->isWordWrap());
 //        ui->actionSave->setEnabled(m_editor->isModified());
     }
@@ -668,6 +671,43 @@ bool NotPad::confirmFileClose(Editor* editor, const QString& messageTitle)
     return permission;
 }
 
+bool NotPad::confirmFileReload(Editor* editor, const QString& messageTitle)
+{
+    qDebug() << "NotPad::confirmFileReload";
+    bool permission = false;
+    if(editor->isModified())
+    {
+        qDebug() << "File is edited";
+        const auto choice = QMessageBox::warning(this, messageTitle,
+                                                 tr("The document has been modified.\n"
+                                                    "Do you want to discard the changes\n"
+                                                    "and reload from disk?"),
+                                                 QMessageBox::Discard | QMessageBox::Cancel,
+                                                 QMessageBox::Cancel);
+
+        qDebug() << "Choice" << choice;
+        switch(choice)
+        {
+        case QMessageBox::Discard:
+            {
+                permission = true;
+                break;
+            }
+        case QMessageBox::Cancel:
+        default:
+            {
+                permission = false;
+            }
+        }
+    }
+    else
+    {
+        /// Not edited, always permission to close
+        permission = true;
+    }
+    return permission;
+}
+
 const QFile* NotPad::currentFile()
 {
     if(m_editor != nullptr)
@@ -776,6 +816,19 @@ void NotPad::on_actionOpen_triggered()
         const QFileInfo fileInfo(fileDialog.selectedFiles().constFirst());
         SETTINGS.currentDir = fileInfo.dir();
 //        SETTINGS.currentDir = fileInfo.absoluteDir();
+    }
+}
+
+void NotPad::on_actionReload_from_disk_triggered()
+{
+    Editor* editor = m_editor;
+    Q_ASSERT(editor != nullptr);
+    if(editor != nullptr)
+    {
+        if(confirmFileReload(editor, editor->name()))
+        {
+            editor->reload();
+        }
     }
 }
 
@@ -1019,6 +1072,12 @@ void NotPad::onRedoAvailable(bool available)
 {
     qDebug() << "onRedoAvailable" << available << sender();
     ui->actionRedo->setEnabled(available);
+}
+
+void NotPad::onHasFileChanged(bool has)
+{
+    qDebug() << "onHasFileChanged" << has;
+    ui->actionReload_from_disk->setEnabled(has);
 }
 
 void NotPad::onTextChanged()

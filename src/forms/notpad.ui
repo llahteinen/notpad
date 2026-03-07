@@ -205,6 +205,7 @@
     <addaction name="actionNew"/>
     <addaction name="actionNewTab"/>
     <addaction name="actionOpen"/>
+    <addaction name="actionReload_from_disk"/>
     <addaction name="actionSave"/>
     <addaction name="actionSave_as"/>
     <addaction name="actionExit"/>
@@ -410,6 +411,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="actionReload_from_disk">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ViewRefresh"/>
+   </property>
+   <property name="text">
+    <string>Reload from disk</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
    </property>
   </action>
  </widget>

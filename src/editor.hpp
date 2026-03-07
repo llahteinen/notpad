@@ -30,6 +30,8 @@ public:
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     File::Status saveAs(const QString& fileName);
 
+    void reload();
+
     qsizetype getMatchCount(const QString& sterm, QTextDocument::FindFlags flags);
     const QList<QTextCursor>& getSearchResults(const QString& sterm, QTextDocument::FindFlags flags);
 
@@ -59,6 +61,8 @@ private slots:
 private:
     std::chrono::high_resolution_clock::time_point m_start_t{}, m_end_t{}; /// DEBUG
 
+    static std::pair<TextStream*, QThread*> createStreamAndThread(const QString& fileName);
+
     /// \param sterm Search term, can be regexp
     /// \param flags Find options
     /// \return -1 on errors, -2 on overflow, otherwise number of matches in the document
@@ -86,9 +90,13 @@ private:
     Highlighter* highLighter;   /// This is destroyed by its parent document
 
     std::atomic_bool m_aborted;
+    bool m_loadingInProgress;
+    bool m_reloading;
+    int m_loadingPos;
 
 signals:
     void nameChanged(const QString& new_name);
+    void hasFileChanged(bool has);
     void dataLoadingUpdate(int progress);
     void dataLoadingFinished();
 };

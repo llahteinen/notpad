@@ -48,10 +48,6 @@ private:
     void setupMenu();
     void setupStatusBar();
 
-    int incrementFontSize(int increment);
-    int restoreFontSize();
-    void updateTabWidth();
-
     void messageOpenStatus(const File::Status& status);
     void messageSaveStatus(const File::Status& status);
 

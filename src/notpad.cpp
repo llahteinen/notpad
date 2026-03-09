@@ -422,45 +422,6 @@ void NotPad::setupStatusBar()
     }
 }
 
-int NotPad::incrementFontSize(int increment)
-{
-    auto font = m_editor->font();
-    auto size = font.pointSize();
-    auto index = SETTINGS.standardFontSizes.indexOf(size);
-    Q_ASSERT(index >= 0);
-    if(index < 0)
-    {
-        qWarning() << "Got weird font size" << size;
-        index = SETTINGS.standardFontSizes.indexOf(SETTINGS.fontSizeDefault);
-    }
-    index += increment;
-    index = qMax(index, 0);
-    index = qMin(index, SETTINGS.standardFontSizes.length()-1);
-    qDebug() << "index" << index;
-    size = SETTINGS.standardFontSizes.at(index);
-    qDebug() << "size" << size;
-    font.setPointSize(size);
-    m_editor->setFont(font);
-    updateTabWidth(); /// TODO: Implement using QEvent::FontChange
-    return size;
-}
-
-int NotPad::restoreFontSize()
-{
-    auto font = m_editor->font();
-    auto size = SETTINGS.fontSizeDefault;
-    font.setPointSize(size);
-    qDebug() << "pointSize" << font.pointSize();
-    m_editor->setFont(font);
-    updateTabWidth();
-    return size;
-}
-
-void NotPad::updateTabWidth()
-{
-    m_editor->setTabStopDistance(SETTINGS.tabWidthChars * m_editor->fontMetrics().averageCharWidth());
-}
-
 void NotPad::messageOpenStatus(const File::Status& status)
 {
     QString msg;
@@ -758,9 +719,21 @@ void NotPad::keyPressEvent(QKeyEvent* event)
             is_repeat ? btn->click() : btn->animateClick();
             return;
         }
+    case Qt::Key_W:
+        {
+            const auto has_ctrl = event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier);
+            const auto is_repeat = event->isAutoRepeat();
+            if(has_ctrl && !is_repeat && m_editor) // && (m_editor->hasFocus() || m_tabManager->hasFocus())) need to think carefully do we want to check focus here
+            {
+                onTabCloseRequested(m_tabManager->currentIndex());
+                return;
+            }
+            break;
+        }
     default:
         break;
     }
+    /// Call the base class implementation if we did NOT handle the event
     QMainWindow::keyPressEvent(event);
 }
 
@@ -986,17 +959,17 @@ void NotPad::on_actionWord_wrap_triggered(bool enabled)
 
 void NotPad::on_actionFontSmaller_triggered()
 {
-    SETTINGS.pers.zoomFontSize = incrementFontSize(-1);
+    m_editor->incrementFontSize(-1);
 }
 
 void NotPad::on_actionFontLarger_triggered()
 {
-    SETTINGS.pers.zoomFontSize = incrementFontSize(1);
+    m_editor->incrementFontSize(1);
 }
 
 void NotPad::on_actionRestoreFontSize_triggered()
 {
-    SETTINGS.pers.zoomFontSize = restoreFontSize();
+    m_editor->restoreFontSize();
 }
 
 void NotPad::on_actionFind_triggered(bool checked)

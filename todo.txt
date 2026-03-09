@@ -23,6 +23,7 @@
     - Icon
 - Font
   x Size adjust
+  x Size adjust with scroll wheel
   - Font selection ?
   - Fixed / not fixed switch
 x Tabs
@@ -67,7 +68,7 @@ x Reload current file
 - Recent files list
 - File finder select OS Native / Qt
 - Key shortcuts
-  - Close tab (ctrl+w)
+  x Close tab (ctrl+w)
   - Word wrap etc extra?
 - Improve about page
   - www address

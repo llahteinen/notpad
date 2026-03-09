@@ -44,7 +44,8 @@ public:
     void setWordWrap(bool enabled);
     bool isWordWrap() const;
     void updateTabWidth();
-    void setFont(const QFont&);     //!< Hide base class setFont
+    int incrementFontSize(int increment);
+    int restoreFontSize();
 
     void setHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags = {});
 
@@ -57,6 +58,10 @@ private slots:
     void onDataQueued();
     void onContentsChange(int position, int charsRemoved, int charsAdded);
     void invalidateSearchResults();
+
+protected:
+    virtual void changeEvent(QEvent *event) override;
+    virtual void wheelEvent(QWheelEvent *e) override;
 
 private:
     std::chrono::high_resolution_clock::time_point m_start_t{}, m_end_t{}; /// DEBUG

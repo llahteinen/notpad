@@ -446,10 +446,38 @@ void Editor::updateTabWidth()
     setTabStopDistance(SETTINGS.tabWidthChars * fontMetrics().averageCharWidth());
 }
 
-void Editor::setFont(const QFont& font)
+int Editor::incrementFontSize(int increment)
 {
-    QPlainTextEdit::setFont(font);
-    updateTabWidth();
+    auto font = this->font();
+    auto size = font.pointSize();
+    auto index = SETTINGS.standardFontSizes.indexOf(size);
+    Q_ASSERT(index >= 0);
+    if(index < 0)
+    {
+        qWarning() << "Got weird font size" << size;
+        index = SETTINGS.standardFontSizes.indexOf(SETTINGS.fontSizeDefault);
+    }
+    index += increment;
+    index = qMax(index, 0);
+    index = qMin(index, SETTINGS.standardFontSizes.length()-1);
+    qDebug() << "index" << index;
+    size = SETTINGS.standardFontSizes.at(index);
+    qDebug() << "size" << size;
+    font.setPointSize(size);
+    setFont(font);
+    SETTINGS.pers.zoomFontSize = size;
+    return size;
+}
+
+int Editor::restoreFontSize()
+{
+    auto font = this->font();
+    auto size = SETTINGS.fontSizeDefault;
+    font.setPointSize(size);
+    qDebug() << "pointSize" << font.pointSize();
+    setFont(font);
+    SETTINGS.pers.zoomFontSize = size;
+    return size;
 }
 
 void Editor::setHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags)
@@ -477,6 +505,29 @@ void Editor::invalidateSearchResults()
 {
     qDebug() << "invalidateSearchResults";
     m_search = {};
+}
+
+void Editor::changeEvent(QEvent* e)
+{
+    if(e->type() == QEvent::FontChange)
+    {
+        updateTabWidth();
+    }
+    QPlainTextEdit::changeEvent(e);
+}
+
+void Editor::wheelEvent(QWheelEvent* e)
+{
+    /// QPlainTextEdit::wheelEvent for some reason does not let zooming to happen unless we are in readOnly mode
+    if(e->modifiers() & Qt::ControlModifier)
+    {
+        /// Delta is mostly 1 or -1, but can be larger if multiple wheel events have been stacked together
+        const float delta = e->angleDelta().y() / 120.f;
+        incrementFontSize(delta);
+        return;
+    }
+    /// Call the base class implementation if we did NOT handle the event
+    QPlainTextEdit::wheelEvent(e);
 }
 
 qsizetype Editor::countMatches(const QString& sterm, QTextDocument::FindFlags flags)

@@ -40,6 +40,7 @@ public:
     int tabWidthChars{4};  /// Measured in characters or multiples of avg character width
     bool confirmAppClose{false};
     QString defaultDocName{"Untitled"};
+    int lineNumberOffset{1};    /// Whether first line is line 0 or line 1
 
 
     /// Runtime (not to be persisted)

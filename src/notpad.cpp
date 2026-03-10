@@ -2,6 +2,7 @@
 #include "forms/ui_notpad.h"
 #include "tab.hpp"
 #include "editor.hpp"
+#include "statusbar.hpp"
 #include "file.hpp"
 #include "utils/utils.hpp"
 #include "settings.hpp"
@@ -20,7 +21,8 @@
 NotPad::NotPad(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
-    , m_statusEncodingLabel{}
+    , m_locale{QLocale::system()}
+    , m_statusBar{new StatusBar(m_locale, this)}
     , m_tabManager{}
     , m_editor{}
     , m_prevEditor{}
@@ -32,8 +34,7 @@ NotPad::NotPad(QWidget *parent)
     m_tabManager = ui->tabWidget;
     m_tabManager->setupUi();
 
-    m_statusEncodingLabel = new QLabel();
-    statusBar()->addPermanentWidget(m_statusEncodingLabel, 0);
+    setStatusBar(m_statusBar);
 
     /// Close the template tabs
     while(m_tabManager->count() > 0)
@@ -102,6 +103,11 @@ NotPad::~NotPad()
         /// Abort
         qFatal() << "ThreadPool was still not finished, crashing...";
     }
+}
+
+StatusBar* NotPad::statusBar() const
+{
+    return m_statusBar;
 }
 
 void NotPad::closeEvent(QCloseEvent* event)
@@ -364,7 +370,7 @@ void NotPad::onCurrentTabChanged(int index)
 
     setupSignals();
     setupMenu();
-    setupStatusBar();
+    updateStatusBar();
 }
 
 void NotPad::setupSignals()
@@ -384,6 +390,7 @@ void NotPad::setupSignals()
         connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable, Qt::UniqueConnection);
         connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged,   Qt::UniqueConnection);
         connect(m_editor, &Editor::hasFileChanged,        this, &NotPad::onHasFileChanged, Qt::UniqueConnection);
+        connect(m_editor, &QPlainTextEdit::cursorPositionChanged, this, &NotPad::onCursorPositionChanged, Qt::UniqueConnection);
 
         /// Signals for active and background tabs, not supposed to get disconnected on tab switch
         connect(m_editor, &Editor::dataLoadingFinished,   this, &NotPad::onLoadingFinished, Qt::UniqueConnection);
@@ -410,15 +417,15 @@ void NotPad::setupMenu()
     }
 }
 
-void NotPad::setupStatusBar()
+void NotPad::updateStatusBar()
 {
     if(m_editor)
     {
-        m_statusEncodingLabel->setText(m_editor->encodingName());
-    }
-    else
-    {
-        m_statusEncodingLabel->setText("");
+        StatusBarData sbdata;
+        sbdata.encoding = m_editor->encodingName();
+        sbdata.stats = { m_editor->document()->blockCount(), m_editor->document()->characterCount() };
+        sbdata.cursor = { m_editor->textCursor() };
+        statusBar()->update(sbdata);
     }
 }
 
@@ -1058,10 +1065,28 @@ void NotPad::onTextChanged()
 //    qDebug() << "onTextChanged" << sender();
 }
 
+void NotPad::onCursorPositionChanged()
+{
+//    qDebug() << "onCursorPositionChanged";
+    if(!m_editor)
+    {
+        return;
+    }
+    StatusBarData sbdata;
+    sbdata.cursor = { m_editor->textCursor() };
+    statusBar()->update(sbdata);
+}
+
 void NotPad::onLoadingUpdate(int progress)
 {
 //    qDebug() << "onLoadingUpdate";
-    statusBar()->showMessage(tr("Loading %1").arg(progress), 2000);
+    /// This could also be a progress bar in the statusbar
+    if(sender() == m_editor)
+    {
+        StatusBarData sbdata;
+        sbdata.stats = { m_editor->document()->blockCount(), progress };
+        statusBar()->update(sbdata);
+    }
 }
 
 void NotPad::onLoadingFinished()
@@ -1072,6 +1097,6 @@ void NotPad::onLoadingFinished()
     {
         statusBar()->showMessage(tr("Finished loading %1").arg(editor->name()), 2000);
     }
-    setupStatusBar();
+    updateStatusBar();
 }
 

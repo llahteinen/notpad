@@ -14,6 +14,8 @@ set(PROJECT_SOURCES
         editor.cpp
         file.hpp
         file.cpp
+        statusbar.hpp
+        statusbar.cpp
         utils/namefilterlist.hpp
         utils/namefilterlist.cpp
         utils/textstream.hpp

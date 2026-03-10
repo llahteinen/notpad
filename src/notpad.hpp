@@ -4,10 +4,11 @@
 #include "file.hpp"
 #include <QMainWindow>
 #include <QTextDocument>
+#include <QLocale>
 
 class TabManager;
 class Editor;
-class QLabel;
+class StatusBar;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -35,6 +36,8 @@ private:
     void dropEvent(QDropEvent* e) override;
     void showEvent(QShowEvent* event) override;
 
+    StatusBar* statusBar() const; /// Reimplement base class method
+
     void saveSettings();
     void loadSettings();
     void handleArguments();
@@ -46,7 +49,7 @@ private:
 
     void setupSignals();
     void setupMenu();
-    void setupStatusBar();
+    void updateStatusBar();
 
     void messageOpenStatus(const File::Status& status);
     void messageSaveStatus(const File::Status& status);
@@ -76,6 +79,7 @@ private slots:
     void onRedoAvailable(bool available);
     void onHasFileChanged(bool has);
     void onTextChanged();
+    void onCursorPositionChanged();
     void onLoadingUpdate(int progress);
     void onLoadingFinished();
     void onCurrentTabChanged(int index);
@@ -116,7 +120,9 @@ private:
 
     Ui::NotPad *ui;
 
-    QLabel* m_statusEncodingLabel;  //!< The rightmost text box in status bar
+    QLocale m_locale;
+
+    StatusBar* m_statusBar;
 
     TabManager* m_tabManager;   /// Parent is an ui widget
     Editor* m_editor;       //!< Editor that is currently selected in the active tab

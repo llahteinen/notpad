@@ -14,7 +14,8 @@
   - Better GUI
 - Statusbar
   x Current encoding
-  - Length of file
+  x Length of file
+  x Cursor position
   - Length of selection (chars and lines)
 - Titlebar
   x File name (in tab title)

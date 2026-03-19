@@ -71,6 +71,49 @@ void TextStream::doValidations()
             m_hasLatinError = EncodingError::UNAVAILABLE;
         }
     }
+
+    /// Detect end-of-line
+    {
+        const bool text_mode = device()->isTextModeEnabled();
+        device()->setTextModeEnabled(false);
+
+        static constexpr char CR = '\r';
+        static constexpr char LF = '\n';
+        m_endOfLine = EndOfLine::UNAVAILABLE;
+
+        static constexpr qint64 max = 4096;
+        const auto bav = device()->bytesAvailable();
+        const QByteArray check_bytes = device()->peek(qMin(bav, max));
+
+        auto i_cr = check_bytes.indexOf(CR);
+        if(i_cr == -1) /// Does not contain any CR
+        {
+            if(check_bytes.indexOf(LF) > -1) /// But contains LF
+            {
+                m_endOfLine = EndOfLine::UNIX;
+            }
+        }
+        else /// Contains CR
+        {
+            if(i_cr < check_bytes.size())
+            {
+                if(check_bytes.at(i_cr + 1) == LF) /// Contains CRLF
+                {
+                    m_endOfLine = EndOfLine::WINDOWS;
+                }
+                else
+                {
+                    m_endOfLine = EndOfLine::MAC; /// Contains CR only
+                }
+            }
+            else
+            {
+                /// Should read more data
+            }
+        }
+        qDebug() << "EOL" << static_cast<int>(m_endOfLine);
+        device()->setTextModeEnabled(text_mode);
+    }
 }
 
 /// NOTE device has to be set before calling this
@@ -78,7 +121,7 @@ void TextStream::doValidations()
 QString TextStream::readAll()
 {
     Q_ASSERT(device());
-    if(File::openFile(m_file, m_file.fileName()) != File::Status::SUCCESS_READ)
+    if(File::openFile(m_file, m_file.fileName(), true) != File::Status::SUCCESS_READ)
     {
         qDebug() << "readAll openFile not successful";
         return {};
@@ -115,7 +158,8 @@ void TextStream::readChunks()
     m_dataQueue.clear();
 
     MetaData meta;
-    if(File::openFile(m_file, m_file.fileName()) != File::Status::SUCCESS_READ)
+    /// Open file in text mode. CRLF will be converted to LF and then the string length matches textdocument contents.
+    if(File::openFile(m_file, m_file.fileName(), true) != File::Status::SUCCESS_READ)
     {
         qDebug() << "readChunks openFile not successful";
         meta.fileError = true;
@@ -148,6 +192,7 @@ void TextStream::readChunks()
         data = QTextStream::read(m_batchSize * maxChunkSize);
 
         meta.encoding = encoding(); /// encoding might be updated in QTextStream::read()
+        meta.endOfLine = m_endOfLine;
         meta.hasBom = m_hasBom;
         meta.hasUtfError = m_hasUtfError;
         meta.hasLatinError = m_hasLatinError;
@@ -182,6 +227,11 @@ void TextStream::quit()
     m_quitCalled = true;
     m_dataWait.notify_all();
 };
+
+EndOfLine TextStream::endOfLine() const
+{
+    return m_endOfLine;
+}
 
 void TextStream::setAutoDetectBom(bool enabled)
 {

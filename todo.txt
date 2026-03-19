@@ -38,8 +38,13 @@ x Drag & drop files
   x Detection of encoding when opening
   - Changing encoding ?
   - Selecting encoding when saving
+- Line endings support
+  x Display current line ending type
+  x Save with the same type as loaded
+  - Choose type when saving
 - Large file warning
 - Binary file warning/question?
+  - Statusbar EOL display? Bin don't have line endings
 - Visualize hidden characters
   - Tabs and spaces
   - Line endings ?

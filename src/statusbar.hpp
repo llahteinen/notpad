@@ -12,6 +12,11 @@ class StatusBar : public QStatusBar
 public:
     struct Data
     {
+        struct Encoding
+        {
+            QString encoding;
+            QString endOfLine;
+        };
         struct Stats
         {
             int lines;
@@ -25,7 +30,7 @@ public:
             Cursor(int ln, int col, int pos);
             Cursor(const QTextCursor& cur);
         };
-        std::optional<QString> encoding{std::nullopt};
+        std::optional<Encoding> encoding{std::nullopt};
         std::optional<Stats> stats{std::nullopt};
         std::optional<Cursor> cursor{std::nullopt};
     };
@@ -41,6 +46,7 @@ private:
     const QLocale& m_locale;
 
     QLabel* m_encodingLabel{};  //!< The rightmost text box in status bar
+    QLabel* m_endOfLineLabel{};
     QLabel* m_docStatsLabel{};
     QLabel* m_cursorPositionLabel{};
 };

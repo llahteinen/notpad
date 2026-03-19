@@ -57,8 +57,9 @@ namespace File
     /// \brief Open a file for reading, but don't read anything.
     /// \param file File to be opened
     /// \param fileName
+    /// \param textMode Open file in text mode or binary mode
     /// \return Success status object
-    Status openFile(QFile& file, const QString& fileName);
+    Status openFile(QFile& file, const QString& fileName, bool textMode = true);
 };
 
 #endif // FILE_HPP

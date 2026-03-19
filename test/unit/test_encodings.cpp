@@ -17,6 +17,7 @@ private slots:
     void read();
     void detectBom();
     void validateUtf();
+    void detectEol();
 
     void cleanupTestCase()
     {
@@ -240,6 +241,44 @@ void Test_Encodings::validateUtf()
         QCOMPARE_NE(actual_str, expected_str);
     }
 
+}
+
+void Test_Encodings::detectEol()
+{
+    QString expected_str{QString::fromUtf8("First line")};
+    QString actual_str;
+
+    {
+        QFile f("testdata/test_eol_win.txt");
+        QVERIFY(f.open(QFile::ReadOnly));
+        TextStream ts(&f);
+        ts.setAutoDetectBom(true);
+        actual_str = ts.readAll();
+        QCOMPARE_EQ(actual_str.count("\n"), 3); /// Read data has EOL converted to LF only
+        QCOMPARE_EQ(actual_str.count("\r\n"), 0);
+        QCOMPARE_EQ(ts.endOfLine(), EndOfLine::WINDOWS);
+    }
+    {
+        QFile f("testdata/test_eol_unix.txt");
+        QVERIFY(f.open(QFile::ReadOnly));
+        TextStream ts(&f);
+        ts.setAutoDetectBom(true);
+        actual_str = ts.readAll();
+        QCOMPARE_EQ(actual_str.count("\n"), 3);
+        QCOMPARE_EQ(actual_str.count("\r\n"), 0);
+        QCOMPARE_EQ(ts.endOfLine(), EndOfLine::UNIX);
+    }
+    {
+        QFile f("testdata/test_eol_mac.txt");
+        QVERIFY(f.open(QFile::ReadOnly));
+        TextStream ts(&f);
+        ts.setAutoDetectBom(true);
+        actual_str = ts.readAll();
+        QCOMPARE_EQ(actual_str.count("\r"), 0); /// Read data has EOL converted to LF only
+        QCOMPARE_EQ(actual_str.count("\n"), 0); /// But Qt doesn't recognize legacy CR only as EOL, so they are removed??
+        QCOMPARE_EQ(actual_str.count("\r\n"), 0);
+        QCOMPARE_EQ(ts.endOfLine(), EndOfLine::MAC);
+    }
 }
 
 QTEST_APPLESS_MAIN(Test_Encodings)

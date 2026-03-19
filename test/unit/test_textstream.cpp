@@ -30,7 +30,10 @@ private slots:
         QString fileName = "testdata/10MB.txt";
         QFile fw;
         fw.setFileName(fileName);
-        QCOMPARE(fw.open(QFile::WriteOnly | QFile::Text), true);
+        /// QFile::Text mode would always write CRLF on Windows and LF on UNIX
+        /// Omitting the flag will always write what is in the incoming text
+        /// So we will write \n end of lines into the test data
+        QCOMPARE(fw.open(QFile::WriteOnly), true);
         qDebug() << QFileInfo(fw).absoluteFilePath();
         QTextStream ts(&fw);
         for(quint64 i = 0; i < filesize10MB; ++i)

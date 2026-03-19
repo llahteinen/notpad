@@ -13,10 +13,12 @@ StatusBar::StatusBar(const QLocale& locale, QWidget* parent) : QStatusBar(parent
     setSizeGripEnabled(true);
 
     m_encodingLabel = new QLabel(this); /// Rightmost
+    m_endOfLineLabel = new QLabel(this);
     m_docStatsLabel = new QLabel(this);
     m_cursorPositionLabel = new QLabel(this);
 
     m_encodingLabel->setMaximumWidth(90);
+    m_endOfLineLabel->setMaximumWidth(100);
     m_docStatsLabel->setMaximumWidth(185);
     m_cursorPositionLabel->setMaximumWidth(210);
 
@@ -27,6 +29,7 @@ StatusBar::StatusBar(const QLocale& locale, QWidget* parent) : QStatusBar(parent
     addPermanentWidget(spacer, 1);
     addPermanentWidget(m_cursorPositionLabel, 1);
     addPermanentWidget(m_docStatsLabel, 1);
+    addPermanentWidget(m_endOfLineLabel, 1);
     addPermanentWidget(m_encodingLabel, 1); /// Rightmost
 }
 
@@ -34,7 +37,8 @@ void StatusBar::update(const Data& d)
 {
     if(d.encoding.has_value())
     {
-        m_encodingLabel->setText(*d.encoding);
+        m_encodingLabel->setText(d.encoding->encoding);
+        m_endOfLineLabel->setText(d.encoding->endOfLine);
     }
     if(d.stats.has_value())
     {

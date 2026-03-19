@@ -20,6 +20,7 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
     , m_textStream{stream}
     , m_file{std::move(file_p)}
     , m_encoding{QStringConverter::Utf8}
+    , m_endOfLine{EndOfLine::UNAVAILABLE}
     , m_hasBom{false}
     , m_format{}
     , m_search{}
@@ -88,6 +89,27 @@ void Editor::abortTasks()
     {
         m_textStreamThread->quit();
     }
+}
+
+/// Handle line endings here and stream to file using binary mode.
+/// If writing to file in text mode, it would insert platform specific end of lines automatically.
+QString Editor::toPlainText() const
+{
+    /// Note: toPlainText() converts the internally used unicode paragraph separators to \n
+    /// toRawText() returns the unicode versions directly
+    /// Let's let toPlainText to handle the unicode chars and we just replace the \n's here
+    using namespace Qt::StringLiterals;
+    QString txt = document()->toPlainText();
+    if(m_endOfLine == EndOfLine::WINDOWS)
+    {
+        /// NOTE not performance tested. But Qt uses similar internally.
+        txt.replace(u'\n', "\r\n"_L1); /// u is utf16 literal, _L1 is latin-1 literal
+    }
+    else if(m_endOfLine == EndOfLine::MAC)
+    {
+        txt.replace(u'\n', '\r'_L1); /// u is utf16 literal, _L1 is latin-1 literal
+    }
+    return txt;
 }
 
 /// static
@@ -199,6 +221,7 @@ void Editor::onDataQueued()
     if(Q_UNLIKELY(meta.first))
     {
         m_encoding = meta.encoding;
+        m_endOfLine = meta.endOfLine; /// TODO: Maybe if this remains unknown after the initial check, this should be checked later on (if the first EOL is very far in the doc)
         m_hasBom = meta.hasBom;
 
         if(document()->isModified())
@@ -226,6 +249,9 @@ void Editor::onDataQueued()
     /// Probably would need to hack QPlainTextEdit to prevent it.
     const auto scrollbarPrevValue = verticalScrollBar()->value();
 
+    /// NOTE insertText converts any line ending characters to unicode block separators.
+    /// So as long as we use insertText, we can't choose what eol type we show in the document.
+    /// Furthermore I don't know if it's even possible to use ascii line endings in QTextDocument
     if(!m_reloading)
     {
         cursor.movePosition(QTextCursor::End); /// Ensure we are appending to the end
@@ -233,6 +259,8 @@ void Editor::onDataQueued()
     }
     else
     {
+        /// setPosition out of range possible here (different end of lines)
+        /// dataChunk and document end of lines must match
         const int chunkEnd = qMin(m_loadingPos + dataChunk.length(), document()->characterCount() - 1);
         cursor.setPosition(m_loadingPos, QTextCursor::MoveAnchor);
         cursor.setPosition(chunkEnd, QTextCursor::KeepAnchor);
@@ -421,6 +449,11 @@ QString Editor::encodingName() const
     QString name = QStringConverter::nameForEncoding(m_encoding);
     if(m_hasBom) name.append(" BOM");
     return name;
+}
+
+QString Editor::endOfLineName() const
+{
+    return TextStream::nameForEndOfLine(m_endOfLine);
 }
 
 bool Editor::isModified() const

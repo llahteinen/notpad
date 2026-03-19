@@ -422,7 +422,7 @@ void NotPad::updateStatusBar()
     if(m_editor)
     {
         StatusBarData sbdata;
-        sbdata.encoding = m_editor->encodingName();
+        sbdata.encoding = { m_editor->encodingName(), m_editor->endOfLineName() };
         sbdata.stats = { m_editor->document()->blockCount(), m_editor->document()->characterCount() };
         sbdata.cursor = { m_editor->textCursor() };
         statusBar()->update(sbdata);

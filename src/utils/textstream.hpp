@@ -7,7 +7,16 @@
 #include <QQueue>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QMap>
 
+
+enum class EndOfLine
+{
+    UNAVAILABLE = -1,
+    UNIX = 0,       /// lf
+    WINDOWS = 1,    /// crlf
+    MAC = 2,        /// cr (obsolete)
+};
 
 class TextStream : public QObject, public QTextStream
 {
@@ -20,8 +29,22 @@ public:
         TRUE = 1,
     };
 
+    static QString nameForEndOfLine(EndOfLine eol)
+    {
+        static const QMap<EndOfLine, QString> eolNames
+            {
+             { EndOfLine::UNAVAILABLE,   "N/A" },
+             { EndOfLine::UNIX,          "Unix (LF)" },
+             { EndOfLine::WINDOWS,       "Windows (CRLF)" },
+             { EndOfLine::MAC,           "Mac legacy (CR)" },
+             };
+        return eolNames.value(eol);
+    }
+
     explicit TextStream(QFileDevice* device);
     explicit TextStream(const QString& fileName); /// Use with readChunks
+
+    EndOfLine endOfLine() const;
 
     void setAutoDetectBom(bool enabled);
     bool hasBom() const;
@@ -36,6 +59,7 @@ public:
     {
         bool fileError{false};
         QStringConverter::Encoding encoding{QStringConverter::Encoding::Utf8};
+        EndOfLine endOfLine{EndOfLine::UNAVAILABLE};
         bool hasBom{false};
         EncodingError hasUtfError{EncodingError::UNAVAILABLE};
         EncodingError hasLatinError{EncodingError::UNAVAILABLE};
@@ -103,9 +127,12 @@ private:
     bool m_autoDetectBom{false};
     bool m_validateUtf{false};
     bool m_validateLatin{false};
+
+    EndOfLine m_endOfLine{EndOfLine::UNAVAILABLE};
     bool m_hasBom{false};
     EncodingError m_hasUtfError{EncodingError::UNAVAILABLE};
     EncodingError m_hasLatinError{EncodingError::UNAVAILABLE};
+
     QFile m_file; /// Own instance here for thread safety
 };
 

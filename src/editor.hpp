@@ -20,6 +20,8 @@ public:
     Editor(const Editor&) = delete;
     Editor& operator=(const Editor&) = delete;
 
+    QString toPlainText() const; /// Hides base class method
+
     static Editor* createEditor(File::Status& o_status, const QString& fileName, QWidget* parent = nullptr);
 
     /// \return True if can be saved over previous file. False if "save as" / file selection is needed first.
@@ -39,6 +41,7 @@ public:
     QString name() const;
     const QFile* file() const;
     QString encodingName() const;
+    QString endOfLineName() const;
     bool isModified() const;
 
     void setWordWrap(bool enabled);
@@ -81,6 +84,7 @@ private:
     QPointer<TextStream> m_textStream;      /// QPointers become null automatically when the QObject is deleted
     std::unique_ptr<QFile> m_file;
     QStringConverter::Encoding m_encoding;
+    EndOfLine m_endOfLine;
     bool m_hasBom;
 
     QTextCharFormat m_format;

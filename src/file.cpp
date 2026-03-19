@@ -20,7 +20,9 @@ File::Status File::saveFile(QStringView text, QFile& file, QStringConverter::Enc
         qDebug() << "Writing new file" << file.fileName();
     }
 
-    if(!file.open(QFile::WriteOnly | QFile::Text))
+    /// QFile::Text mode would always write CRLF on Windows and LF on UNIX
+    /// Omitting the flag will always write what is in the incoming text
+    if(!file.open(QFile::WriteOnly))
     {
         qWarning() << "Failed to open file:" << file.errorString();
         status.code = Status::FAIL_OPEN_WRITE;
@@ -56,7 +58,7 @@ File::Status File::saveFile(QStringView text, QFile& file, QStringConverter::Enc
     return status;
 }
 
-File::Status File::openFile(QFile& file, const QString& fileName)
+File::Status File::openFile(QFile& file, const QString& fileName, bool textMode)
 {
     qDebug() << "File::openFile" << fileName;
 
@@ -72,7 +74,8 @@ File::Status File::openFile(QFile& file, const QString& fileName)
     }
     status.fileName = file.fileName();
 
-    if(!file.open(QFile::ReadOnly | QFile::Text))
+    /// The Text flag passed to open() tells Qt to convert Windows-style line terminators ("\r\n") into C++-style terminators ("\n")
+    if(!file.open(QFile::ReadOnly | (textMode ? QFile::Text : QFile::OpenMode{})))
     {
         qWarning() << "Can't open";
         status.code = Status::FAIL_OPEN_READ;

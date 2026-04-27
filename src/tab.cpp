@@ -152,10 +152,16 @@ void TabManager::iterateTabs(std::function<bool(Editor* editor)> processor)
 
 QList<Editor*> TabManager::getProcessingOrder()
 {
+    if(count() <= 0 || currentIndex() < 0)
+    {
+        return {};
+    }
+
     QList<Editor*> tabs;
 
     const auto add = [this, &tabs](int i) {
         auto* editor = widget(i);
+        Q_ASSERT(editor != nullptr);
         if(!tabs.contains(editor)) { tabs.append(editor); }
     };
 

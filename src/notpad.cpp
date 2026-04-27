@@ -206,6 +206,7 @@ bool NotPad::closeAllTabs()
 {
     /// Speed up shutdown a little bit if there are ongoing tasks running
     m_tabManager->iterateTabs([](Editor* editor) -> bool {
+        Q_ASSERT(editor != nullptr);
         editor->abortTasks();
         return false;
     });

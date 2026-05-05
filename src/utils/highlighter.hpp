@@ -16,7 +16,7 @@ public:
         : LSyntaxHighlighter(parent)
     {
         m_highlightFormat.setBackground(Qt::yellow);
-//        m_highlightFormat.setForeground(Qt::black);
+        m_highlightFormat.setForeground(Qt::black);
     }
 
     ~Highlighter() = default;

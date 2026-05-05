@@ -2,7 +2,6 @@
 #include "editor.hpp"
 #include "settings.hpp"
 #include <QTabBar>
-#include <QToolButton>
 
 
 Editor* TabManager::createEmptyEditor()
@@ -48,19 +47,6 @@ void TabManager::setupUi()
 {
     tabBar()->setDrawBase(false); /// false ehkä ihan OK
     tabBar()->setDocumentMode(true);
-
-    QToolButton* tb = new QToolButton(this);
-    tb->setText("+");
-    tb->setFont(QFont("Consolas", 15));
-//    tb->setArrowType(Qt::ArrowType::DownArrow); /// Ei.
-//    tb->setAutoRaise(true);
-    tb->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::ListAdd));
-//    tb->setIconSize({24,24}); /// Tekee blurria
-//    tb->setMinimumWidth(26);
-
-    connect(tb, &QToolButton::clicked, this, &TabManager::addEmptyTab);
-
-    QTabWidget::setCornerWidget(tb, Qt::TopRightCorner);
 }
 
 void TabManager::addTab(Editor* editor)

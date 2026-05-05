@@ -31,6 +31,8 @@ set(PROJECT_SOURCES
 
 set(RESOURCE_FILES
     forms/styles.css
+    forms/colors-light.css
+    forms/colors-dark.css
     res/icon.ico
 )
 

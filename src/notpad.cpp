@@ -15,6 +15,8 @@
 #include <QSettings>
 #include <QThreadPool>
 #include <QFuture>
+#include <QToolButton>
+#include <QStyleHints>
 
 
 
@@ -33,6 +35,16 @@ NotPad::NotPad(QWidget *parent)
     ui->setupUi(this);
     m_tabManager = ui->tabWidget;
     m_tabManager->setupUi();
+
+    /// Create add tab button
+    {
+        auto* tb = new QToolButton(this);
+        tb->setObjectName("menuBarPlusButton");
+        tb->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::ListAdd));
+//        tb->setArrowType(Qt::ArrowType::DownArrow); /// Could be good for tab list button
+        connect(tb, &QToolButton::clicked, m_tabManager, &TabManager::addEmptyTab);
+        ui->menubar->setCornerWidget(tb, Qt::TopRightCorner);
+    }
 
     setStatusBar(m_statusBar);
 
@@ -61,27 +73,22 @@ NotPad::NotPad(QWidget *parent)
     /// Check command line arguments
     handleArguments();
 
-    QFile styleFile(":/forms/styles.css");
-    if(styleFile.open(QFile::ReadOnly))
-    {
-        const auto style = styleFile.readAll();
-//        qDebug() << "style" << style;
-        qApp->setStyleSheet(style);
-        if(style.trimmed().isEmpty())
-        {
-            qWarning() << "Style was empty.";
-        }
-    }
-    else
-    {
-        qWarning() << "Setting style failed.";
-    }
+//    QApplication::setStyle("Fusion"); /// Similar look on all platforms, but not very native look on Windows. Does not seem to need much CSS/QSS customization
+//    QApplication::setStyle("windows"); /// Vintage Windows style (but still supports dark mode!)
+//    QApplication::setStyle("windowsvista"); /// Does not look super great. Does not support dark mode (but doesn't break either)
+//    QApplication::setStyle("macOS"); /// Looks to fall back to windows11 style on Windows 11
+//    QApplication::setStyle("windows11"); /// Good Windows 11 style (from Qt 6.11 onwards). Needs some CSS magic
+    updateStyle(QGuiApplication::styleHints()->colorScheme());
+
+    const auto* hints = QGuiApplication::styleHints();
+    connect(hints, &QStyleHints::colorSchemeChanged, this, &NotPad::onColorSchemeChanged);
 
     on_actionFind_triggered(ui->actionFind->isChecked());
 
     qDebug() << "Platform:" << QGuiApplication::platformName();
     qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
     qDebug() << "Current theme:" << QIcon::themeName();
+    qDebug() << "Current style:" << QApplication::style();
 
     /// Load persisted data
     loadSettings(); /// Must be before QMainWindow::show() because it loads window size etc
@@ -426,6 +433,50 @@ void NotPad::updateStatusBar()
         sbdata.stats = { m_editor->document()->blockCount(), m_editor->document()->characterCount() };
         sbdata.cursor = { m_editor->textCursor() };
         statusBar()->update(sbdata);
+    }
+}
+
+void NotPad::updateStyle(Qt::ColorScheme scheme)
+{
+    /// Set colors based on OS dark/light mode
+    qDebug() << "Color scheme" << scheme;
+    QFile colorStyleFile;
+    if(scheme == Qt::ColorScheme::Dark)
+    {
+        colorStyleFile.setFileName(":/forms/colors-dark.css");
+    }
+    else
+    {
+        colorStyleFile.setFileName(":/forms/colors-light.css");
+    }
+
+    if(colorStyleFile.open(QFile::ReadOnly))
+    {
+        const auto style = colorStyleFile.readAll();
+        qApp->setStyleSheet(style);
+        if(style.trimmed().isEmpty())
+        {
+            qWarning() << "Style was empty.";
+        }
+    }
+    else
+    {
+        qWarning() << "Setting color style failed.";
+    }
+
+    /// Set other style settings common for all color themes
+    if(QFile styleFile(":/forms/styles.css"); styleFile.open(QFile::ReadOnly))
+    {
+        const auto style = styleFile.readAll();
+        this->setStyleSheet(style);
+        if(style.trimmed().isEmpty())
+        {
+            qWarning() << "Style was empty.";
+        }
+    }
+    else
+    {
+        qWarning() << "Setting common style failed.";
     }
 }
 
@@ -1098,5 +1149,15 @@ void NotPad::onLoadingFinished()
         statusBar()->showMessage(tr("Finished loading %1").arg(editor->name()), 2000);
     }
     updateStatusBar();
+}
+
+void NotPad::onColorSchemeChanged(Qt::ColorScheme colorScheme)
+{
+    qDebug() << "onColorSchemeChanged" << colorScheme;
+    /// Must be queued call, otherwise the styles get mangled badly.
+    /// Seems that this colorSchemeChanged signal is emitted before the theme has actually changed.
+    /// "When the colorSchemeChange() signal gets emitted, the old palette is still in effect."
+    /// "To update application- specific colors when the effective palette changes, handle PaletteChange or ApplicationPaletteChange events."
+    QMetaObject::invokeMethod(this, &NotPad::updateStyle, Qt::QueuedConnection, colorScheme);
 }
 

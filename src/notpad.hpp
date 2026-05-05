@@ -50,6 +50,7 @@ private:
     void setupSignals();
     void setupMenu();
     void updateStatusBar();
+    void updateStyle(Qt::ColorScheme scheme);
 
     void messageOpenStatus(const File::Status& status);
     void messageSaveStatus(const File::Status& status);
@@ -86,6 +87,7 @@ private slots:
     bool onTabCloseRequested(int index);
     void onFindResultFound(Editor* editor, QTextCursor result);
     void onMatchCountFinished(Editor* editor, qsizetype count);
+    void onColorSchemeChanged(Qt::ColorScheme colorScheme);
 
     /// Automatically connected slots
     /// MENU ================================

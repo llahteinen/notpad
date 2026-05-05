@@ -35,6 +35,7 @@ private:
     void dragEnterEvent(QDragEnterEvent* e) override;
     void dropEvent(QDropEvent* e) override;
     void showEvent(QShowEvent* event) override;
+    void changeEvent(QEvent* event) override;
 
     StatusBar* statusBar() const; /// Reimplement base class method
 
@@ -50,6 +51,7 @@ private:
     void setupSignals();
     void setupMenu();
     void updateStatusBar();
+    void updateStyle();
 
     void messageOpenStatus(const File::Status& status);
     void messageSaveStatus(const File::Status& status);

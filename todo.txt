@@ -76,6 +76,11 @@ x Reload current file
 - Key shortcuts
   x Close tab (ctrl+w)
   - Word wrap etc extra?
+- Dark mode support
+  x Switch with OS
+  - Switch manually
+
+## Misc
 - Improve about page
   - www address
   x creator

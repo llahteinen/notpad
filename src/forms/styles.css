@@ -1,5 +1,3 @@
-NotPad { background-color: #f0f0f0; } /* #f0f0f0 was the default in the palette */
-
 QScrollBar {
 }
 QScrollBar:horizontal {
@@ -11,38 +9,50 @@ QScrollBar:vertical {
 /*    color: #333;*/            /* Does nothing */
 }
 
+/* File Edit Options etc */
+/* Affects the top menu bar but not inside the menus */
 QMenuBar {
-/*    color: #333;*/       /* Don't set this because it overrides inactive colors */
-    border-bottom: 1px solid rgba(0, 0, 0, 30);
-    background-color: rgba(255, 255, 255, 50); /* Transparent background */
     padding: 1px;           /* Padding inside the whole menu bar */
+    /* padding-top: 0px;
+    padding-bottom: 12px; */
 }
-QMenuBar::active {
-    color: #333;            /* Affects the top menu bar but not inside the menus */
-}
+/* Make the menubar smaller without the huge default padding */
 QMenuBar::item {
-    background: transparent; /* For some weird reason when setting this, the font starts to look right (on Windows) */
     padding: 3px 8px;        /* Padding inside the menubar items e.g. File */
+    border-radius: 0px;
 }
-QMenuBar::item:selected {    /* Hover effect */
-    background-color: rgba(0, 0, 0, 20); /* Darker background on hover */
+
+QMenuBar QToolButton {
+    /* Set the border here to have consistent size for non hover and hover */
+    border-radius: 2px;
+    /* 14px minimum for the icon */
+    height: 16px;
+    /* Hack required to make the icon look centered (at least on Windows) */
+    padding-top: 1px;
+    padding-bottom: 0px;
+    padding-left: 5px;
+    padding-right: 2px;
+    /* If want to get it further from window border */
+    /* margin-right: 4px;
+    margin-bottom: 0px; */
 }
-QMenuBar::item:pressed {     /* Click effect */
-    background-color: rgba(0, 0, 0, 10); /* Different darkness on click */
+QMenuBar QToolButton:hover
+{
+/* IDEA:
+ Q-letter shape borders
+ */
+    /* border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 0px; */
 }
 
 QMenu {
-/*    color: #333;*/       /* Don't set this because it overrides inactive colors */
+    /* For some reason border-radius is not working on Qt 6.11 */
     border-radius: 0px;
-    border: 1px solid rgba(0, 0, 0, 30);
-    background-color: rgb(252, 252, 252);
     padding: 2px;
 }
-QMenu::active {
-    color: #333;            /* Affects text and checkmark, but not (png) icons */
-}
 QMenu::separator {
-    background: rgba(0, 0, 0, 30);
     height: 1px;
     margin-left: 26px;
     margin-right: 4px;
@@ -57,22 +67,6 @@ QMenu::item {
     padding-bottom: 4px;
     min-width: 80px;        /* Can be used to make more space between text and shortcut. Seems to affect the text portion itself, the shortcut and icon sections excluded */
 }
-QMenu::item::active {
-/*    color: #333;*/        /* Also affects text and checkmark, but not icons */
-}
-QMenu::item::disabled {
-    color: #888;            /* Maybe adjust this later. The icon goes a bit grey, but no idea how to adjust that */
-}
-QMenu::item:selected {    /* Hover effect */
-    background-color: rgba(0, 0, 0, 12); /* Darker background on hover */
-}
-QMenu::item:pressed {     /* Click effect */
-    background-color: rgba(0, 0, 0, 6);  /* Different darkness on click */
-}
-/* The whole row, if the item is checked */
-/*QMenu::item:checked {
-    background-color: rgba(0, 0, 0, 30);
-}*/
 /* Checkable menu item checkmark (for items that don't have icon set) */
 /* It seems quite weird to try to get this look same as an ::icon */
 /* If you set this to same size as ::icon including its padding, the text will be misaligned */
@@ -85,7 +79,7 @@ QMenu::indicator {
     padding: 2px;           /* This pushes the text right. On ::icon it DOESN'T */
 /*    background-color: pink;*/ /* Background of the check mark area, get's rid of the check icon */
 }
-QMenu::indicator::active {
+QMenu::indicator:active {
 /*    color: #F00;*/            /* Doesn't do anything */
 }
 QMenu::indicator:checked {
@@ -95,13 +89,23 @@ QMenu::indicator:checked {
 QMenu::icon {
 /*    width: 36px;*/        /* Doesn't have any effect */
     padding: 4px;           /* 4px padding == total size 24x24 px Same padding as QMenu::item -> vertically fills whole row */
-    border-radius: 2px;
+    border-radius: 4px;     /* 4px looks ok with the new windows11 style unchangeable menu radius */
+/* IDEA:
+ Q-letter shape borders
+ */
+    /* border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 0px; */
 }
-QMenu::icon:pressed,
+QMenu::icon:pressed {
+    /* height: 24px; */   /* Does not affect */
+    /* Needs hacking or some other solution for some icons to get the same size for the bordered area */
+    /* padding-top: 6px;
+    padding-bottom: 6px; */
+}
 QMenu::icon:checked {
-    background-color: rgba(0, 0, 0, 16);
     padding: 3px;           /* Reduce padding same amount as border size */
-    border: 1px inset lightgray;
 }
 /* QT EXAMPLE */
 /*QMenu::icon:checked {
@@ -114,26 +118,28 @@ QMenu::icon:checked {
     left: 1px;
 }*/
 
-QToolButton { /* vaikuttaa + nappiin */
-/*    min-width: 50px;*/
-    height: 20px;
-    border: none;
-    background-color: #f0f0f0; /* This disables the quirk that tab X buttons show from below */
+/* Tab overflow scroll buttons */
+/* Set the size using QTabBar::scroller */
+QTabBar QToolButton {
+
 }
-QTabBar QToolButton { /* ei vaikuta + nappiin */
-/*    padding: 1px;*/
-/*    min-width: 50px;*/
-/*    text-align: right;*/
-/*    margin: 0px;*/
-/*border: none;*/
-/*    padding-left: 15px;*/
+QTabBar QToolButton:hover
+{
+    border-radius: 0px;
 }
+QTabBar QToolButton:pressed
+{
+
+}
+/* Setting width here for some reason disappears the arrow icons.
+   Set it with QTabBar::scroller instead */
 /*QTabBar QToolButton::right-arrow {
 }
 QTabBar QToolButton::left-arrow {
 }*/
 QTabWidget::pane { /* The tab widget frame */
-    border-top: 2px solid #000;
+    /* Color does not seem to affect */
+    border-top: 0px solid;
 }
 QTabWidget::tab-bar {
 /*    right: 15px;*/ /* move to the left by 5px */
@@ -143,18 +149,21 @@ QTabBar::tab {
 /*    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);*/
-/*    border: 2px solid #C4C4C3;*/
-/*    border-bottom-color: #C2C7CB;*/
-/*    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;*/
+    /* border: 1px solid #C4C4C3;
+    border-bottom-color: #C2C7CB;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px; */
     min-width: 20ex;
 /*    padding: 2px;*/
 /*    padding-left: 0px;*/ /* padding rikkoo koko setin */
 /*    margin: 0px;*/
+    height: 24px; /* Default height 24px */
+    /* If set background-color, then the whole default style disappears */
+    /* background-color: #fff; */
 }
 
 QTabBar::scroller { /* the width of the scroll buttons */
-    width: 40px;
+    width: 46px;
 /*    background: solid;*/
 }
 /*QTabBar::close-button { Ei tunnu vaikuttavan tabien rakseihin

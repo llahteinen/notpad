@@ -1,0 +1,121 @@
+/* main color #F0F0F0 (== 240) */
+/* darker 1   #E7E7E7 (== 231) */
+/* darker 2   #E0E0E0 (== 224) */
+
+/* #f0f0f0 was the default in the palette */
+NotPad { background-color: #F0F0F0; } /* main color */
+
+/* File Edit Options etc */
+/* Affects the top menu bar but not inside the menus */
+QMenuBar {
+    border-bottom: 1px solid rgba(0, 0, 0, 30);
+    /* Not very necessary to set */
+    background-color: rgba(255, 255, 255, 50);
+}
+/* Affects only when the window is active */
+QMenuBar:active {
+    /* Text color */
+    /* A bit less black text */
+    color: rgba(0, 0, 0, 224);
+}
+QMenuBar::item {
+    /* For some weird reason when setting this, the font starts to look right (on Windows) */
+    background: transparent;
+}
+QMenuBar::item:selected {    /* Hover effect */
+    /* Darker background on hover */
+    background-color: rgba(0, 0, 0, 20);
+}
+QMenuBar::item:pressed {     /* Click effect */
+    /* Different darkness on click */
+    background-color: rgba(0, 0, 0, 10);
+}
+
+QMenuBar QToolButton {
+    border: 1px outset rgba(127, 127, 127, 0); /* Invisible border */
+}
+QMenuBar QToolButton:hover
+{
+    /* inset outset? */
+    border: 1px outset rgb(211, 211, 211);
+    background-color: rgba(0, 0, 0, 20);
+}
+QMenuBar QToolButton:pressed
+{
+    /* border: 1px inset rgb(211, 211, 211); */
+    background-color: rgba(0, 0, 0, 10);
+}
+
+QMenu {
+    /* Needed for Qt <6.11, but does not affect on Qt 6.11 */
+    border: 1px solid rgba(0, 0, 0, 30);
+    /* If you set alpha here the menu itself will be transparent */
+    /* Seems not necessary with Qt 6.11 */
+    /* background-color: rgb(252, 252, 252); */ /* bit lighter menus */
+}
+QMenu:active {
+    /* Set foreground color with QMenu::item:active instead */
+}
+QMenu::separator {
+    background: rgba(0, 0, 0, 30);
+}
+QMenu::item:active {
+    /* Affects text and checkmark, but not icons */
+    /* A bit less black text */
+    /* Try to match the text color to the default icon color */
+    color:  rgba(0, 0, 0, 224);
+}
+QMenu::item:disabled {
+    /* The icon goes a bit grey, but no idea how to adjust that */
+    /* Try to match the text color to the default icon color */
+    color:  rgba(0, 0, 0, 127);
+}
+QMenu::item:selected {    /* Hover effect */
+    /* Darker background on hover */
+    background-color: rgba(0, 0, 0, 12);
+}
+QMenu::item:pressed {     /* Click effect */
+    /* Different darkness on click */
+    background-color: rgba(0, 0, 0, 6);
+}
+/* Colorize the whole row, if the item is checked */
+/*QMenu::item:checked {
+    background-color: rgba(0, 0, 0, 30);
+}*/
+QMenu::icon:pressed {
+    /* No press effect for now */
+    /* background-color: rgba(0, 0, 0, 16);
+    border: 1px inset lightgray; */
+}
+QMenu::icon:checked {
+    background-color: rgba(0, 0, 0, 16);
+    border: 1px inset rgb(211, 211, 211); /* 211 == lightgray */
+}
+
+/* Tab overflow scroll buttons */
+QTabBar QToolButton {
+    /* Setting background disables the quirk that tab X buttons show from below */
+    background-color: #F0F0F0; /* main color */
+    /* border: 1px outset rgba(127, 127, 127, 0); */ /* Invisible border */
+    border: none;
+}
+QTabBar QToolButton:hover
+{
+    background-color: #E0E0E0; /* darker 2 */
+    /* border: 1px outset rgb(211, 211, 211); */ /* 211 == lightgray */
+}
+QTabBar QToolButton:pressed
+{
+    background-color: #E7E7E7; /* darker 1 */
+}
+
+QTabBar::tear {
+    /* Don't know how to set color */
+    /* color: rgba(255, 255, 255, 255); */
+}
+
+/* Seems not to be properly possible to set the separator color.
+   It can be set using border, but it changes other aspects too. */
+QStatusBar::item {
+    /* border-left: 1px solid red; */
+}

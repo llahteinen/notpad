@@ -773,7 +773,7 @@ void NotPad::keyPressEvent(QKeyEvent* event)
                 }
                 else
                 {
-                    on_actionFind_triggered(false);
+                    showHideFind(false);
                 }
                 return;
             }
@@ -1057,27 +1057,35 @@ void NotPad::on_actionFind_triggered(bool checked)
         return;
     }
 
-    /// Three scenarios:
+    /// Scenarios:
     /// Find widget is not currently visible
     ///  -> show
-    /// Find widget is already visible, but the selected text is different than what is in the search input box
-    ///  -> set new search text
-    /// Find widget is already visible and the selected text has stayed the same
+    /// Find widget is already visible, but is not focused
+    ///  -> set focus and select the text
+    ///  -> If user has selected text in the editor, set new search text
+    /// Find widget is already visible and focused
     ///  -> hide
 
     bool show = checked;
-    if(m_editor->textCursor().hasSelection()) /// hasComplexSelection ?
+
+    if(!ui->find_lineEdit->hasFocus())
     {
-        qDebug() << "hasSelection" << m_editor->textCursor().selectedText();
-        const auto selected_text = m_editor->textCursor().selectedText();
-        if(selected_text.compare(ui->find_lineEdit->text(), Qt::CaseInsensitive) != 0) /// Should match search setting?
+        show = true;
+
+        if(m_editor->textCursor().hasSelection()) /// hasComplexSelection ?
         {
+            qDebug() << "hasSelection" << m_editor->textCursor().selectedText();
+            const auto selected_text = m_editor->textCursor().selectedText();
             /// User has selected something else, probably wants to search for it and not close the search
-            show = true;
             ui->find_lineEdit->setText(selected_text);
         }
     }
 
+    showHideFind(show);
+}
+
+void NotPad::showHideFind(bool show)
+{
     const bool raising_edge = !ui->main_find_widget->isVisible() && show;
     const bool falling_edge = ui->main_find_widget->isVisible() && !show;
 

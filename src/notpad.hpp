@@ -71,6 +71,7 @@ private:
     /// \return true for permission to discard file, false for no permission
     bool confirmFileReload(Editor* editor, const QString& messageTitle = tr("Confirmation"));
 
+    void showHideFind(bool show);
     void find(QTextDocument::FindFlags flags, int recursion = 0);
 
     const QFile* currentFile();

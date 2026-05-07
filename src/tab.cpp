@@ -51,14 +51,15 @@ void TabManager::setupUi()
 
 void TabManager::addTab(Editor* editor)
 {
-    const int index = QTabWidget::addTab(editor, QIcon::fromTheme(QIcon::ThemeIcon::DocumentNew), editor->name());
+    /// Windows doesn't have "document" but for example Ubuntu has
+    const int index = QTabWidget::addTab(editor, QIcon::fromTheme("document", QIcon::fromTheme("document-new")), editor->name());
 
     connect(editor, &Editor::nameChanged, this, &TabManager::onNameChanged, Qt::UniqueConnection);
     connect(editor, &Editor::modificationChanged, this, &TabManager::onModificationChanged, Qt::UniqueConnection);
 
 //    /// Custom close button
 //    QToolButton* tb = new QToolButton(this);
-//    tb->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::EditClear));
+//    tb->setIcon(QIcon::fromTheme("edit-clear"));
 //    tabBar()->setTabButton(index, QTabBar::RightSide, tb);
     /// Toimii mutta pitää tehdä signaalit
 

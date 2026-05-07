@@ -5,12 +5,17 @@
   x Open file via command line argument
     - Add a tab instead of a new instance
   - Sessionless mode / single file mode
+- Single instance mode
+  - https://github.com/itay-grudev/SingleApplication
+  - Option to select behavior on second instance launch
+    - Add tab / launch another instance / always ask
 - Find
   x Find next and prev
   x Highlight all
   - Highlight matches over scrollbar
   x Count matches
   - Replace
+  - Regex search
   - Better GUI
   - Highlight previous search when re-entering Find
   - Seach immediately with ctrl+f when text is selected ?
@@ -34,6 +39,7 @@ x Tabs
   - Right click tab
     - open in explorer
     - copy path / name
+    - duplicate ?
 x Drag & drop files
   - Better visualization ?
 - Unified titlebar / tab bar / menu bar ?
@@ -41,6 +47,8 @@ x Drag & drop files
   x Detection of encoding when opening
   - Changing encoding ?
   - Selecting encoding when saving
+  - Selecting BOM save behavior
+    - remove / keep if already present / add
 - Line endings support
   x Display current line ending type
   x Save with the same type as loaded
@@ -53,6 +61,7 @@ x Drag & drop files
   - Line endings ?
   - Other specials ?
   - See QTextOption
+  - Visualize only in selection ?
 - Markdown
   - Visualization
     - Swap editors
@@ -75,6 +84,7 @@ x Drag & drop files
   - Highlight matches of selected text
 x Reload current file
 - Recent files list
+  - Reopen latest closed file /w shortcut
 - File finder select OS Native / Qt
 - Key shortcuts
   x Close tab (ctrl+w)
@@ -88,6 +98,7 @@ x Reload current file
   - www address
   x creator
 x License file
+  - Add machine learning prohibition
 
 ## Tuning
 - Rename the project
@@ -99,6 +110,11 @@ x Large file open optimizing
 - Better architecture
   x File manager class
   - Settings class
+  - Key shortcut handler class
+  - Menu item change signal class
   - etc
+- Project cleaning
+  - file to utils
+  - rename tab
 x Qt static linking
 - Exe signing

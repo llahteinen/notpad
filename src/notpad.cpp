@@ -40,7 +40,7 @@ NotPad::NotPad(QWidget *parent)
     {
         auto* tb = new QToolButton(this);
         tb->setObjectName("menuBarPlusButton");
-        tb->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::ListAdd));
+        tb->setIcon(QIcon::fromTheme("list-add"));
 //        tb->setArrowType(Qt::ArrowType::DownArrow); /// Could be good for tab list button
         connect(tb, &QToolButton::clicked, m_tabManager, &TabManager::addEmptyTab);
         ui->menubar->setCornerWidget(tb, Qt::TopRightCorner);

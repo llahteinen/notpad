@@ -439,6 +439,11 @@ QString Editor::name() const
     return m_name;
 }
 
+QString Editor::filePath() const
+{
+    return m_file ? QDir::toNativeSeparators(m_file->fileName()) : "";
+}
+
 const QFile* Editor::file() const
 {
     return m_file.get();

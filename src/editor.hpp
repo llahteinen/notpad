@@ -39,6 +39,7 @@ public:
 
     void setName(const QString& name);
     QString name() const;
+    QString filePath() const;
     const QFile* file() const;
     QString encodingName() const;
     QString endOfLineName() const;
@@ -79,7 +80,7 @@ private:
     /// NOTE: This function is very slow and memory intensive on large files!
     QList<QTextCursor> findAll(const QString& sterm, QTextDocument::FindFlags flags);
 
-    QString m_name;
+    QString m_name;                         /// file name not full path
     QPointer<QThread> m_textStreamThread;   /// Thread finished signal connects to deleteLater
     QPointer<TextStream> m_textStream;      /// QPointers become null automatically when the QObject is deleted
     std::unique_ptr<QFile> m_file;

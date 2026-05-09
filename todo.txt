@@ -27,9 +27,10 @@
   - Length of selection (chars and lines)
 - Titlebar
   x File name (in tab title)
+  - File path in app title ?
   x Edited
     x Asterisk
-    - Icon
+    x Icon
 - Font
   x Size adjust
   x Size adjust with scroll wheel
@@ -40,6 +41,7 @@ x Tabs
     - open in explorer
     - copy path / name
     - duplicate ?
+  x Tooltip full path
 x Drag & drop files
   - Better visualization ?
 - Unified titlebar / tab bar / menu bar ?

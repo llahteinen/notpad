@@ -20,7 +20,7 @@ public:
     void closeTab(int index);
     void closeCurrentTab();
     void resetTab(int index);
-    void updateTabText(const Editor* editor);
+    void updateTabTitle(const Editor* editor);
 
     Editor* currentWidget() const;
     Editor* widget(int index) const;

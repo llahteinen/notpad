@@ -52,7 +52,8 @@ void TabManager::setupUi()
 void TabManager::addTab(Editor* editor)
 {
     /// Windows doesn't have "document" but for example Ubuntu has
-    const int index = QTabWidget::addTab(editor, QIcon::fromTheme("document", QIcon::fromTheme("document-new")), editor->name());
+    const int index = QTabWidget::addTab(editor, "");
+    updateTabTitle(editor);
 
     connect(editor, &Editor::nameChanged, this, &TabManager::onNameChanged, Qt::UniqueConnection);
     connect(editor, &Editor::modificationChanged, this, &TabManager::onModificationChanged, Qt::UniqueConnection);
@@ -108,12 +109,22 @@ void TabManager::resetTab(int index)
     addEmptyTab();
 }
 
-void TabManager::updateTabText(const Editor* editor)
+void TabManager::updateTabTitle(const Editor* editor)
 {
-    qDebug() << "updateTabText" << editor->name();
+    qDebug() << "updateTabTitle" << editor->name();
     const bool modified = editor->isModified();
-    const QString text = QString("%1%2").arg((modified ? "*" : ""), editor->name());
-    QTabWidget::setTabText(QTabWidget::indexOf(editor), text);
+
+//    const QString text = QString("%1%2").arg((modified ? "*" : ""), editor->name()); /// Highlight modified with asterisk
+    const QString text = QString("%2").arg(editor->name()); /// Just the name - highlight modified with icon only
+    const QIcon icon = modified ?
+        QIcon::fromTheme("document-save-as") :
+        QIcon::fromTheme("document-new");
+    const QString tooltip = QString("%1%2").arg(editor->filePath(), (modified ? " (modified)" : ""));
+
+    const auto index = QTabWidget::indexOf(editor);
+    QTabWidget::setTabText(index, text);
+    QTabWidget::setTabIcon(index, icon);
+    QTabWidget::setTabToolTip(index, tooltip);
 }
 
 Editor* TabManager::currentWidget() const
@@ -199,7 +210,7 @@ void TabManager::onNameChanged([[maybe_unused]] const QString& new_name)
     Q_ASSERT(editor != nullptr);
     if(editor != nullptr)
     {
-        updateTabText(editor);
+        updateTabTitle(editor);
     }
     else
     {
@@ -214,7 +225,7 @@ void TabManager::onModificationChanged([[maybe_unused]] bool modified)
     Q_ASSERT(editor != nullptr);
     if(editor != nullptr)
     {
-        updateTabText(editor);
+        updateTabTitle(editor);
     }
     else
     {

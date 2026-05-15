@@ -3,6 +3,7 @@
 
 #include "utils/namefilterlist.hpp"
 #include <QFont>
+#include <QFontDatabase>
 #include <QList>
 #include <QString>
 #include <QStringList>
@@ -22,8 +23,10 @@ public:
     }
 
     /// Constants
-    static constexpr int fontSizeDefault{10};
-    const QList<int> standardFontSizes{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 32, 36, 42, 48, 56, 64, 72, 84, 100, 116, 132, 164, 196};
+    const QString operatingSystem;
+    const QFont systemFont;
+    const int fontSizeDefault;
+    const QList<int> standardFontSizes{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 32, 36, 42, 48, 56, 64, 72, 84, 100, 116, 132, 164, 196};
     const NameFilterList nameFilters{};
     const QString defaultNameFilter{nameFilters.at(1)};
 //    const QStringList mimeTypeFilters{ /// This is alternative to nameFilters, both can't be used together
@@ -36,7 +39,7 @@ public:
 
 
     /// Editables
-    QFont font{"Consolas", fontSizeDefault};
+    QFont font;            /// This font will be used when constructing new editors
     int tabWidthChars{4};  /// Measured in characters or multiples of avg character width
     bool confirmAppClose{false};
     QString defaultDocName{"Untitled"};
@@ -48,6 +51,7 @@ public:
     QDir currentDir{QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)};
 
 
+    /// Give sensible defaults here for fresh installations
     struct Persistables
     {
         /// Background
@@ -58,7 +62,8 @@ public:
         /// User editables
         /// Options (menu bar choices)
         bool wordWrap{true};    /// This would probably be best if it was saved per tab
-        int zoomFontSize{fontSizeDefault}; /// The font point size after user has been fiddling with the "zoom" controls
+        int zoomFontSize{11};   /// The font point size after user has been fiddling with the "zoom" controls
+        QFont::StyleHint fontStyle{QFont::StyleHint::Monospace};
 
 
         /// \brief Loads from persistent storage
@@ -68,9 +73,41 @@ public:
 
     } pers{};
 
+    const QStringList& getMonospaceFamilies() {
+        static QStringList fontList;
+        if(fontList.empty())
+        {
+            if(operatingSystem == "macos")
+            {
+                fontList = {"Menlo", "PT Mono", "Andale Mono", "Courier New"};
+            }
+            else if(operatingSystem == "linux")
+            {
+                fontList = {"Noto Mono", "DejaVu Sans Mono", "Monospace"};
+            }
+            else
+            {
+                fontList = {"Consolas", "Cascadia Mono", "Lucida Console", "Courier new"};
+            }
+        }
+        return fontList;
+    };
+
+    Settings()
+        : operatingSystem{QSysInfo::productType()}
+        , systemFont{QFontDatabase::systemFont(QFontDatabase::GeneralFont)}
+        , fontSizeDefault{systemFont.pointSize()}
+    {
+        font.setPointSize(fontSizeDefault);
+        font.setStyleHint(pers.fontStyle);
+        font.setFamilies(getMonospaceFamilies());
+
+        pers.zoomFontSize = fontSizeDefault;
+    }
 };
 
-inline auto& SETTINGS = Settings::get();
+//inline auto& SETTINGS = Settings::get(); /// Causes Settings::get() to be run too early (static)
+#define SETTINGS Settings::get()
 
 
 #endif // SETTINGS_HPP

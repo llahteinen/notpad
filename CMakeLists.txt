@@ -43,12 +43,22 @@ else()
     add_compile_options(-Wall)
     add_compile_options(-Wextra)
     add_compile_options(-Wpedantic)
-    add_compile_options(-Weffc++ -Wno-error=effc++)
     add_compile_options(-Werror)
     # Selectively treat some warnings as warnings instead of errors
     add_compile_options(-Wno-error=deprecated-declarations) # The [[deprecated]] attribute
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        add_compile_options(-Weffc++ -Wno-error=effc++)
+    endif()
+
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        add_compile_options(-Wno-gnu-zero-variadic-macro-arguments) # Clang gave errors with some Qt macros
+        # Additional common clang + Qt options if getting errors later with Qt code
+#        add_compile_options(-Wno-zero-as-null-pointer-constant)
+#        add_compile_options(-Wno-deprecated-declarations)
+    endif()
 endif()
-# Override the above if needed in unittest using target_compile_options()
+# Override the above if needed in unittest for more relaxed setup
 
 include(GNUInstallDirs)
 

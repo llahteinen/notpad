@@ -161,12 +161,6 @@
         </property>
         <item>
          <widget class="QPlainTextEdit" name="textEdit">
-          <property name="font">
-           <font>
-            <family>Consolas</family>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
           <property name="undoRedoEnabled">
            <bool>true</bool>
           </property>

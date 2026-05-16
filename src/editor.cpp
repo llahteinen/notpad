@@ -503,7 +503,7 @@ int Editor::incrementFontSize(int increment)
     qDebug() << "size" << size;
     font.setPointSize(size);
     setFont(font);
-    SETTINGS.pers.zoomFontSize = size;
+    SETTINGS.pers.font = font;
     return size;
 }
 
@@ -514,8 +514,18 @@ int Editor::restoreFontSize()
     font.setPointSize(size);
     qDebug() << "pointSize" << font.pointSize();
     setFont(font);
-    SETTINGS.pers.zoomFontSize = size;
+    SETTINGS.pers.font = font;
     return size;
+}
+
+void Editor::updateFontStyle()
+{
+    auto font = this->font();
+    font.setStyleHint(SETTINGS.pers.fontStyle);
+    font.setFamily(font.defaultFamily()); /// Family takes precedence over any other attributes, so set it to the default value for the style hint
+    qDebug() << "defaultFamily" << font.defaultFamily();
+    this->setFont(font);
+    SETTINGS.pers.font = font;
 }
 
 void Editor::setHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags)

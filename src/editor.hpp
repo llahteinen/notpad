@@ -50,6 +50,7 @@ public:
     void updateTabWidth();
     int incrementFontSize(int increment);
     int restoreFontSize();
+    void updateFontStyle();
 
     void setHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags = {});
 

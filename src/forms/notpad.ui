@@ -224,7 +224,21 @@
     <property name="title">
      <string>&amp;Options</string>
     </property>
+    <widget class="QMenu" name="menuFontType">
+     <property name="title">
+      <string>Font type</string>
+     </property>
+     <addaction name="actionMonospace"/>
+     <addaction name="actionCourier"/>
+     <addaction name="actionHelvetica"/>
+     <addaction name="actionSerif"/>
+     <addaction name="actionSansSerif"/>
+     <addaction name="actionTimes"/>
+     <addaction name="actionSystem"/>
+    </widget>
     <addaction name="actionWord_wrap"/>
+    <addaction name="separator"/>
+    <addaction name="menuFontType"/>
     <addaction name="actionFontSmaller"/>
     <addaction name="actionFontLarger"/>
     <addaction name="actionRestoreFontSize"/>
@@ -416,6 +430,41 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionMonospace">
+   <property name="text">
+    <string>Monospace</string>
+   </property>
+  </action>
+  <action name="actionCourier">
+   <property name="text">
+    <string>Courier</string>
+   </property>
+  </action>
+  <action name="actionHelvetica">
+   <property name="text">
+    <string>Helvetica</string>
+   </property>
+  </action>
+  <action name="actionSerif">
+   <property name="text">
+    <string>Serif</string>
+   </property>
+  </action>
+  <action name="actionSansSerif">
+   <property name="text">
+    <string>SansSerif</string>
+   </property>
+  </action>
+  <action name="actionTimes">
+   <property name="text">
+    <string>Times</string>
+   </property>
+  </action>
+  <action name="actionSystem">
+   <property name="text">
+    <string>System</string>
    </property>
   </action>
  </widget>

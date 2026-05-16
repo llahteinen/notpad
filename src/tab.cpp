@@ -27,9 +27,7 @@ Editor* TabManager::createEditorFromFile(File::Status& o_status, const QString& 
 void TabManager::setupEditor(Editor* editor)
 {
     /// Dynamic global settings
-    auto font = SETTINGS.font;
-    font.setPointSize(SETTINGS.pers.zoomFontSize);
-    editor->setFont(font);
+    editor->setFont(SETTINGS.pers.font);
     editor->setWordWrap(SETTINGS.pers.wordWrap);
 
     /// Hard coded stuff

@@ -40,7 +40,6 @@ public:
 
 
     /// Editables
-    QFont font;            /// This font will be used when constructing new editors
     int tabWidthChars{4};  /// Measured in characters or multiples of avg character width
     bool confirmAppClose{false};
     QString defaultDocName{"Untitled"};
@@ -63,8 +62,8 @@ public:
         /// User editables
         /// Options (menu bar choices)
         bool wordWrap{true};    /// This would probably be best if it was saved per tab
-        int zoomFontSize{11};   /// The font point size after user has been fiddling with the "zoom" controls
         QFont::StyleHint fontStyle{QFont::StyleHint::Monospace};
+        QFont font;             /// This font will be used when constructing new editors
 
 
         /// \brief Loads from persistent storage
@@ -95,11 +94,9 @@ public:
         , fontSizeDefault{systemFont.pointSize()}
         , monospaceFamilies{getMonospaceFamilies(operatingSystem)}
     {
-        font.setPointSize(fontSizeDefault);
-        font.setStyleHint(pers.fontStyle);
-        font.setFamilies(monospaceFamilies);
-
-        pers.zoomFontSize = fontSizeDefault;
+        pers.font.setPointSize(fontSizeDefault);
+        pers.font.setStyleHint(pers.fontStyle);
+        pers.font.setFamilies(monospaceFamilies);
     }
 };
 

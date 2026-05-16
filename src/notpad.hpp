@@ -111,6 +111,14 @@ private slots:
     void on_actionFontSmaller_triggered();
     void on_actionFontLarger_triggered();
     void on_actionRestoreFontSize_triggered();
+    /// Options menu / font style
+    void on_actionMonospace_triggered();
+    void on_actionSansSerif_triggered();
+    void on_actionSerif_triggered();
+    void on_actionCourier_triggered();
+    void on_actionHelvetica_triggered();
+    void on_actionTimes_triggered();
+    void on_actionSystem_triggered();
     /// /MENU ================================
 
     /// FIND ================================

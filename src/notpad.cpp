@@ -1034,6 +1034,8 @@ void NotPad::on_actionWord_wrap_triggered(bool enabled)
 
 void NotPad::on_actionFontSmaller_triggered()
 {
+    /// TODO settings>increment
+    /// emit fontChanged
     m_editor->incrementFontSize(-1);
 }
 
@@ -1176,3 +1178,45 @@ void NotPad::onLoadingFinished()
     updateStatusBar();
 }
 
+
+void NotPad::on_actionMonospace_triggered()
+{
+    SETTINGS.pers.fontStyle = QFont::StyleHint::Monospace;
+    m_editor->updateFontStyle();
+}
+
+void NotPad::on_actionSansSerif_triggered()
+{
+    SETTINGS.pers.fontStyle = QFont::StyleHint::SansSerif;
+    m_editor->updateFontStyle();
+}
+
+void NotPad::on_actionSerif_triggered()
+{
+    SETTINGS.pers.fontStyle = QFont::StyleHint::Serif;
+    m_editor->updateFontStyle();
+}
+
+void NotPad::on_actionCourier_triggered()
+{
+    SETTINGS.pers.fontStyle = QFont::StyleHint::Courier;
+    m_editor->updateFontStyle();
+}
+
+void NotPad::on_actionHelvetica_triggered()
+{
+    SETTINGS.pers.fontStyle = QFont::StyleHint::Helvetica;
+    m_editor->updateFontStyle();
+}
+
+void NotPad::on_actionTimes_triggered()
+{
+    SETTINGS.pers.fontStyle = QFont::StyleHint::Times;
+    m_editor->updateFontStyle();
+}
+
+void NotPad::on_actionSystem_triggered()
+{
+    SETTINGS.pers.fontStyle = QFont::StyleHint::System;
+    m_editor->updateFontStyle();
+}

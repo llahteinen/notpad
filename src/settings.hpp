@@ -65,6 +65,8 @@ public:
         QFont::StyleHint fontStyle{QFont::StyleHint::Monospace};
         QFont font;             /// This font will be used when constructing new editors
 
+        bool nativeFileDialog{true};
+
 
         /// \brief Loads from persistent storage
         void fromQSettings(const QSettings& settings);

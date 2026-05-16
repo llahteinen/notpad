@@ -854,7 +854,10 @@ void NotPad::on_actionOpen_triggered()
 //    qDebug() << "start_path name_filter" << start_path << name_filter;
 
     QFileDialog fileDialog(this, tr("Open Document"), start_path);
-    fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
+    if(!SETTINGS.pers.nativeFileDialog)
+    {
+        fileDialog.setOptions(QFileDialog:: QFileDialog::DontUseNativeDialog);
+    }
     fileDialog.setNameFilters(SETTINGS.nameFilters);
     fileDialog.selectNameFilter(name_filter);
 

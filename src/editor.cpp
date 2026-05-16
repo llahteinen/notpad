@@ -481,7 +481,12 @@ bool Editor::isWordWrap() const
 
 void Editor::updateTabWidth()
 {
-    setTabStopDistance(SETTINGS.tabWidthChars * fontMetrics().averageCharWidth());
+    /// fontMetrics().averageCharWidth() was not accurate on Ubuntu even when the font was supposed to be monospace.
+    /// Qt seems to calculate char widths in fixed point in QFontMetricsF, causing inaccuracy for some values.
+    /// Give more than one character to improve accuracy.
+    const auto metricsF = QFontMetricsF(this->font());
+    const qreal space_width_4 = metricsF.horizontalAdvance("    ") / 4.0; /// Seems accurate on windows and ubuntu
+    setTabStopDistance(SETTINGS.tabWidthChars * space_width_4);
 }
 
 int Editor::incrementFontSize(int increment)

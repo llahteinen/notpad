@@ -96,6 +96,7 @@ x Reload current file
   - Switch manually
 
 ## Misc
+- exe file version, company name etc
 - Improve about page
   - www address
   x creator

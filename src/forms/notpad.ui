@@ -224,7 +224,19 @@
     <property name="title">
      <string>&amp;Options</string>
     </property>
+    <widget class="QMenu" name="menuFontType">
+     <property name="title">
+      <string>Font type</string>
+     </property>
+     <addaction name="actionFontMonospace"/>
+     <addaction name="actionFontCourier"/>
+     <addaction name="actionFontSansSerif"/>
+     <addaction name="actionFontSerif"/>
+     <addaction name="actionFontSystem"/>
+    </widget>
     <addaction name="actionWord_wrap"/>
+    <addaction name="separator"/>
+    <addaction name="menuFontType"/>
     <addaction name="actionFontSmaller"/>
     <addaction name="actionFontLarger"/>
     <addaction name="actionRestoreFontSize"/>
@@ -416,6 +428,46 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionFontMonospace">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Monospace</string>
+   </property>
+  </action>
+  <action name="actionFontCourier">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Courier</string>
+   </property>
+  </action>
+  <action name="actionFontSansSerif">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>SansSerif</string>
+   </property>
+  </action>
+  <action name="actionFontSerif">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Serif</string>
+   </property>
+  </action>
+  <action name="actionFontSystem">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>System</string>
    </property>
   </action>
  </widget>

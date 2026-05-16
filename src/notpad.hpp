@@ -49,6 +49,7 @@ private:
 
     void setupSignals();
     void setupMenu();
+    void updateMenu();
     void updateStatusBar();
     void updateStyle(Qt::ColorScheme scheme);
 
@@ -89,6 +90,8 @@ private slots:
     void onFindResultFound(Editor* editor, QTextCursor result);
     void onMatchCountFinished(Editor* editor, qsizetype count);
     void onColorSchemeChanged(Qt::ColorScheme colorScheme);
+    /// Options menu / font style
+    void onMenuFontTypeGroup_triggered(QAction* action);
 
     /// Automatically connected slots
     /// MENU ================================
@@ -124,6 +127,8 @@ private:
     Ui::NotPad *ui;
 
     QLocale m_locale;
+
+    QActionGroup* m_menuFontTypeGroup;
 
     StatusBar* m_statusBar;
 

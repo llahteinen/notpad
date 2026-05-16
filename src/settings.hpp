@@ -2,6 +2,7 @@
 #define SETTINGS_HPP
 
 #include "utils/namefilterlist.hpp"
+#include <QObject>
 #include <QFont>
 #include <QFontDatabase>
 #include <QList>
@@ -13,8 +14,9 @@
 class QSettings;
 
 
-class Settings
+class Settings : public QObject
 {
+    Q_OBJECT
 public:
     static Settings& get()
     {
@@ -39,7 +41,6 @@ public:
 
 
     /// Editables
-    QFont font;            /// This font will be used when constructing new editors
     int tabWidthChars{4};  /// Measured in characters or multiples of avg character width
     bool confirmAppClose{false};
     QString defaultDocName{"Untitled"};
@@ -62,8 +63,7 @@ public:
         /// User editables
         /// Options (menu bar choices)
         bool wordWrap{true};    /// This would probably be best if it was saved per tab
-        int zoomFontSize{11};   /// The font point size after user has been fiddling with the "zoom" controls
-        QFont::StyleHint fontStyle{QFont::StyleHint::Monospace};
+        QFont font;             /// This font will be used when constructing new editors
 
 
         /// \brief Loads from persistent storage
@@ -98,12 +98,15 @@ public:
         , systemFont{QFontDatabase::systemFont(QFontDatabase::GeneralFont)}
         , fontSizeDefault{systemFont.pointSize()}
     {
-        font.setPointSize(fontSizeDefault);
-        font.setStyleHint(pers.fontStyle);
-        font.setFamilies(getMonospaceFamilies());
-
-        pers.zoomFontSize = fontSizeDefault;
+        pers.font.setPointSize(fontSizeDefault);
+        pers.font.setStyleHint(QFont::StyleHint::Monospace);
+        pers.font.setFamilies(getMonospaceFamilies());
     }
+
+    void setFontStyle(QFont::StyleHint style);
+
+signals:
+    void fontChanged(const QFont& font);
 };
 
 //inline auto& SETTINGS = Settings::get(); /// Causes Settings::get() to be run too early (static)

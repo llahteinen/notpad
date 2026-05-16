@@ -27,10 +27,9 @@ Editor* TabManager::createEditorFromFile(File::Status& o_status, const QString& 
 void TabManager::setupEditor(Editor* editor)
 {
     /// Dynamic global settings
-    auto font = SETTINGS.font;
-    font.setPointSize(SETTINGS.pers.zoomFontSize);
-    editor->setFont(font);
+    editor->setFont(SETTINGS.pers.font);
     editor->setWordWrap(SETTINGS.pers.wordWrap);
+    connect(&SETTINGS, &Settings::fontChanged, editor, &Editor::setFont);
 
     /// Hard coded stuff
     /// Setting this to false will let dragEnterEvent etc pass through to the underneath widget / main window

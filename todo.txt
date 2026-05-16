@@ -34,8 +34,9 @@
 - Font
   x Size adjust
   x Size adjust with scroll wheel
-  - Font selection ?
-  - Fixed / not fixed switch
+  x Font types selection
+  x Fixed / not fixed switch
+  - Font free selection ?
 x Tabs
   - Right click tab
     - open in explorer

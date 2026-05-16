@@ -57,6 +57,7 @@ public:
 
 public slots:
     void setHighlighterEnabled(bool enabled);
+    void setFont(const QFont& font); /// Hides QWidget setFont that is not a slot
 
 private slots:
     void onDataQueued();

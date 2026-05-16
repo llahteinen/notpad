@@ -508,7 +508,7 @@ int Editor::incrementFontSize(int increment)
     qDebug() << "size" << size;
     font.setPointSize(size);
     setFont(font);
-    SETTINGS.pers.zoomFontSize = size;
+    SETTINGS.pers.font = font;
     return size;
 }
 
@@ -519,8 +519,14 @@ int Editor::restoreFontSize()
     font.setPointSize(size);
     qDebug() << "pointSize" << font.pointSize();
     setFont(font);
-    SETTINGS.pers.zoomFontSize = size;
+    SETTINGS.pers.font = font;
     return size;
+}
+
+void Editor::setFont(const QFont& font)
+{
+    QWidget::setFont(font);
+    /// changeEvent handles updateTabWidth
 }
 
 void Editor::setHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags)

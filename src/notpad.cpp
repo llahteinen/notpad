@@ -17,6 +17,8 @@
 #include <QFuture>
 #include <QToolButton>
 #include <QStyleHints>
+#include <QActionGroup>
+#include <QMetaEnum>
 
 
 
@@ -33,6 +35,7 @@ NotPad::NotPad(QWidget *parent)
     qInfo() << PROJECT_NAME << "starting";
 
     ui->setupUi(this);
+    setupMenu();
     m_tabManager = ui->tabWidget;
     m_tabManager->setupUi();
 
@@ -195,7 +198,26 @@ void NotPad::loadSettings()
     SETTINGS.pers.fromQSettings(settings);
 
     /// Apply settings
+    /// Window geometry
     if(!SETTINGS.pers.windowGeometry.isEmpty()) restoreGeometry(SETTINGS.pers.windowGeometry); /// Seems to work even if the data is something weird
+
+    /// Menu font style
+    const auto style = SETTINGS.pers.font.styleHint();
+    const auto actions = m_menuFontTypeGroup->actions();
+    const auto action_it = std::find_if(actions.constBegin(), actions.constEnd(), [style](const auto* act) {
+        bool ok;
+        const auto val = static_cast<QFont::StyleHint>(act->property("fontStyle").toInt(&ok));
+        return ok && (val == style);
+    });
+    if(action_it != actions.end())
+    {
+        (*action_it)->setChecked(true);
+    }
+    else
+    {
+        qWarning() << "Font style menu match not found" << style;
+        actions.at(0)->setChecked(true);
+    }
 }
 
 void NotPad::handleArguments()
@@ -376,8 +398,27 @@ void NotPad::onCurrentTabChanged(int index)
     qDebug() << "file" << currentFile();
 
     setupSignals();
-    setupMenu();
+    updateMenu();
     updateStatusBar();
+}
+
+void NotPad::setupMenu()
+{
+    m_menuFontTypeGroup = new QActionGroup(this);
+    connect(m_menuFontTypeGroup, &QActionGroup::triggered, this, &NotPad::onMenuFontTypeGroup_triggered);
+    m_menuFontTypeGroup->setExclusive(true);
+
+    m_menuFontTypeGroup->addAction(ui->actionFontMonospace);
+    m_menuFontTypeGroup->addAction(ui->actionFontCourier);
+    m_menuFontTypeGroup->addAction(ui->actionFontSansSerif);
+    m_menuFontTypeGroup->addAction(ui->actionFontSerif);
+    m_menuFontTypeGroup->addAction(ui->actionFontSystem);
+
+    ui->actionFontMonospace->setProperty("fontStyle",   QFont::StyleHint::Monospace);
+    ui->actionFontCourier->setProperty("fontStyle",     QFont::StyleHint::Courier);
+    ui->actionFontSansSerif->setProperty("fontStyle",   QFont::StyleHint::SansSerif);
+    ui->actionFontSerif->setProperty("fontStyle",       QFont::StyleHint::Serif);
+    ui->actionFontSystem->setProperty("fontStyle",      QFont::StyleHint::System);
 }
 
 void NotPad::setupSignals()
@@ -406,7 +447,7 @@ void NotPad::setupSignals()
     }
 }
 
-void NotPad::setupMenu()
+void NotPad::updateMenu()
 {
     if(m_editor)
     {
@@ -1167,5 +1208,35 @@ void NotPad::onColorSchemeChanged(Qt::ColorScheme colorScheme)
     /// "When the colorSchemeChange() signal gets emitted, the old palette is still in effect."
     /// "To update application- specific colors when the effective palette changes, handle PaletteChange or ApplicationPaletteChange events."
     QMetaObject::invokeMethod(this, &NotPad::updateStyle, Qt::QueuedConnection, colorScheme);
+}
+
+void NotPad::onMenuFontTypeGroup_triggered(QAction* action)
+{
+    qDebug() << "onMenuFontTypeGroup_triggered" << action;
+    const auto convertVariant = [](QFont::StyleHint& o_style, const QVariant& variant) -> bool {
+        if(!variant.isValid()) { return false; };
+
+        static const auto metaEnum = QMetaEnum::fromType<QFont::StyleHint>();
+        bool valid;
+        const auto value = static_cast<QFont::StyleHint>(variant.toInt(&valid));
+        valid &= metaEnum.valueToKey(value) != nullptr;
+        if(valid)
+        {
+            o_style = value;
+        }
+        return valid;
+    };
+
+    const auto variant = action->property("fontStyle");
+    QFont::StyleHint style{};
+    if(convertVariant(style, variant))
+    {
+        SETTINGS.setFontStyle(style);
+    }
+    else
+    {
+        qWarning() << "Invalid font type" << variant;
+        Q_ASSERT_X(false, "fontStyle", "INVALID FONT");
+    }
 }
 

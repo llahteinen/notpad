@@ -161,6 +161,7 @@ QTabBar::tab {
     /* If set background-color, then the whole default style disappears */
     /* background-color: #fff; */
 }
+/* QCommonStylePrivate::tabLayout in qcommonstyle.cpp I think sets the button etc positions and paddings */
 
 QTabBar::scroller { /* the width of the scroll buttons */
     width: 46px;

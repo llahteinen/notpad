@@ -15,6 +15,7 @@
   - Highlight matches over scrollbar
   x Count matches
   - Replace
+    - Editor context menu: selected text to replace lineEdit
   - Regex search
   - Better GUI
   - Highlight previous search when re-entering Find

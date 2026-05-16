@@ -95,7 +95,8 @@ NotPad::NotPad(QWidget *parent)
     const auto* hints = QGuiApplication::styleHints();
     connect(hints, &QStyleHints::colorSchemeChanged, this, &NotPad::onColorSchemeChanged);
 
-    on_actionFind_triggered(ui->actionFind->isChecked());
+    showHideFind(false);
+    showHideReplace(false);
 
     qDebug() << "Platform:" << QGuiApplication::platformName();
     qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
@@ -797,12 +798,11 @@ void NotPad::keyPressEvent(QKeyEvent* event)
     {
     case Qt::Key_Escape:
         {
-//            qDebug() << "Escape";
             if(ui->main_find_widget->isVisible())
             {
                 /// First press pops focus off find box,
                 /// second press hides find ui
-                if(ui->find_lineEdit->hasFocus() && m_editor)
+                if((ui->find_lineEdit->hasFocus() || ui->find_replace_lineEdit->hasFocus()) && m_editor)
                 {
                     m_editor->setFocus(Qt::OtherFocusReason);
                 }
@@ -814,8 +814,19 @@ void NotPad::keyPressEvent(QKeyEvent* event)
             }
             break;
         }
+    /// Enter key triggers find next or replace & find
     case Qt::Key_Return:
     case Qt::Key_Enter:
+        {
+            if((ui->find_replace_lineEdit->hasFocus() || ui->find_replaceAndFindButton->hasFocus()) && m_editor)
+            {
+                const auto btn = ui->find_replaceAndFindButton;
+                event->isAutoRepeat() ? btn->click() : btn->animateClick();
+                return;
+            }
+            [[fallthrough]];
+        }
+    /// F3 key triggers find next only
     case Qt::Key_F3:
         {
             /// F3 works always, enter only when find is active
@@ -953,6 +964,14 @@ void NotPad::on_find_findPrevButton_clicked()
 {
     find(QTextDocument::FindFlag::FindBackward);
 }
+void NotPad::on_find_replaceButton_clicked()
+{
+    replace();
+}
+void NotPad::on_find_replaceAndFindButton_clicked()
+{
+    replace(true);
+}
 
 void NotPad::onFindResultFound(Editor* editor, QTextCursor result)
 {
@@ -1059,6 +1078,35 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
     }
 }
 
+void NotPad::replace(bool findAfter)
+{
+    qDebug() << "replace";
+
+    if(m_editor->isReadOnly())
+    {
+        qDebug() << "ReadOnly";
+        return;
+    }
+
+    const QString& replaceString = ui->find_replace_lineEdit->text();
+
+    auto cursor = m_editor->textCursor();
+    if(!cursor.isNull() && cursor.hasSelection())
+    {
+        cursor.setKeepPositionOnInsert(true);
+        cursor.beginEditBlock();
+        cursor.insertText(replaceString);
+        cursor.endEditBlock();
+        /// endEditBlock -> finishEdit -> contentsChange -> setDocument(lambda) ->  reformatBlocks
+        m_editor->setTextCursor(cursor);
+    }
+
+    if(findAfter)
+    {
+        find({});
+    }
+}
+
 void NotPad::on_actionWord_wrap_triggered(bool enabled)
 {
 //    qDebug() << "on_actionWord_wrap_triggered" << enabled;
@@ -1119,6 +1167,48 @@ void NotPad::on_actionFind_triggered(bool checked)
     showHideFind(show);
 }
 
+void NotPad::on_actionReplace_triggered()
+{
+    /// If editor does not have text selected, focus should go to find lineEdit
+    /// If editor has text selected -> the text goes to find lineEdit
+    ///  -> focus should go directly to replace lineEdit
+    /// If either has already focus, then the focus should alternate between them
+
+    const bool find_had_focus = ui->find_lineEdit->hasFocus();
+    const bool replace_had_focus = ui->find_replace_lineEdit->hasFocus();
+
+    on_actionFind_triggered(true); /// Focus will always go to find (when true)
+    showHideReplace(true); /// Does not change focus
+
+    /// If find already had focus, move it to replace
+    if(find_had_focus)
+    {
+        ui->find_replace_lineEdit->setFocus(Qt::OtherFocusReason);
+    }
+    /// If replace already had focus, move it to find
+    else if(replace_had_focus)
+    {
+        ui->find_lineEdit->setFocus(Qt::OtherFocusReason);
+    }
+    /// If neither had focus and find has some text in it, move focus to replace
+    /// Or would it be better to check if editor has selection?
+    else if(!ui->find_lineEdit->text().isEmpty())
+    {
+        ui->find_replace_lineEdit->setFocus(Qt::OtherFocusReason);
+    }
+}
+
+void NotPad::on_main_find_showReplace_toolButton_clicked()
+{
+    /// Keep this button's state using a property. It's not set as checkable.
+    /// Hide replace UI if checked property does no exist or if it was true
+    const QVariant was_checked = ui->main_find_showReplace_toolButton->property("btn_checked");
+    qDebug() << "was_checked" << was_checked;
+    bool show = was_checked.isValid() ? !was_checked.toBool() : false;
+
+    showHideReplace(show);
+}
+
 void NotPad::showHideFind(bool show)
 {
     const bool raising_edge = !ui->main_find_widget->isVisible() && show;
@@ -1133,7 +1223,11 @@ void NotPad::showHideFind(bool show)
     }
     else
     {
-        m_editor->setFocus(Qt::OtherFocusReason);
+        showHideReplace(false);
+        if(m_editor)
+        {
+            m_editor->setFocus(Qt::OtherFocusReason);
+        }
         statusBar()->clearMessage(); /// Maybe we should use a dedicated text info box for search
     }
 
@@ -1141,6 +1235,15 @@ void NotPad::showHideFind(bool show)
     {
         emit findBoxVisibleChanged(show);
     }
+}
+
+void NotPad::showHideReplace(bool show)
+{
+    /// Keep replace button's state in a property
+    ui->main_find_showReplace_toolButton->setProperty("btn_checked", show);
+    ui->main_find_showReplace_toolButton->setArrowType(show ? Qt::ArrowType::DownArrow : Qt::ArrowType::RightArrow);
+
+    ui->main_find_replacewidget->setVisible(show);
 }
 
 void NotPad::on_actionUndo_triggered()
@@ -1171,9 +1274,11 @@ void NotPad::onHasFileChanged(bool has)
     ui->actionReload_from_disk->setEnabled(has);
 }
 
+/// Seems that maybe highlighter is triggering this as well
 void NotPad::onTextChanged()
 {
 //    qDebug() << "onTextChanged" << sender();
+    updateStatusBar();
 }
 
 void NotPad::onCursorPositionChanged()

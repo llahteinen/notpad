@@ -72,7 +72,9 @@ private:
     bool confirmFileReload(Editor* editor, const QString& messageTitle = tr("Confirmation"));
 
     void showHideFind(bool show);
+    void showHideReplace(bool show);
     void find(QTextDocument::FindFlags flags, int recursion = 0);
+    void replace(bool findAfter = false);
 
     const QFile* currentFile();
 
@@ -106,6 +108,7 @@ private slots:
     void on_actionUndo_triggered();
     void on_actionRedo_triggered();
     void on_actionFind_triggered(bool checked);
+    void on_actionReplace_triggered();
     /// Help menu
     void on_actionAbout_triggered();
     void on_actionAboutQt_triggered();
@@ -119,6 +122,9 @@ private slots:
     /// FIND ================================
     void on_find_findButton_clicked();
     void on_find_findPrevButton_clicked();
+    void on_find_replaceButton_clicked();
+    void on_find_replaceAndFindButton_clicked();
+    void on_main_find_showReplace_toolButton_clicked();
     /// /FIND ================================
 
 private:

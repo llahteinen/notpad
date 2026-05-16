@@ -947,7 +947,7 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
         if(!recursion)
         {
             /// Capture by value because we might return early
-            QThreadPool::globalInstance()->start([=]{
+            QThreadPool::globalInstance()->start([=, this]{
                 count_promise->start();
                 const auto count = m_editor->getMatchCount(searchString, flags);
                 count_promise->addResult(count);

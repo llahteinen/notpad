@@ -27,8 +27,8 @@ public:
     /// Constants
     const QString operatingSystem;
     const QFont systemFont;
-    const int fontSizeDefault;
-    const QList<int> standardFontSizes{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 32, 36, 42, 48, 56, 64, 72, 84, 100, 116, 132, 164, 196};
+    const qreal fontSizeDefault;
+    const QList<qreal> standardFontSizes{2, 3, 4, 4.5, 5, 6, 7, 7.5, 8, 9, 10, 10.5, 11, 12, 13, 13.5, 14, 15, 16, 17, 18, 19, 20, 22, 24, 28, 32, 36, 42, 48, 56, 64, 72, 84, 100, 116, 132, 164, 196};
     const NameFilterList nameFilters{};
     const QString defaultNameFilter{nameFilters.at(1)};
 //    const QStringList mimeTypeFilters{ /// This is alternative to nameFilters, both can't be used together
@@ -96,9 +96,9 @@ public:
     Settings()
         : operatingSystem{QSysInfo::productType()}
         , systemFont{QFontDatabase::systemFont(QFontDatabase::GeneralFont)}
-        , fontSizeDefault{systemFont.pointSize()}
+        , fontSizeDefault{systemFont.pointSizeF() + 1}
     {
-        pers.font.setPointSize(fontSizeDefault);
+        pers.font.setPointSizeF(fontSizeDefault);
         pers.font.setStyleHint(QFont::StyleHint::Monospace);
         pers.font.setFamilies(getMonospaceFamilies());
     }

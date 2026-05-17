@@ -492,7 +492,7 @@ void Editor::updateTabWidth()
 int Editor::incrementFontSize(int increment)
 {
     auto font = this->font();
-    auto size = font.pointSize();
+    auto size = font.pointSizeF();
     auto index = SETTINGS.standardFontSizes.indexOf(size);
     Q_ASSERT(index >= 0);
     if(index < 0)
@@ -506,7 +506,7 @@ int Editor::incrementFontSize(int increment)
     qDebug() << "index" << index;
     size = SETTINGS.standardFontSizes.at(index);
     qDebug() << "size" << size;
-    font.setPointSize(size);
+    font.setPointSizeF(size);
     setFont(font);
     SETTINGS.pers.font = font;
     return size;
@@ -516,8 +516,8 @@ int Editor::restoreFontSize()
 {
     auto font = this->font();
     auto size = SETTINGS.fontSizeDefault;
-    font.setPointSize(size);
-    qDebug() << "pointSize" << font.pointSize();
+    font.setPointSizeF(size);
+    qDebug() << "pointSize" << font.pointSizeF();
     setFont(font);
     SETTINGS.pers.font = font;
     return size;

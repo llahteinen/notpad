@@ -48,8 +48,6 @@ public:
     void setWordWrap(bool enabled);
     bool isWordWrap() const;
     void updateTabWidth();
-    int incrementFontSize(int increment);
-    int restoreFontSize();
 
     void setHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags = {});
 

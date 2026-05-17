@@ -1058,17 +1058,17 @@ void NotPad::on_actionWord_wrap_triggered(bool enabled)
 
 void NotPad::on_actionFontSmaller_triggered()
 {
-    m_editor->incrementFontSize(-1);
+    SETTINGS.incrementFontSize(-1);
 }
 
 void NotPad::on_actionFontLarger_triggered()
 {
-    m_editor->incrementFontSize(1);
+    SETTINGS.incrementFontSize(1);
 }
 
 void NotPad::on_actionRestoreFontSize_triggered()
 {
-    m_editor->restoreFontSize();
+    SETTINGS.restoreFontSize();
 }
 
 void NotPad::on_actionFind_triggered(bool checked)

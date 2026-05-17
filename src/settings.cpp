@@ -1,4 +1,5 @@
 #include "settings.hpp"
+#include "utils/utils.hpp"
 #include <QSettings>
 
 
@@ -18,6 +19,36 @@ void Settings::Persistables::toQSettings(QSettings& settings)
     settings.setValue("main/sessionTabs",       sessionTabs);
     settings.setValue("options/wordWrap",       wordWrap);
     settings.setValue("options/font",           font.toString());
+}
+
+void Settings::incrementFontSize(int increment)
+{
+    auto size = pers.font.pointSizeF();
+    size = Utils::roundToHalf(size);
+    auto index = standardFontSizes.indexOf(size);
+    Q_ASSERT_X(index >= 0, "incrementFontSize", "Got weird font size");
+    if(index < 0)
+    {
+        qWarning() << "Got weird font size" << size;
+        index = standardFontSizes.indexOf(fontSizeDefault);
+    }
+    index += increment;
+    index = qMax(index, 0);
+    index = qMin(index, standardFontSizes.length()-1);
+    qDebug() << "index" << index;
+    size = standardFontSizes.at(index);
+    qDebug() << "size" << size;
+    pers.font.setPointSizeF(size);
+
+    emit fontChanged(pers.font);
+}
+
+void Settings::restoreFontSize()
+{
+    pers.font.setPointSizeF(fontSizeDefault);
+    qDebug() << "pointSize" << pers.font.pointSizeF();
+
+    emit fontChanged(pers.font);
 }
 
 void Settings::setFontStyle(QFont::StyleHint style)

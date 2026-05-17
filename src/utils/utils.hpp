@@ -13,6 +13,11 @@ namespace Utils
 
     QStringList toFilelist(const QMimeData* mimeData);
 
+    template<std::floating_point T>
+    T roundToHalf(T input)
+    {
+        return std::round(input * T(2)) / T(2);
+    }
 };
 
 

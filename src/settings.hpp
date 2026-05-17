@@ -103,6 +103,8 @@ public:
         pers.font.setFamilies(getMonospaceFamilies());
     }
 
+    void incrementFontSize(int increment);
+    void restoreFontSize();
     void setFontStyle(QFont::StyleHint style);
 
 signals:

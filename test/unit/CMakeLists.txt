@@ -11,6 +11,7 @@ set(PROJECT_SOURCES
     test_encodings
     test_textstream
     test_highlighter
+    test_utils
 )
 
 # Each of them will generate a separate executable

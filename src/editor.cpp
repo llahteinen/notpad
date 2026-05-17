@@ -489,40 +489,6 @@ void Editor::updateTabWidth()
     setTabStopDistance(SETTINGS.tabWidthChars * space_width_4);
 }
 
-int Editor::incrementFontSize(int increment)
-{
-    auto font = this->font();
-    auto size = font.pointSizeF();
-    auto index = SETTINGS.standardFontSizes.indexOf(size);
-    Q_ASSERT(index >= 0);
-    if(index < 0)
-    {
-        qWarning() << "Got weird font size" << size;
-        index = SETTINGS.standardFontSizes.indexOf(SETTINGS.fontSizeDefault);
-    }
-    index += increment;
-    index = qMax(index, 0);
-    index = qMin(index, SETTINGS.standardFontSizes.length()-1);
-    qDebug() << "index" << index;
-    size = SETTINGS.standardFontSizes.at(index);
-    qDebug() << "size" << size;
-    font.setPointSizeF(size);
-    setFont(font);
-    SETTINGS.pers.font = font;
-    return size;
-}
-
-int Editor::restoreFontSize()
-{
-    auto font = this->font();
-    auto size = SETTINGS.fontSizeDefault;
-    font.setPointSizeF(size);
-    qDebug() << "pointSize" << font.pointSizeF();
-    setFont(font);
-    SETTINGS.pers.font = font;
-    return size;
-}
-
 void Editor::setFont(const QFont& font)
 {
     QWidget::setFont(font);
@@ -572,7 +538,7 @@ void Editor::wheelEvent(QWheelEvent* e)
     {
         /// Delta is mostly 1 or -1, but can be larger if multiple wheel events have been stacked together
         const float delta = e->angleDelta().y() / 120.f;
-        incrementFontSize(delta);
+        SETTINGS.incrementFontSize(delta);
         return;
     }
     /// Call the base class implementation if we did NOT handle the event

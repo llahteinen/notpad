@@ -34,6 +34,15 @@ NotPad::NotPad(QWidget *parent)
 {
     qInfo() << PROJECT_NAME << "starting";
 
+    /// Needed when embedding resources in a static library
+    Q_INIT_RESOURCE(ui_icons);
+    {
+        auto paths = QIcon::themeSearchPaths();
+        paths.append(":/res/icons");
+        QIcon::setThemeSearchPaths(paths);
+        qDebug() << "themeSearchPaths" << QIcon::themeSearchPaths();
+    }
+
     ui->setupUi(this);
     setupMenu();
     m_tabManager = ui->tabWidget;
@@ -484,10 +493,12 @@ void NotPad::updateStyle(Qt::ColorScheme scheme)
     QFile colorStyleFile;
     if(scheme == Qt::ColorScheme::Dark)
     {
+        QIcon::setThemeName("dark");
         colorStyleFile.setFileName(":/forms/colors-dark.css");
     }
     else
     {
+        QIcon::setThemeName("light");
         colorStyleFile.setFileName(":/forms/colors-light.css");
     }
 

@@ -113,16 +113,17 @@ void TabManager::updateTabTitle(const Editor* editor)
     qDebug() << "updateTabTitle" << editor->name();
     const bool modified = editor->isModified();
 
-//    const QString text = QString("%1%2").arg((modified ? "*" : ""), editor->name()); /// Highlight modified with asterisk
-    const QString text = QString("%2").arg(editor->name()); /// Just the name - highlight modified with icon only
-    const QIcon icon = modified ?
-        QIcon::fromTheme("document-save-as") :
-        QIcon::fromTheme("document-new");
-    const QString tooltip = QString("%1%2").arg(editor->filePath(), (modified ? " (modified)" : ""));
+    const auto text = QString("%2").arg(editor->name());
+
+    static const auto normal_icon = QIcon::fromTheme("ic_fluent_document_20_regular");
+    static const auto modified_icon = QIcon::fromTheme("ic_fluent_document_edit_20_regular");
+    const auto* icon = modified ? &modified_icon : &normal_icon;
+
+    const auto tooltip = QString("%1%2").arg(editor->filePath(), (modified ? " (modified)" : ""));
 
     const auto index = QTabWidget::indexOf(editor);
     QTabWidget::setTabText(index, text);
-    QTabWidget::setTabIcon(index, icon);
+    QTabWidget::setTabIcon(index, *icon);
     QTabWidget::setTabToolTip(index, tooltip);
 }
 

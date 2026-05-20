@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/icons/light/index.theme</file>
+        <file>res/icons/light/actions/ic_fluent_document_20_regular.png</file>
+        <file>res/icons/light/actions/ic_fluent_document_edit_20_regular.png</file>
+        <file>res/icons/dark/index.theme</file>
+        <file>res/icons/dark/actions/ic_fluent_document_20_regular.png</file>
+        <file>res/icons/dark/actions/ic_fluent_document_edit_20_regular.png</file>
+    </qresource>
+</RCC>

@@ -45,3 +45,4 @@ Now you are ready to build the project with Qt Creator or the IDE of your choice
 This application uses the following open-source libraries:
 - [Qt](https://www.qt.io/) (LGPL v3) – Copyright (C) The Qt Company Ltd. and other contributors
 - [Notepad icons created by NX Icon - Flaticon](https://www.flaticon.com/free-icons/notepad)
+- [Microsoft Fluent System Icons](https://github.com/microsoft/fluentui-system-icons)

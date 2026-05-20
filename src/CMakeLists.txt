@@ -34,6 +34,7 @@ set(RESOURCE_FILES
     forms/colors-light.css
     forms/colors-dark.css
     res/icon.ico
+    ui_icons.qrc
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

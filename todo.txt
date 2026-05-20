@@ -95,7 +95,7 @@ x Reload current file
   - Word wrap etc extra?
 - Dark mode support
   x Switch with OS
-  - Switch manually
+  x Switch manually
 
 ## Misc
 - exe file version, company name etc

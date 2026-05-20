@@ -10,6 +10,7 @@ void Settings::Persistables::fromQSettings(const QSettings& settings)
     sessionTabs     = settings.value("main/sessionTabs").toStringList();
     wordWrap        = settings.value("options/wordWrap", wordWrap).toBool();
     font.fromString(  settings.value("options/font", font.toString()).toString()); /// Uses font.toString as the default fallback value
+    colorScheme = static_cast<Qt::ColorScheme>( settings.value("options/colorScheme", static_cast<int>(colorScheme)).toInt() );
 }
 
 void Settings::Persistables::toQSettings(QSettings& settings)
@@ -19,6 +20,7 @@ void Settings::Persistables::toQSettings(QSettings& settings)
     settings.setValue("main/sessionTabs",       sessionTabs);
     settings.setValue("options/wordWrap",       wordWrap);
     settings.setValue("options/font",           font.toString());
+    settings.setValue("options/colorScheme",    static_cast<int>(colorScheme));
 }
 
 void Settings::incrementFontSize(int increment)
@@ -67,3 +69,9 @@ void Settings::setFontStyle(QFont::StyleHint style)
 
     emit fontChanged(pers.font);
 }
+
+void Settings::setColorScheme(Qt::ColorScheme scheme)
+{
+    pers.colorScheme = scheme;
+}
+

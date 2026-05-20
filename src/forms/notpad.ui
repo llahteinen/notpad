@@ -471,13 +471,26 @@
     <addaction name="actionFind"/>
     <addaction name="actionReplace"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="actionWord_wrap"/>
+    <addaction name="separator"/>
+    <addaction name="actionFontSmaller"/>
+    <addaction name="actionFontLarger"/>
+    <addaction name="actionRestoreFontSize"/>
+   </widget>
    <widget class="QMenu" name="menuOptions">
     <property name="title">
      <string>&amp;Options</string>
     </property>
     <widget class="QMenu" name="menuFontType">
      <property name="title">
-      <string>Font type</string>
+      <string>&amp;Font type</string>
+     </property>
+     <property name="icon">
+      <iconset theme="format-text-bold"/>
      </property>
      <addaction name="actionFontMonospace"/>
      <addaction name="actionFontCourier"/>
@@ -485,15 +498,23 @@
      <addaction name="actionFontSerif"/>
      <addaction name="actionFontSystem"/>
     </widget>
-    <addaction name="actionWord_wrap"/>
-    <addaction name="separator"/>
+    <widget class="QMenu" name="menuDarkMode">
+     <property name="title">
+      <string>&amp;Dark mode</string>
+     </property>
+     <property name="icon">
+      <iconset theme="weather-clear"/>
+     </property>
+     <addaction name="actionSystem"/>
+     <addaction name="actionLight"/>
+     <addaction name="actionDark"/>
+    </widget>
     <addaction name="menuFontType"/>
-    <addaction name="actionFontSmaller"/>
-    <addaction name="actionFontLarger"/>
-    <addaction name="actionRestoreFontSize"/>
+    <addaction name="menuDarkMode"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menuView"/>
    <addaction name="menuOptions"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -730,6 +751,41 @@
    </property>
    <property name="text">
     <string>System</string>
+   </property>
+  </action>
+  <action name="actionDarkMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="weather-clear"/>
+   </property>
+   <property name="text">
+    <string>Dark mode</string>
+   </property>
+  </action>
+  <action name="actionSystem">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>System</string>
+   </property>
+  </action>
+  <action name="actionLight">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Light</string>
+   </property>
+  </action>
+  <action name="actionDark">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Dark</string>
    </property>
   </action>
  </widget>

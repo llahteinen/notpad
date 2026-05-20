@@ -93,8 +93,9 @@ private slots:
     void onFindResultFound(Editor* editor, QTextCursor result);
     void onMatchCountFinished(Editor* editor, qsizetype count);
     void onColorSchemeChanged(Qt::ColorScheme colorScheme);
-    /// Options menu / font style
+    /// Options menu action groups
     void onMenuFontTypeGroup_triggered(QAction* action);
+    void onMenuDarkModeGroup_triggered(QAction* action);
 
     /// Automatically connected slots
     /// MENU ================================
@@ -137,6 +138,7 @@ private:
     QLocale m_locale;
 
     QActionGroup* m_menuFontTypeGroup;
+    QActionGroup* m_menuDarkModeGroup;
 
     StatusBar* m_statusBar;
 

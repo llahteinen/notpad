@@ -64,6 +64,7 @@ public:
         /// Options (menu bar choices)
         bool wordWrap{true};    /// This would probably be best if it was saved per tab
         QFont font;             /// This font will be used when constructing new editors
+        Qt::ColorScheme colorScheme{Qt::ColorScheme::Unknown}; /// Unknown == system default
 
 
         /// \brief Loads from persistent storage
@@ -106,6 +107,7 @@ public:
     void incrementFontSize(int increment);
     void restoreFontSize();
     void setFontStyle(QFont::StyleHint style);
+    void setColorScheme(Qt::ColorScheme scheme);
 
 signals:
     void fontChanged(const QFont& font);

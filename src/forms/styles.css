@@ -62,10 +62,10 @@ QMenu::separator {
 /* The text section */
 QMenu::item {
     padding-left: 12px;     /* Padding starting from an icon or indicator/checkmark, or from left of menu if the whole menu has no icons or indicators */
-    padding-right: 12px;    /* Padding right of the shortcut key */
+    padding-right: 16px;    /* Padding right of the shortcut key */
     padding-top: 4px;
     padding-bottom: 4px;
-    min-width: 80px;        /* Can be used to make more space between text and shortcut. Seems to affect the text portion itself, the shortcut and icon sections excluded */
+    min-width: 100px;       /* Can be used to make more space between text and shortcut. Seems to affect the text portion itself, the shortcut and icon sections excluded */
 }
 /* Checkable menu item checkmark (for items that don't have icon set) */
 /* It seems quite weird to try to get this look same as an ::icon */

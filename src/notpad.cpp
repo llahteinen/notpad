@@ -26,6 +26,8 @@ NotPad::NotPad(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
     , m_locale{QLocale::system()}
+    , m_menuFontTypeGroup{}
+    , m_menuDarkModeGroup{}
     , m_statusBar{new StatusBar(m_locale, this)}
     , m_tabManager{}
     , m_editor{}
@@ -213,19 +215,31 @@ void NotPad::loadSettings()
 
     /// Menu font style
     const auto style = SETTINGS.pers.font.styleHint();
-    const auto actions = m_menuFontTypeGroup->actions();
-    const auto action_it = std::find_if(actions.constBegin(), actions.constEnd(), [style](const auto* act) {
-        bool ok;
-        const auto val = static_cast<QFont::StyleHint>(act->property("fontStyle").toInt(&ok));
-        return ok && (val == style);
-    });
+    auto actions = m_menuFontTypeGroup->actions();
+    auto action_it = std::ranges::find_if(actions, Utils::getPropertyEqualsPred("fontStyle", style));
     if(action_it != actions.end())
     {
         (*action_it)->setChecked(true);
+        /// Font will be automatically used by the editors
     }
     else
     {
         qWarning() << "Font style menu match not found" << style;
+        actions.at(0)->setChecked(true);
+    }
+
+    /// Menu dark mode
+    const auto scheme = SETTINGS.pers.colorScheme;
+    actions = m_menuDarkModeGroup->actions();
+    action_it = std::ranges::find_if(actions, Utils::getPropertyEqualsPred("colorScheme", scheme));
+    if(action_it != actions.end())
+    {
+        (*action_it)->setChecked(true);
+        QGuiApplication::styleHints()->setColorScheme(SETTINGS.pers.colorScheme);
+    }
+    else
+    {
+        qWarning() << "Dark mode menu match not found" << scheme;
         actions.at(0)->setChecked(true);
     }
 }
@@ -414,6 +428,13 @@ void NotPad::onCurrentTabChanged(int index)
 
 void NotPad::setupMenu()
 {
+    if(m_menuFontTypeGroup != nullptr || m_menuDarkModeGroup != nullptr)
+    {
+        Q_ASSERT_X(false, "setupMenu()", "called more than once");
+        return;
+    }
+
+    /// Font type
     m_menuFontTypeGroup = new QActionGroup(this);
     connect(m_menuFontTypeGroup, &QActionGroup::triggered, this, &NotPad::onMenuFontTypeGroup_triggered);
     m_menuFontTypeGroup->setExclusive(true);
@@ -429,6 +450,19 @@ void NotPad::setupMenu()
     ui->actionFontSansSerif->setProperty("fontStyle",   QFont::StyleHint::SansSerif);
     ui->actionFontSerif->setProperty("fontStyle",       QFont::StyleHint::Serif);
     ui->actionFontSystem->setProperty("fontStyle",      QFont::StyleHint::System);
+
+    /// Dark mode
+    m_menuDarkModeGroup = new QActionGroup(this);
+    connect(m_menuDarkModeGroup, &QActionGroup::triggered, this, &NotPad::onMenuDarkModeGroup_triggered);
+    m_menuDarkModeGroup->setExclusive(true);
+
+    m_menuDarkModeGroup->addAction(ui->actionSystem);
+    m_menuDarkModeGroup->addAction(ui->actionLight);
+    m_menuDarkModeGroup->addAction(ui->actionDark);
+
+    ui->actionSystem->setProperty("colorScheme",    QVariant::fromValue(Qt::ColorScheme::Unknown));
+    ui->actionLight->setProperty("colorScheme",     QVariant::fromValue(Qt::ColorScheme::Light));
+    ui->actionDark->setProperty("colorScheme",      QVariant::fromValue(Qt::ColorScheme::Dark));
 }
 
 void NotPad::setupSignals()
@@ -1380,5 +1414,20 @@ void NotPad::onMenuFontTypeGroup_triggered(QAction* action)
         qWarning() << "Invalid font type" << variant;
         Q_ASSERT_X(false, "fontStyle", "INVALID FONT");
     }
+}
+
+void NotPad::onMenuDarkModeGroup_triggered(QAction* action)
+{
+    const auto variant = action->property("colorScheme");
+    if(const auto* scheme = get_if<Qt::ColorScheme>(&variant))
+    {
+        QGuiApplication::styleHints()->setColorScheme(*scheme); /// This will also trigger onColorSchemeChanged
+        SETTINGS.setColorScheme(*scheme);
+    }
+    else
+    {
+        qWarning() << "Invalid color scheme" << variant;
+        Q_ASSERT_X(false, "colorScheme", "INVALID COLOR SCHEME");
+    };
 }
 

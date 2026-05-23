@@ -414,13 +414,26 @@ void Editor::reload()
 qsizetype Editor::getMatchCount(const QString& sterm, QTextDocument::FindFlags flags)
 {
     qDebug() << "getMatchCount" << sterm;
+
+    QMutexLocker lock(&m_searchMutex);
+    if(m_search.m_countInProgress)
+    {
+        return m_search.matchCount; /// Return old value
+        /// TODO Should test if caching and reusing the old value can cause problems
+    }
+
     flags.setFlag(QTextDocument::FindBackward, false); /// Don't store search direction
 
-    if(m_search.matchCount < 0 || sterm != m_search.term || flags != m_search.flags)
+    if(sterm != m_search.term || flags != m_search.flags)
     {
         m_search.term = sterm;
         m_search.flags = flags;
-        m_search.matchCount = countMatches(sterm, flags);
+        m_search.m_countInProgress = true;
+        lock.unlock();
+        const auto match_count = countMatches(sterm, flags);
+        lock.relock();
+        m_search.matchCount = match_count;
+        m_search.m_countInProgress = false;
     }
     return m_search.matchCount;
 }
@@ -519,7 +532,7 @@ void Editor::onContentsChange([[maybe_unused]]int position, [[maybe_unused]]int 
 void Editor::invalidateSearchResults()
 {
     qDebug() << "invalidateSearchResults";
-    m_search = {};
+    m_search.invalidate();
 }
 
 void Editor::changeEvent(QEvent* e)

@@ -34,6 +34,7 @@ public:
 
     void reload();
 
+    /// \brief Count occurrences of a substring. Thread safe.
     qsizetype getMatchCount(const QString& sterm, QTextDocument::FindFlags flags);
     const QList<QTextCursor>& getSearchResults(const QString& sterm, QTextDocument::FindFlags flags);
 
@@ -91,10 +92,18 @@ private:
 
     struct Search
     {
+        bool m_countInProgress{false};
         qsizetype matchCount{-1};   /// qsizetype is signed
         QString term{};
         QTextDocument::FindFlags flags{};
+
+        void invalidate()
+        {
+            term = {};
+            flags = {};
+        }
     } m_search;
+    QMutex m_searchMutex{};
 
     Highlighter* highLighter;   /// This is destroyed by its parent document
 

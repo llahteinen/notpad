@@ -32,7 +32,7 @@ public:
     QPointer<QTextDocument> doc;
 
     void _q_reformatBlocks(int from, int charsRemoved, int charsAdded);
-    void reformatBlocks(int from, int charsRemoved, int charsAdded);
+    void reformatBlocks(int from, int charsRemoved, int charsAdded, int* progress = nullptr);
     void reformatBlock(const QTextBlock &block);
 
     inline void rehighlight(QTextCursor &cursor, QTextCursor::MoveOperation operation)
@@ -131,7 +131,7 @@ void LSyntaxHighlighterPrivate::_q_reformatBlocks(int from, int charsRemoved, in
         reformatBlocks(from, charsRemoved, charsAdded);
 }
 
-void LSyntaxHighlighterPrivate::reformatBlocks(int from, int charsRemoved, int charsAdded)
+void LSyntaxHighlighterPrivate::reformatBlocks(int from, int charsRemoved, int charsAdded, int* progress)
 {
     QTextBlock block = doc->findBlock(from);
     if (!block.isValid())
@@ -159,7 +159,11 @@ void LSyntaxHighlighterPrivate::reformatBlocks(int from, int charsRemoved, int c
     }
 
     formatChanges.clear();
-    q->m_rehighlightProgress = block.position();
+
+    if(progress != nullptr)
+    {
+        *progress = block.position();
+    }
 }
 
 void LSyntaxHighlighterPrivate::reformatBlock(const QTextBlock &block)
@@ -349,6 +353,7 @@ void LSyntaxHighlighter::rehighlight()
     /// NOTE the Qt method emits contentsChanged after the rehighlight, but this method does not
 
     /// Start rehighlighting process in chunks
+    m_rehighlightTriggered = true;
     d->m_abort = false;
     m_batchSize = m_startingBatchSize;
     m_rehighlightProgress = 0;
@@ -358,18 +363,21 @@ void LSyntaxHighlighter::rehighlight()
 
 void LSyntaxHighlighter::rehighlight(int topPos)
 {
-    qDebug() << "rehighlight" << topPos;
+    qDebug() << "LSyntaxHighlighter::rehighlight" << topPos;
+    /// If the document is at the top, then highlight normally
     if(topPos <= 0)
     {
         rehighlight();
+        return;
     }
     if(!d->doc)
     {
         return;
     }
 
-    /// Start rehighlighting process in chunks from a given spot
+    /// Else start rehighlighting process in chunks from a given spot
     /// The idea is to fill the visible screen + some above and below for the first batch
+    m_rehighlightTriggered = true;
     d->m_abort = false;
     m_batchSize = m_startingBatchSize;
 
@@ -406,7 +414,7 @@ void LSyntaxHighlighter::continueRehighlight()
     QElapsedTimer timer;
     timer.start();
 
-    d->reformatBlocks(m_rehighlightProgress, 0, todo);
+    d->reformatBlocks(m_rehighlightProgress, 0, todo, &m_rehighlightProgress);
 
     const int elapsed = timer.elapsed();
     if(elapsed < m_frameTimeTarget)
@@ -428,6 +436,7 @@ void LSyntaxHighlighter::continueRehighlight()
     }
     else
     {
+        m_rehighlightTriggered = false;
         qDebug() << "rehighlight ended";
         qDebug() << "final batch" << m_batchSize;
         d->rehighlightPending = false;

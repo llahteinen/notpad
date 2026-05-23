@@ -66,6 +66,7 @@ private:
     static constexpr int m_frameTimeTarget = 16;
     int m_batchSize = m_startingBatchSize;
     int m_rehighlightProgress{-1};
+    bool m_rehighlightTriggered{false};
 
     std::unique_ptr<LSyntaxHighlighterPrivate> const d;
 };

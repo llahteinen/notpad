@@ -1,6 +1,7 @@
 
 if (MSVC)
     add_compile_options(/wd4189) # Removes unused variable warning and error
+    add_compile_options(/wd4702) # Removes unreachable code warning and error
 else()
     add_compile_options(-Wno-error=unused-variable) # Turns unused-variable from error to warning
 endif()
@@ -11,6 +12,7 @@ set(PROJECT_SOURCES
     test_encodings
     test_textstream
     test_highlighter
+    test_search
     test_utils
 )
 
@@ -39,6 +41,7 @@ foreach(TEST ${PROJECT_SOURCES})
     target_link_libraries(${TARGET_NAME} PRIVATE
         lib${PROJECT_NAME}
         Qt6::Test
+        libtestutils
     )
 
     # Copy test data to build dir

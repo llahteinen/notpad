@@ -1,19 +1,19 @@
 #include "search.hpp"
-#include "regex.hpp"
 
 
-qsizetype Search::countMatches(QStringView document, const QString& sterm, QTextDocument::FindFlags flags)
+qsizetype Search::countMatches(QStringView document, const QString& sterm, const QRegularExpression& regex, QTextDocument::FindFlags flags)
 {
     qDebug() << "countMatches";
+    Q_UNUSED(sterm);
+    Q_UNUSED(flags);
 
     /// Regex method (this is faster than QString::count(QString))
-    const auto reg = Regex::stringToRegex(sterm, flags);
-    if(!reg.isValid())
+    if(!regex.isValid())
     {
         return -1;
     }
 
-    const auto matchIterator = reg.globalMatchView(document);
+    const auto matchIterator = regex.globalMatchView(document);
     if(!matchIterator.isValid())
     {
         return -1;

@@ -3,6 +3,7 @@
 #include "testutils/testutils.hpp"
 #include "editor.hpp"
 #include "utils/search.hpp"
+#include "utils/regex.hpp"
 
 
 class Test_Search : public QObject
@@ -74,31 +75,46 @@ void Test_Search::countMatches()
 
     int matches;
     QString doc;
+    QString sterm;
+    QRegularExpression reg;
+    QTextDocument::FindFlags flags;
 
     timerNow(start_t);
     doc = editor.document()->toRawText();
-    matches = Search::countMatches(doc, "ABC", {});
+    sterm = "ABC";
+    flags = {};
+    reg = Regex::stringToRegex(sterm, flags);
+    matches = Search::countMatches(doc, sterm, reg, flags);
     timerNow(end_t);
     printTime("getMatchCount DONE", start_t, end_t);
     QCOMPARE(matches, 220753); /// Case insensitive 220753
 
     timerNow(start_t);
     doc = editor.document()->toRawText();
-    matches = Search::countMatches(doc, "ABD", {});
+    sterm = "ABD";
+    flags = {};
+    reg = Regex::stringToRegex(sterm, flags);
+    matches = Search::countMatches(doc, sterm, reg, flags);
     timerNow(end_t);
     printTime("getMatchCount DONE", start_t, end_t);
     QCOMPARE(matches, 0);
 
     timerNow(start_t);
     doc = editor.document()->toRawText();
-    matches = Search::countMatches(doc, "bcd", {});
+    sterm = "bcd";
+    flags = {};
+    reg = Regex::stringToRegex(sterm, flags);
+    matches = Search::countMatches(doc, sterm, reg, flags);
     timerNow(end_t);
     printTime("getMatchCount DONE", start_t, end_t);
     QCOMPARE(matches, 220753);
 
     timerNow(start_t);
     doc = editor.document()->toRawText();
-    matches = Search::countMatches(doc, "bcd", QTextDocument::FindFlag::FindCaseSensitively);
+    sterm = "bcd";
+    flags = QTextDocument::FindFlag::FindCaseSensitively;
+    reg = Regex::stringToRegex(sterm, flags);
+    matches = Search::countMatches(doc, sterm, reg, flags);
     timerNow(end_t);
     printTime("getMatchCount DONE", start_t, end_t);
     QCOMPARE(matches, 110376);

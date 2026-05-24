@@ -1,4 +1,5 @@
 #include "editor.hpp"
+#include "utils/regex.hpp"
 #include "settings.hpp"
 #include <QFileDialog>
 #include <QFileInfo>
@@ -423,10 +424,22 @@ qsizetype Editor::getMatchCount(const QString& sterm, QTextDocument::FindFlags f
 
     flags.setFlag(QTextDocument::FindBackward, false); /// Don't store search direction
 
+    bool need_recount = false;
+    if(m_search.revision != document()->revision())
+    {
+        m_search.revision = document()->revision();
+        need_recount = true;
+    }
     if(sterm != m_search.term || flags != m_search.flags)
     {
         m_search.term = sterm;
+        m_search.termRegex = Regex::stringToRegex(sterm, flags);
         m_search.flags = flags;
+        need_recount = true;
+    }
+
+    if(need_recount)
+    {
         m_search.m_countInProgress = true;
         /// Tää documentin haku ei ehkä oo ihan thread safe
         const auto doc = document()->toRawText();
@@ -434,11 +447,12 @@ qsizetype Editor::getMatchCount(const QString& sterm, QTextDocument::FindFlags f
         const QStringView doc_view(doc);
 
         lock.unlock();
-        const auto match_count = Search::countMatches(doc_view, m_search.term, m_search.flags);
+        const auto match_count = Search::countMatches(doc_view, m_search.term, m_search.termRegex, m_search.flags);
         lock.relock();
-        m_search.matchCount = match_count;
         m_search.m_countInProgress = false;
+        m_search.matchCount = match_count;
     }
+
     return m_search.matchCount;
 }
 
@@ -530,13 +544,6 @@ void Editor::setHighlighterEnabled(bool enabled)
 void Editor::onContentsChange([[maybe_unused]]int position, [[maybe_unused]]int charsRemoved, [[maybe_unused]]int charsAdded)
 {
 //    qDebug() << "onContentsChange" << position << "" << charsRemoved << "" << charsAdded;
-    invalidateSearchResults();
-}
-
-void Editor::invalidateSearchResults()
-{
-    qDebug() << "invalidateSearchResults";
-    m_search.invalidate();
 }
 
 void Editor::changeEvent(QEvent* e)

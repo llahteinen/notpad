@@ -61,7 +61,6 @@ public slots:
 private slots:
     void onDataQueued();
     void onContentsChange(int position, int charsRemoved, int charsAdded);
-    void invalidateSearchResults();
 
 protected:
     virtual void changeEvent(QEvent *event) override;

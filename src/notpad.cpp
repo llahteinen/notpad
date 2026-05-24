@@ -440,6 +440,7 @@ void NotPad::setupSignals()
         disconnect(m_prevEditor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
         disconnect(m_prevEditor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged);
         disconnect(m_prevEditor, &Editor::hasFileChanged,        this, &NotPad::onHasFileChanged);
+        disconnect(m_prevEditor, &QPlainTextEdit::cursorPositionChanged, this, &NotPad::onCursorPositionChanged);
     }
     if(m_editor)
     {

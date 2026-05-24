@@ -4,6 +4,7 @@
 #include "file.hpp"
 #include "utils/highlighter.hpp"
 #include "utils/textstream.hpp"
+#include "utils/search.hpp"
 #include <QPlainTextEdit>
 #include <QFile>
 #include <QPointer>
@@ -36,7 +37,6 @@ public:
 
     /// \brief Count occurrences of a substring. Thread safe.
     qsizetype getMatchCount(const QString& sterm, QTextDocument::FindFlags flags);
-    const QList<QTextCursor>& getSearchResults(const QString& sterm, QTextDocument::FindFlags flags);
 
     void setName(const QString& name);
     QString name() const;
@@ -72,11 +72,6 @@ private:
 
     static std::pair<TextStream*, QThread*> createStreamAndThread(const QString& fileName);
 
-    /// \param sterm Search term, can be regexp
-    /// \param flags Find options
-    /// \return -1 on errors, -2 on overflow, otherwise number of matches in the document
-    qsizetype countMatches(const QString& sterm, QTextDocument::FindFlags flags);
-
     /// NOTE: This function is very slow and memory intensive on large files!
     QList<QTextCursor> findAll(const QString& sterm, QTextDocument::FindFlags flags);
 
@@ -90,19 +85,7 @@ private:
 
     QTextCharFormat m_format;
 
-    struct Search
-    {
-        bool m_countInProgress{false};
-        qsizetype matchCount{-1};   /// qsizetype is signed
-        QString term{};
-        QTextDocument::FindFlags flags{};
-
-        void invalidate()
-        {
-            term = {};
-            flags = {};
-        }
-    } m_search;
+    Search m_search;
     QMutex m_searchMutex{};
 
     Highlighter* highLighter;   /// This is destroyed by its parent document

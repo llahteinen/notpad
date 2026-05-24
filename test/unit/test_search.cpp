@@ -2,7 +2,7 @@
 #include <QTest>
 #include "testutils/testutils.hpp"
 #include "editor.hpp"
-
+#include "utils/search.hpp"
 
 
 class Test_Search : public QObject
@@ -38,8 +38,9 @@ private slots:
         end_t = start_t;
     }
 
-    void countMatches_editSearchTerm();
-    void countMatches_editDoc();
+    void countMatches();
+    void getMatchCount_editSearchTerm();
+    void getMatchCount_editDoc();
 
     void cleanup()
     {
@@ -57,7 +58,7 @@ private:
 using namespace TestUtils;
 
 
-void Test_Search::countMatches_editSearchTerm()
+void Test_Search::countMatches()
 {
     auto filesize = filesize10MB;
     QString fileName = "testdata/10MB.txt";
@@ -72,6 +73,53 @@ void Test_Search::countMatches_editSearchTerm()
     QCOMPARE_EQ(editor.document()->characterCount(), filesize+1);
 
     int matches;
+    QString doc;
+
+    timerNow(start_t);
+    doc = editor.document()->toRawText();
+    matches = Search::countMatches(doc, "ABC", {});
+    timerNow(end_t);
+    printTime("getMatchCount DONE", start_t, end_t);
+    QCOMPARE(matches, 220753); /// Case insensitive 220753
+
+    timerNow(start_t);
+    doc = editor.document()->toRawText();
+    matches = Search::countMatches(doc, "ABD", {});
+    timerNow(end_t);
+    printTime("getMatchCount DONE", start_t, end_t);
+    QCOMPARE(matches, 0);
+
+    timerNow(start_t);
+    doc = editor.document()->toRawText();
+    matches = Search::countMatches(doc, "bcd", {});
+    timerNow(end_t);
+    printTime("getMatchCount DONE", start_t, end_t);
+    QCOMPARE(matches, 220753);
+
+    timerNow(start_t);
+    doc = editor.document()->toRawText();
+    matches = Search::countMatches(doc, "bcd", QTextDocument::FindFlag::FindCaseSensitively);
+    timerNow(end_t);
+    printTime("getMatchCount DONE", start_t, end_t);
+    QCOMPARE(matches, 110376);
+}
+
+void Test_Search::getMatchCount_editSearchTerm()
+{
+    auto filesize = filesize10MB;
+    QString fileName = "testdata/10MB.txt";
+    {
+        QFile file(fileName);
+        QVERIFY(file.open(QFile::ReadOnly));
+    }
+
+    TextStream stream(fileName);
+    Editor editor;
+    editor.setPlainText(stream.readAll());
+    QCOMPARE_EQ(editor.document()->characterCount(), filesize+1);
+
+    int matches;
+    QString doc;
 
     timerNow(start_t);
     matches = editor.getMatchCount("ABC", {});
@@ -100,7 +148,7 @@ void Test_Search::countMatches_editSearchTerm()
     QCOMPARE(matches, 220753);
 }
 
-void Test_Search::countMatches_editDoc()
+void Test_Search::getMatchCount_editDoc()
 {
     auto filesize = filesize10MB;
     QString fileName = "testdata/10MB.txt";

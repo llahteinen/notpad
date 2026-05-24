@@ -1,5 +1,4 @@
 #include "editor.hpp"
-#include "utils/regex.hpp"
 #include "settings.hpp"
 #include <QFileDialog>
 #include <QFileInfo>
@@ -429,8 +428,13 @@ qsizetype Editor::getMatchCount(const QString& sterm, QTextDocument::FindFlags f
         m_search.term = sterm;
         m_search.flags = flags;
         m_search.m_countInProgress = true;
+        /// Tää documentin haku ei ehkä oo ihan thread safe
+        const auto doc = document()->toRawText();
+//        const auto doc = document()->toPlainText(); /// Check later if should use this if toRawText has issues with unicode or something
+        const QStringView doc_view(doc);
+
         lock.unlock();
-        const auto match_count = countMatches(sterm, flags);
+        const auto match_count = Search::countMatches(doc_view, m_search.term, m_search.flags);
         lock.relock();
         m_search.matchCount = match_count;
         m_search.m_countInProgress = false;
@@ -556,43 +560,6 @@ void Editor::wheelEvent(QWheelEvent* e)
     }
     /// Call the base class implementation if we did NOT handle the event
     QPlainTextEdit::wheelEvent(e);
-}
-
-qsizetype Editor::countMatches(const QString& sterm, QTextDocument::FindFlags flags)
-{
-    qDebug() << "countMatches";
-
-    const auto doc = document()->toRawText();
-//    const auto doc = document()->toPlainText(); /// Check later if should use this if toRawText has issues with unicode or something
-
-    /// Regex method (this is faster than QString::count(QString))
-    const auto reg = Regex::stringToRegex(sterm, flags);
-    if(!reg.isValid())
-    {
-        return -1;
-    }
-
-    const auto matchIterator = reg.globalMatch(doc);
-    if(!matchIterator.isValid())
-    {
-        return -1;
-    }
-
-    qsizetype count = 0;
-    static constexpr auto max_val = std::numeric_limits<decltype(count)>::max();
-    for([[maybe_unused]]const auto& _ : matchIterator)
-    {
-        if(count == max_val)
-        {
-            count = -2;
-            qInfo() << "Too many search results: >" << max_val;
-            break;
-        }
-        ++count;
-    }
-
-    qDebug() << "resultCount" << count;
-    return count;
 }
 
 QList<QTextCursor> Editor::findAll(const QString& sterm, QTextDocument::FindFlags flags)

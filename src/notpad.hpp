@@ -75,6 +75,7 @@ private:
     void showHideReplace(bool show);
     void find(QTextDocument::FindFlags flags, int recursion = 0);
     void replace(bool findAfter = false);
+    void replaceAll();
 
     const QFile* currentFile();
 
@@ -124,6 +125,7 @@ private slots:
     void on_find_findPrevButton_clicked();
     void on_find_replaceButton_clicked();
     void on_find_replaceAndFindButton_clicked();
+    void on_find_replaceAllButton_clicked();
     void on_main_find_showReplace_toolButton_clicked();
     /// /FIND ================================
 

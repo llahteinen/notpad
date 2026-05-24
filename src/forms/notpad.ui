@@ -156,7 +156,7 @@
          </item>
          <item>
           <widget class="QWidget" name="main_find_replacewidget" native="true">
-           <layout class="QGridLayout" name="main_find_gridLayout_2" columnstretch="3,0,0,3">
+           <layout class="QGridLayout" name="main_find_gridLayout_2" columnstretch="3,0,0,0,3">
             <property name="leftMargin">
              <number>0</number>
             </property>
@@ -172,7 +172,7 @@
             <property name="horizontalSpacing">
              <number>0</number>
             </property>
-            <item row="0" column="3">
+            <item row="0" column="4">
              <spacer name="find_horizontalSpacer_2">
               <property name="orientation">
                <enum>Qt::Orientation::Horizontal</enum>
@@ -187,20 +187,6 @@
                </size>
               </property>
              </spacer>
-            </item>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="find_replaceButton">
-              <property name="text">
-               <string>Replace</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
-             <widget class="QPushButton" name="find_replaceAndFindButton">
-              <property name="text">
-               <string>Replc+Find</string>
-              </property>
-             </widget>
             </item>
             <item row="0" column="0">
              <widget class="QLineEdit" name="find_replace_lineEdit">
@@ -221,6 +207,27 @@
               </property>
               <property name="clearButtonEnabled">
                <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="find_replaceButton">
+              <property name="text">
+               <string>Replace</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QPushButton" name="find_replaceAndFindButton">
+              <property name="text">
+               <string>Replc+Find</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="3">
+             <widget class="QPushButton" name="find_replaceAllButton">
+              <property name="text">
+               <string>Replace all</string>
               </property>
              </widget>
             </item>

@@ -974,6 +974,11 @@ void NotPad::on_find_replaceAndFindButton_clicked()
     replace(true);
 }
 
+void NotPad::on_find_replaceAllButton_clicked()
+{
+    replaceAll();
+}
+
 void NotPad::onFindResultFound(Editor* editor, QTextCursor result)
 {
     if(!editor || editor != m_editor)
@@ -1108,6 +1113,40 @@ void NotPad::replace(bool findAfter)
     }
 }
 
+void NotPad::replaceAll()
+{
+    if(m_editor->isReadOnly())
+    {
+        qDebug() << "ReadOnly";
+        return;
+    }
+
+    const QString& searchString = ui->find_lineEdit->text();
+    if(searchString.isEmpty())
+    {
+        statusBar()->showMessage(tr("Empty Search Field"), 1000);
+    }
+
+    const QString& replaceString = ui->find_replace_lineEdit->text();
+    QTextDocument* document = m_editor->document();
+
+    /// For some reason we need this for the document modified state to change properly.
+    /// Just using the match_cursor only won't do it.
+    auto cursor = m_editor->textCursor();
+    cursor.beginEditBlock();
+
+    /// Create a cursor in the beginning of the document
+    QTextCursor match_cursor(document);
+    match_cursor = document->find(searchString, match_cursor, {});
+    while(!match_cursor.isNull())
+    {
+//        match_cursor.setKeepPositionOnInsert(true); /// Probably not necessary
+        match_cursor.insertText(replaceString); /// The cursor ends up to after the replaced text
+        match_cursor = document->find(searchString, match_cursor, {});
+    }
+    cursor.endEditBlock();
+}
+
 void NotPad::on_actionWord_wrap_triggered(bool enabled)
 {
 //    qDebug() << "on_actionWord_wrap_triggered" << enabled;
@@ -1178,8 +1217,8 @@ void NotPad::on_actionReplace_triggered()
     const bool find_had_focus = ui->find_lineEdit->hasFocus();
     const bool replace_had_focus = ui->find_replace_lineEdit->hasFocus();
 
-    on_actionFind_triggered(true); /// Focus will always go to find (when true)
     showHideReplace(true); /// Does not change focus
+    on_actionFind_triggered(true); /// Focus will always go to find (when true)
 
     /// If find already had focus, move it to replace
     if(find_had_focus)
@@ -1231,6 +1270,7 @@ void NotPad::showHideFind(bool show)
         }
         statusBar()->clearMessage(); /// Maybe we should use a dedicated text info box for search
     }
+    qApp->processEvents(QEventLoop::ExcludeUserInputEvents); /// This is here for not to cause GUI lag while highlighters are being enabled
 
     if(raising_edge || falling_edge)
     {

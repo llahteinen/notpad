@@ -6,5 +6,15 @@
         <file>res/icons/dark/index.theme</file>
         <file>res/icons/dark/actions/ic_fluent_document_20_regular.png</file>
         <file>res/icons/dark/actions/ic_fluent_document_edit_20_regular.png</file>
+        <file>res/icons/dark/actions/ic_fluent_arrow_turn_left_up_20_regular.png</file>
+        <file>res/icons/dark/actions/ic_fluent_arrow_turn_right_down_20_regular.png</file>
+        <file>res/icons/light/actions/ic_fluent_arrow_turn_left_up_20_regular.png</file>
+        <file>res/icons/light/actions/ic_fluent_arrow_turn_right_down_20_regular.png</file>
+        <file>res/icons/dark/actions/ic_fluent_column_arrow_right_20_regular.png</file>
+        <file>res/icons/light/actions/ic_fluent_column_arrow_right_20_regular.png</file>
+        <file>res/icons/light/actions/ic_fluent_column_arrow_right_20_regular+arrow.png</file>
+        <file>res/icons/light/actions/ic_fluent_column_arrow_right_20_regular+globe.png</file>
+        <file>res/icons/dark/actions/ic_fluent_column_arrow_right_20_regular+arrow.png</file>
+        <file>res/icons/dark/actions/ic_fluent_column_arrow_right_20_regular+globe.png</file>
     </qresource>
 </RCC>

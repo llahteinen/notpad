@@ -1284,6 +1284,7 @@ void NotPad::showHideReplace(bool show)
     ui->main_find_showReplace_toolButton->setProperty("btn_checked", show);
     ui->main_find_showReplace_toolButton->setArrowType(show ? Qt::ArrowType::DownArrow : Qt::ArrowType::RightArrow);
 
+    ui->find_replace_lineEdit->setVisible(show);
     ui->main_find_replacewidget->setVisible(show);
 }
 

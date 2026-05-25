@@ -14,10 +14,10 @@
   x Highlight all
   - Highlight matches over scrollbar
   x Count matches
-  - Replace
+  x Replace
     - Editor context menu: selected text to replace lineEdit
   - Regex search
-  - Better GUI
+  x Better GUI
   - Highlight previous search when re-entering Find
   - Seach immediately with ctrl+f when text is selected ?
     - or just highlight but don't search next ?

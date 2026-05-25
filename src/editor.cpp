@@ -456,6 +456,25 @@ qsizetype Editor::getMatchCount(const QString& sterm, QTextDocument::FindFlags f
     return m_search.matchCount;
 }
 
+void Editor::replaceAll(QString searchString, QString replaceString)
+{
+    /// For some reason we need this for the document modified state to change properly.
+    /// Just using the match_cursor only won't do it.
+    auto cursor = textCursor();
+    cursor.beginEditBlock();
+
+    /// Create a cursor in the beginning of the document
+    QTextCursor match_cursor(document());
+    match_cursor = document()->find(searchString, match_cursor, {});
+    while(!match_cursor.isNull())
+    {
+//        match_cursor.setKeepPositionOnInsert(true); /// Probably not necessary
+        match_cursor.insertText(replaceString); /// The cursor ends up to after the replaced text
+        match_cursor = document()->find(searchString, match_cursor, {});
+    }
+    cursor.endEditBlock();
+}
+
 void Editor::setName(const QString& name)
 {
     if(name != m_name)

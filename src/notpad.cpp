@@ -1121,30 +1121,14 @@ void NotPad::replaceAll()
         return;
     }
 
-    const QString& searchString = ui->find_lineEdit->text();
+    const QString searchString = ui->find_lineEdit->text();
     if(searchString.isEmpty())
     {
         statusBar()->showMessage(tr("Empty Search Field"), 1000);
     }
+    const QString replaceString = ui->find_replace_lineEdit->text();
 
-    const QString& replaceString = ui->find_replace_lineEdit->text();
-    QTextDocument* document = m_editor->document();
-
-    /// For some reason we need this for the document modified state to change properly.
-    /// Just using the match_cursor only won't do it.
-    auto cursor = m_editor->textCursor();
-    cursor.beginEditBlock();
-
-    /// Create a cursor in the beginning of the document
-    QTextCursor match_cursor(document);
-    match_cursor = document->find(searchString, match_cursor, {});
-    while(!match_cursor.isNull())
-    {
-//        match_cursor.setKeepPositionOnInsert(true); /// Probably not necessary
-        match_cursor.insertText(replaceString); /// The cursor ends up to after the replaced text
-        match_cursor = document->find(searchString, match_cursor, {});
-    }
-    cursor.endEditBlock();
+    m_editor->replaceAll(searchString, replaceString);
 }
 
 void NotPad::on_actionWord_wrap_triggered(bool enabled)

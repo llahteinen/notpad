@@ -24,6 +24,7 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
     , m_hasBom{false}
     , m_format{}
     , m_search{}
+    , m_replaceAllInProgress{false}
     , highLighter{new Highlighter(this->document())}
     , m_aborted{false}
     , m_loadingInProgress{false}
@@ -456,22 +457,70 @@ qsizetype Editor::getMatchCount(const QString& sterm, QTextDocument::FindFlags f
     return m_search.matchCount;
 }
 
-void Editor::replaceAll(QString searchString, QString replaceString)
+void Editor::replaceAll(QString searchString, QString replaceString,
+                        std::optional<QTextCursor> progress, int iterationSize)
 {
+    m_replaceAllInProgress = true;
+
+    int iterations = 0;
+    QElapsedTimer timer;
+    timer.start();
+
     /// For some reason we need this for the document modified state to change properly.
     /// Just using the match_cursor only won't do it.
     auto cursor = textCursor();
-    cursor.beginEditBlock();
 
     /// Create a cursor in the beginning of the document
-    QTextCursor match_cursor(document());
-    match_cursor = document()->find(searchString, match_cursor, {});
-    while(!match_cursor.isNull())
+    QTextCursor match_cursor;
+    if(!progress.has_value())
+    /// Starting new replace all
+    {
+        setReadOnly(true);
+        cursor.beginEditBlock();
+//        m_editor->document()->setModified(true); /// This does not work as expected
+        match_cursor = QTextCursor(document());
+        match_cursor = document()->find(searchString, match_cursor, {});
+    }
+    else /// Continuing replace all
+    {
+        match_cursor = progress.value();
+    }
+
+    while(!match_cursor.isNull() && iterations < iterationSize)
     {
 //        match_cursor.setKeepPositionOnInsert(true); /// Probably not necessary
         match_cursor.insertText(replaceString); /// The cursor ends up to after the replaced text
         match_cursor = document()->find(searchString, match_cursor, {});
+        iterations++;
     }
+
+    if(!match_cursor.isNull())
+    {
+//        m_editor->document()->markContentsDirty(m_editor->getFirstVisibleBlock(), 1000); /// This works for immediate change but slows down a lot
+        /// Should do so that the replaceAll starts from where the viewport is and not top of the document, if wanted to show immediate change
+
+        const qint64 elapsed = timer.elapsed();
+        static constexpr qint64 FRAME_TIME_TARGET = 16;
+
+        if(elapsed < FRAME_TIME_TARGET)
+        {
+            /// Too small value here slightly slows down. Too big value does not give any benefit
+            iterationSize += 1000;
+        }
+        else if(elapsed > FRAME_TIME_TARGET)
+        {
+            iterationSize = qMax(100, iterationSize - 400);
+        }
+
+        /// Continue later
+        QMetaObject::invokeMethod(this, &Editor::replaceAll, Qt::QueuedConnection,
+                                  searchString, replaceString, match_cursor, iterationSize);
+        return;
+    }
+
+    /// All done
+    setReadOnly(false);
+    m_replaceAllInProgress = false;
     cursor.endEditBlock();
 }
 

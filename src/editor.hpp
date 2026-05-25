@@ -38,7 +38,8 @@ public:
     /// \brief Count occurrences of a substring. Thread safe.
     qsizetype getMatchCount(const QString& sterm, QTextDocument::FindFlags flags);
 
-    void replaceAll(QString searchString, QString replaceString);
+    void replaceAll(QString searchString, QString replaceString,
+                    std::optional<QTextCursor> progress = std::nullopt, int iterationSize = 1000);
 
     void setName(const QString& name);
     QString name() const;
@@ -88,6 +89,7 @@ private:
 
     Search m_search;
     QMutex m_searchMutex{};
+    bool m_replaceAllInProgress;
 
     Highlighter* highLighter;   /// This is destroyed by its parent document
 

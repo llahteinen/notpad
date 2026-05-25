@@ -47,7 +47,7 @@ foreach(TEST ${PROJECT_SOURCES})
     # Copy test data to build dir
     add_custom_command(
         TARGET ${TARGET_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/testdata" # From
             "${CMAKE_CURRENT_BINARY_DIR}/testdata" # To
     )

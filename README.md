@@ -11,7 +11,7 @@ Linux or macOS not tested (so far).
 ### Requirements
 
 - Qt 6.10 and probably compatible with many other versions
-  - Originally developed using Qt 6.10.1
+  - Originally developed using Qt 6.10.1, 6.11.1
 
 ### Shared linked (Qt default)
 
@@ -24,15 +24,15 @@ You need to build Qt from sources first. Static libraries are not provided by Qt
 - Setup your command line environment
   - For example with MSVC:
     - Launch your Qt command line from the provided shortcut e.g. Qt 6.10.1 (MSVC 2022 64-bit)
-    - Run vcvarsall.bat
+    - Run vcvarsall.bat that is located in e.g. C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat
 - Configure the build
-  - `cd /path/to/Qt/6.10.1/sources`
+  - `cd /path/to/Qt/6.10.1` (sources would be located in /path/to/Qt/6.10.1/Src)
   - `mkdir build`
   - `cd build`
   - `..\Src\configure.bat -prefix /some/path/static_install_dir -static -submodules qtbase`
     - `-submodules qtbase` can be omitted if you want to build the whole Qt universe
     - This configures the release variant only
-  - `cmake --build . --parallel`
+  - `cmake --build . --parallel` (or --parallel 8 for 8 threads etc)
   - `cmake --install .`
 - Qt static libraries should be now installed in /some/path/static_install_dir
 

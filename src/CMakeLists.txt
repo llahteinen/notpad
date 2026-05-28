@@ -16,6 +16,7 @@ set(PROJECT_SOURCES
         file.cpp
         statusbar.hpp
         statusbar.cpp
+        types.hpp
         utils/namefilterlist.hpp
         utils/namefilterlist.cpp
         utils/textstream.hpp

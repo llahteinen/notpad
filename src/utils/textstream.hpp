@@ -1,6 +1,7 @@
 #ifndef TEXTSTREAM_H
 #define TEXTSTREAM_H
 
+#include "types.hpp"
 #include <QTextStream>
 #include <QObject>
 #include <QFile>
@@ -9,14 +10,6 @@
 #include <QWaitCondition>
 #include <QMap>
 
-
-enum class EndOfLine
-{
-    UNAVAILABLE = -1,
-    UNIX = 0,       /// lf
-    WINDOWS = 1,    /// crlf
-    MAC = 2,        /// cr (obsolete)
-};
 
 class TextStream : public QObject, public QTextStream
 {

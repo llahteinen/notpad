@@ -1,6 +1,7 @@
 #ifndef SETTINGS_HPP
 #define SETTINGS_HPP
 
+#include "types.hpp"
 #include "utils/namefilterlist.hpp"
 #include <QObject>
 #include <QFont>
@@ -50,6 +51,7 @@ public:
     /// Runtime (not to be persisted)
     QString currentNameFilter{defaultNameFilter};
     QDir currentDir{QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)};
+    EndOfLine endOfLine{EndOfLine::UNIX};
 
 
     /// Give sensible defaults here for fresh installations
@@ -102,6 +104,11 @@ public:
         pers.font.setPointSizeF(fontSizeDefault);
         pers.font.setStyleHint(QFont::StyleHint::Monospace);
         pers.font.setFamilies(getMonospaceFamilies());
+
+        if(operatingSystem == "windows")
+        {
+            endOfLine = EndOfLine::WINDOWS;
+        }
     }
 
     void incrementFontSize(int increment);

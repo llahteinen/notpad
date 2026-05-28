@@ -20,7 +20,7 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
     , m_textStream{stream}
     , m_file{std::move(file_p)}
     , m_encoding{QStringConverter::Utf8}
-    , m_endOfLine{EndOfLine::UNAVAILABLE}
+    , m_endOfLine{SETTINGS.endOfLine}
     , m_hasBom{false}
     , m_format{}
     , m_search{}

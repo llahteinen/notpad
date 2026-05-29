@@ -157,7 +157,7 @@ QTabBar::tab {
 /*    padding: 2px;*/
 /*    padding-left: 0px;*/ /* padding rikkoo koko setin */
 /*    margin: 0px;*/
-    height: 24px; /* Default height 24px */
+/*    height: 24px;*/ /* Default height 24px on Windows, something else on others */
     /* If set background-color, then the whole default style disappears */
     /* background-color: #fff; */
 }

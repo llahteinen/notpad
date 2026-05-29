@@ -37,7 +37,7 @@ QMenuBar QToolButton {
 QMenuBar QToolButton:hover
 {
     /* inset outset? */
-    border: 1px outset rgb(211, 211, 211);
+/*    border: 1px outset rgb(211, 211, 211);*/
     background-color: rgba(0, 0, 0, 20);
 }
 QMenuBar QToolButton:pressed

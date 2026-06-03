@@ -1,5 +1,8 @@
 ### TODO
 
+## Bugs
+- If reloading file that has been already deleted, then no information appears
+
 ## Features
 - Command line arguments
   x Open file via command line argument

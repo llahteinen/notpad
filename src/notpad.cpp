@@ -5,6 +5,7 @@
 #include "statusbar.hpp"
 #include "file.hpp"
 #include "utils/utils.hpp"
+#include "utils/theme.hpp"
 #include "settings.hpp"
 #include <QString>
 #include <QFile>
@@ -19,6 +20,7 @@
 #include <QStyleHints>
 #include <QActionGroup>
 #include <QMetaEnum>
+#include <QStyle>
 
 
 
@@ -33,8 +35,29 @@ NotPad::NotPad(QWidget *parent)
     , m_editor{}
     , m_prevEditor{}
     , m_argumentFiles{}
+    , m_systemThemeName{}
+    , m_systemThemeNameDark{}
 {
     qInfo() << PROJECT_NAME << "starting";
+
+    qInfo() << "Platform" << QGuiApplication::platformName();
+    qInfo() << "Style" << QApplication::style()->name();
+    qInfo() << "ThemeName" << QIcon::themeName();
+    qInfo() << "ColorScheme" << QApplication::styleHints()->colorScheme();
+    if(QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark)
+    {
+        m_systemThemeNameDark = QIcon::themeName();
+        m_systemThemeName = Theme::findCounterpartTheme(QIcon::themeName());
+        qDebug() << "Dark theme" << m_systemThemeNameDark;
+        qDebug() << "Light theme" << m_systemThemeName;
+    }
+    else /// Light and Unknown
+    {
+        m_systemThemeName = QIcon::themeName();
+        m_systemThemeNameDark = Theme::findCounterpartTheme(QIcon::themeName());
+        qDebug() << "Light theme" << m_systemThemeName;
+        qDebug() << "Dark theme" << m_systemThemeNameDark;
+    }
 
     /// Needed when embedding resources in a static library
     Q_INIT_RESOURCE(ui_icons);
@@ -529,12 +552,14 @@ void NotPad::updateStyle(Qt::ColorScheme scheme)
     QFile colorStyleFile;
     if(scheme == Qt::ColorScheme::Dark)
     {
-        QIcon::setThemeName("dark");
+        QIcon::setThemeName(m_systemThemeNameDark);
+        QIcon::setFallbackThemeName("dark");
         colorStyleFile.setFileName(":/forms/colors-dark.css");
     }
     else
     {
-        QIcon::setThemeName("light");
+        QIcon::setThemeName(m_systemThemeName);
+        QIcon::setFallbackThemeName("light");
         colorStyleFile.setFileName(":/forms/colors-light.css");
     }
 

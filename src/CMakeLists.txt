@@ -26,6 +26,8 @@ set(PROJECT_SOURCES
         utils/regex.hpp
         utils/search.hpp
         utils/search.cpp
+        utils/theme.hpp
+        utils/theme.cpp
         utils/utils.hpp
         utils/utils.cpp
         qtforks/lsyntaxhighlighter.cpp

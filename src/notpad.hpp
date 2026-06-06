@@ -148,6 +148,9 @@ private:
 
     QStringList m_argumentFiles;
 
+    QString m_systemThemeName;
+    QString m_systemThemeNameDark;
+
 signals:
     void findResultFound(Editor* editor, QTextCursor result);
     void matchCountFinished(Editor* editor, qsizetype count);

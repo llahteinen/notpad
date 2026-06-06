@@ -22,18 +22,6 @@ public:
         TRUE = 1,
     };
 
-    static QString nameForEndOfLine(EndOfLine eol)
-    {
-        static const QMap<EndOfLine, QString> eolNames
-            {
-             { EndOfLine::UNAVAILABLE,   "N/A" },
-             { EndOfLine::UNIX,          "Unix (LF)" },
-             { EndOfLine::WINDOWS,       "Windows (CRLF)" },
-             { EndOfLine::MAC,           "Mac legacy (CR)" },
-             };
-        return eolNames.value(eol);
-    }
-
     explicit TextStream(QFileDevice* device);
     explicit TextStream(const QString& fileName); /// Use with readChunks
 

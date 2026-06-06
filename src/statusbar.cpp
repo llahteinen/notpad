@@ -1,5 +1,6 @@
 #include "statusbar.hpp"
 #include "settings.hpp"
+#include "utils/utils.hpp"
 #include <QLocale>
 #include <QLabel>
 
@@ -17,10 +18,22 @@ StatusBar::StatusBar(const QLocale& locale, QWidget* parent) : QStatusBar(parent
     m_docStatsLabel = new QLabel(this);
     m_cursorPositionLabel = new QLabel(this);
 
-    m_encodingLabel->setMaximumWidth(90);
-    m_endOfLineLabel->setMaximumWidth(100);
-    m_docStatsLabel->setMaximumWidth(185);
-    m_cursorPositionLabel->setMaximumWidth(210);
+    const auto metrics = QFontMetrics(this->font());
+    qreal width;
+    width = metrics.horizontalAdvance(QString("%1 %2")
+                                          .arg(QStringConverter::nameForEncoding(QStringConverter::Encoding::Utf32BE), "BOM"));
+    m_encodingLabel->setMaximumWidth(width + 2);
+    width = metrics.horizontalAdvance(Utils::nameForEndOfLine(EndOfLine::WINDOWS));
+    m_endOfLineLabel->setMaximumWidth(width + 2);
+    width = metrics.horizontalAdvance(QString("Lines %1   Chars %2")
+                                          .arg(m_locale.toString(999'999),
+                                               m_locale.toString(999'999'999)));
+    m_docStatsLabel->setMaximumWidth(width + 2);
+    width = metrics.horizontalAdvance(QString("Ln %1  Col %2  Pos %3")
+                                          .arg(m_locale.toString(999'999),
+                                               m_locale.toString(9999),
+                                               m_locale.toString(999'999'999)));
+    m_cursorPositionLabel->setMaximumWidth(width + 2);
 
     QWidget* spacer = new QLabel(this);
     spacer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -43,13 +56,13 @@ void StatusBar::update(const Data& d)
     if(d.stats.has_value())
     {
         m_docStatsLabel->setText(QString("Lines %1   Chars %2")
-                                           .arg(m_locale.toString(d.stats->lines),  /// 9999999
+                                           .arg(m_locale.toString(d.stats->lines),  /// 999999
                                                 m_locale.toString(d.stats->chars)));/// 999999999
     }
     if(d.cursor.has_value())
     {
         m_cursorPositionLabel->setText(QString("Ln %1  Col %2  Pos %3")
-                                           .arg(m_locale.toString(d.cursor->ln + SETTINGS.lineNumberOffset),   /// 9999999
+                                           .arg(m_locale.toString(d.cursor->ln + SETTINGS.lineNumberOffset),   /// 999999
                                                 m_locale.toString(d.cursor->col + SETTINGS.lineNumberOffset),  /// 9999
                                                 m_locale.toString(d.cursor->pos + SETTINGS.lineNumberOffset)));/// 999999999
     }

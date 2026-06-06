@@ -1,7 +1,10 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include "types.hpp"
 #include <QStringList>
+#include <QString>
+#include <QMap>
 
 class QMimeData;
 
@@ -48,6 +51,19 @@ namespace Utils
                 return prop_value && (*prop_value == expectedValue);
             }
         };
+    }
+
+
+    static inline QString nameForEndOfLine(EndOfLine eol)
+    {
+        static const QMap<EndOfLine, QString> eolNames
+            {
+             { EndOfLine::UNAVAILABLE,   "N/A" },
+             { EndOfLine::UNIX,          "Unix (LF)" },
+             { EndOfLine::WINDOWS,       "Windows (CRLF)" },
+             { EndOfLine::MAC,           "Mac legacy (CR)" },
+             };
+        return eolNames.value(eol);
     }
 };
 

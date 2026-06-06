@@ -1,5 +1,6 @@
 #include "editor.hpp"
 #include "utils/regex.hpp"
+#include "utils/utils.hpp"
 #include "settings.hpp"
 #include <QFileDialog>
 #include <QFileInfo>
@@ -557,7 +558,7 @@ QString Editor::encodingName() const
 
 QString Editor::endOfLineName() const
 {
-    return TextStream::nameForEndOfLine(m_endOfLine);
+    return Utils::nameForEndOfLine(m_endOfLine);
 }
 
 bool Editor::isModified() const

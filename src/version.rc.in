@@ -1,0 +1,28 @@
+#include <winver.h>
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,@VERSION_SUFFIX_I@
+PRODUCTVERSION  @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,@VERSION_SUFFIX_I@
+FILEOS          VOS__WINDOWS32
+FILETYPE        VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "@ORGANIZATION_NAME@"
+      VALUE "FileDescription", "Notepad application"
+      VALUE "FileVersion", "@PROJECT_FULL_VERSION@"
+      VALUE "InternalName", "@PROJECT_NAME@"
+      VALUE "LegalCopyright", "Copyright 2026 @ORGANIZATION_NAME@"
+      VALUE "OriginalFilename", "@PROJECT_NAME@.exe"
+      VALUE "ProductName", "@PROJECT_NAME@"
+      VALUE "ProductVersion", "@PROJECT_FULL_VERSION@"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 0x04B0
+  END
+END

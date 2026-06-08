@@ -77,10 +77,20 @@ target_compile_definitions(${TARGET_NAME} PRIVATE
 
 
 # EXECUTABLE TARGET ===========
+
 set(EXE_SOURCES
         main.cpp
 )
+
 if(WIN32)
+    # Configure template version file. Replaces @VARNAME@ in the file using cmake variables
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in
+        version.rc
+        @ONLY
+    )
+
+    list(APPEND EXE_SOURCES version.rc)
     list(APPEND EXE_SOURCES resource.rc)
 endif()
 

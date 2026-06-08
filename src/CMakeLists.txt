@@ -131,6 +131,13 @@ if(BUILD_STATIC)
     set(INSTALL_BINDIR ${INSTALL_BINDIR}-static)
 endif()
 
+set_target_properties(${EXE_TARGET_NAME} PROPERTIES
+    BUILD_RPATH "$ORIGIN/lib"   # Qt installation directory seems to be added to RUNPATH
+    INSTALL_RPATH "$ORIGIN/lib" # This affects when running cmake install. Qt installation directory seems NOT to be added
+#    BUILD_WITH_INSTALL_RPATH true # This will set build RUNPATH same as install RUNPATH
+#    LINK_OPTIONS "-Wl,--disable-new-dtags" # This will set RPATH instead of RUNPATH
+)
+
 install(TARGETS ${TARGET_NAME} ${EXE_TARGET_NAME}
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

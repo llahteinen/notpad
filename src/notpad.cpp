@@ -21,10 +21,11 @@
 #include <QActionGroup>
 #include <QMetaEnum>
 #include <QStyle>
+#include <QCommandLineParser>
 
 
 
-NotPad::NotPad(QWidget *parent)
+NotPad::NotPad(QCommandLineParser& args, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
     , m_locale{QLocale::system()}
@@ -34,16 +35,18 @@ NotPad::NotPad(QWidget *parent)
     , m_tabManager{}
     , m_editor{}
     , m_prevEditor{}
+    , m_commandLine{args}
     , m_argumentFiles{}
     , m_systemThemeName{}
     , m_systemThemeNameDark{}
 {
     qInfo() << PROJECT_NAME << "starting";
 
-    qInfo() << "Platform" << QGuiApplication::platformName();
-    qInfo() << "Style" << QApplication::style()->name();
-    qInfo() << "ThemeName" << QIcon::themeName();
-    qInfo() << "ColorScheme" << QApplication::styleHints()->colorScheme();
+    qInfo() << "Platform:" << QGuiApplication::platformName();
+    qInfo() << "Style:" << QApplication::style()->name();
+    qInfo() << "ThemeName:" << QIcon::themeName();
+    qInfo() << "System ColorScheme:" << QApplication::styleHints()->colorScheme();
+
     if(QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark)
     {
         m_systemThemeNameDark = QIcon::themeName();
@@ -122,11 +125,6 @@ NotPad::NotPad(QWidget *parent)
 
     showHideFind(false);
     showHideReplace(false);
-
-    qDebug() << "Platform:" << QGuiApplication::platformName();
-    qDebug() << "Available XDG themes:" << QIcon::themeSearchPaths();
-    qDebug() << "Current theme:" << QIcon::themeName();
-    qDebug() << "Current style:" << QApplication::style();
 
     /// Load persisted data
     loadSettings(); /// Must be before QMainWindow::show() because it loads window size etc
@@ -272,7 +270,7 @@ void NotPad::handleArguments()
     /// arg0    = path to this executable
     /// arg1... = possible file
     /// Note that Qt automatically removes it's own supported args such as -widgetcount
-    const auto arguments = qApp->arguments();
+    const auto arguments = m_commandLine.positionalArguments();
 //    qDebug() << "args" << arguments;
     m_argumentFiles.clear();
     for(int i = 1; i < arguments.size(); ++i)

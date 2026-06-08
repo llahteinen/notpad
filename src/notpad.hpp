@@ -9,6 +9,7 @@
 class TabManager;
 class Editor;
 class StatusBar;
+class QCommandLineParser;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -22,7 +23,7 @@ class NotPad : public QMainWindow
     Q_OBJECT
 
 public:
-    NotPad(QWidget *parent = nullptr);
+    NotPad(QCommandLineParser& args, QWidget *parent = nullptr);
     ~NotPad();
     NotPad(const NotPad&) = delete;
     NotPad& operator=(const NotPad&) = delete;
@@ -146,6 +147,7 @@ private:
     Editor* m_editor;       //!< Editor that is currently selected in the active tab
     Editor* m_prevEditor;   //!< Editor that was selected before the current one
 
+    QCommandLineParser& m_commandLine;
     QStringList m_argumentFiles;
 
     QString m_systemThemeName;

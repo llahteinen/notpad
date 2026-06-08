@@ -124,6 +124,8 @@ target_compile_options(${EXE_TARGET_NAME} PRIVATE
     >
 )
 
+target_compile_definitions(${EXE_TARGET_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
+
 # When this property is set to true the executable when linked on Windows will be created with a WinMain() entry point
 # instead of just main(). This makes it a GUI executable instead of a console application.
 # qDebug etc will go to system debug log instead of console. Stdout will go nowhere.

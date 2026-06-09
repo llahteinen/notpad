@@ -70,8 +70,6 @@ protected:
     virtual void wheelEvent(QWheelEvent *e) override;
 
 private:
-    std::chrono::high_resolution_clock::time_point m_start_t{}, m_end_t{}; /// DEBUG
-
     static std::pair<TextStream*, QThread*> createStreamAndThread(const QString& fileName);
 
     /// NOTE: This function is very slow and memory intensive on large files!

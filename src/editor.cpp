@@ -152,7 +152,6 @@ Editor* Editor::createEditor(File::Status& o_status, const QString& fileName, QW
     editor->m_loadingInProgress = true;
 
     /// QThread enters its own event loop here which executes until exit is called (or quit)
-    editor->m_start_t = std::chrono::high_resolution_clock::now(); /// DEBUG
     thread->start();
 
     return editor;
@@ -318,8 +317,6 @@ void Editor::onDataQueued()
             }
         }
 
-        m_end_t = std::chrono::high_resolution_clock::now(); /// DEBUG
-        qInfo() << "insertText DONE in" << std::chrono::duration_cast<std::chrono::milliseconds>(m_end_t-m_start_t).count();
         qDebug() << "Final batchSize" << m_textStream->batchSize();
 
         /// 10000 = 5,3s
@@ -409,7 +406,6 @@ void Editor::reload()
     m_loadingPos = 0;
 
     /// QThread enters its own event loop here which executes until exit is called (or quit)
-    m_start_t = std::chrono::high_resolution_clock::now(); /// DEBUG
     m_textStreamThread->start();
 }
 

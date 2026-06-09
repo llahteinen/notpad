@@ -19,7 +19,7 @@ QString findCounterpartTheme(const QString& themeName)
     {
         QString other_name = themeName;
         other_name.remove("-dark", Qt::CaseInsensitive);
-        qInfo() << "other_name" << other_name;
+        qDebug() << "other_name" << other_name;
         if(themeExists(other_name))
         {
             return other_name;
@@ -37,7 +37,7 @@ QString findCounterpartTheme(const QString& themeName)
     {
         QString base_name = themeName;
         base_name.remove("-light", Qt::CaseInsensitive);
-        qInfo() << "base_name" << base_name;
+        qDebug() << "base_name" << base_name;
         QString other_name = base_name +  "-dark";
         if(themeExists(other_name))
         {

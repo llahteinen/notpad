@@ -45,7 +45,7 @@ void Highlighter::rehighlight(int topPos)
 {
     if(m_running)
     {
-        qInfo() << "rehighlight already running";
+        qDebug() << "rehighlight already running";
         return;
     }
 

@@ -26,7 +26,7 @@ qsizetype Search::countMatches(QStringView document, const QString& sterm, const
         if(count == max_val)
         {
             count = -2;
-            qInfo() << "Too many search results: >" << max_val;
+            qWarning() << "Too many search results: >" << max_val;
             break;
         }
         ++count;

@@ -279,7 +279,7 @@ void NotPad::handleArguments()
         const QFileInfo arg{arguments.at(i)};
         if(arg.isFile())
         {
-            qInfo() << "Got file argument" << arg.filePath();
+            qDebug() << "Got file argument" << arg.filePath();
             m_argumentFiles.append(arg.absoluteFilePath());
         }
     }
@@ -1054,7 +1054,7 @@ void NotPad::onMatchCountFinished(Editor* editor, qsizetype count)
         return;
     }
 
-    qInfo() << "Matches count" << count;
+    qDebug() << "Matches count" << count;
     statusBar()->showMessage(tr("%1 matches").arg(count));
     if(count <= 0)
     {
@@ -1125,7 +1125,7 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
             {
 //                qDebug() << "FindForward";
                 m_editor->moveCursor(QTextCursor::Start);
-                qInfo() << "Find jumped to start";
+                qDebug() << "Find jumped to start";
                 statusBar()->showMessage(tr("Jumped to start"), 1000);
                 find(flags, ++recursion);
             }
@@ -1133,7 +1133,7 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
             {
 //                qDebug() << "FindBackward";
                 m_editor->moveCursor(QTextCursor::End);
-                qInfo() << "Find jumped to end";
+                qDebug() << "Find jumped to end";
                 statusBar()->showMessage(tr("Jumped to end"), 1000);
                 find(flags, ++recursion);
             }

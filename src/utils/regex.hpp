@@ -23,7 +23,7 @@ namespace Regex
     //    reg.optimize(); /// Not sure what this does, does not seem to affect performance
         if(!reg.isValid())
         {
-            qInfo() << "Invalid regexp:" << reg.errorString();
+            qWarning() << "Invalid regexp:" << reg.errorString();
         }
         return reg;
     }

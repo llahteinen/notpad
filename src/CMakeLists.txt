@@ -116,12 +116,41 @@ set_target_properties(${EXE_TARGET_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
+if(QT_VERSION_MAJOR EQUAL 6)
+    qt_finalize_executable(${EXE_TARGET_NAME})
+endif()
+
+
+set(INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR})
+if(BUILD_STATIC)
+    message("Static build is ON")
+    set(INSTALL_BINDIR ${INSTALL_BINDIR}-static)
+endif()
+
 install(TARGETS ${TARGET_NAME} ${EXE_TARGET_NAME}
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    RUNTIME DESTINATION ${INSTALL_BINDIR}
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(${EXE_TARGET_NAME})
+if(WIN32 AND NOT BUILD_STATIC)
+    find_program(DEPLOYQT windeployqt
+#      PATHS "${Qt6_ROOT_DIR}/bin"
+    )
+    if(DEPLOYQT)
+        set(DEPLOY_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+
+        install(CODE "execute_process(COMMAND
+          \"${DEPLOYQT}\"
+          \"${DEPLOY_DIR}\"
+          --no-translations
+          --no-system-d3d-compiler
+          --no-system-dxc-compiler
+          --no-opengl-sw
+          --no-network
+          --skip-plugin-types imageformats,iconengines
+        )")
+    else()
+        message(WARNING "windeployqt not found")
+    endif()
 endif()

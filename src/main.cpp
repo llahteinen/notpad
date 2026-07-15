@@ -3,10 +3,41 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QStyleFactory>
+#include <SingleApplication>
+
+#ifdef Q_OS_WINDOWS
+#include <Windows.h>
+#endif
+
+
+void raiseWidget(QWidget* widget);
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
+    /// Single instance for this application
+#ifdef Q_OS_WINDOWS
+    SingleApplication a(argc, argv, true, /// Allow secondary instances
+                        (SingleApplication::Mode::User |
+                         SingleApplication::Mode::SecondaryNotification)
+                        );
+
+    if(a.isSecondary())
+    {
+        /// Enable the primary instance to set itself as foreground window
+        AllowSetForegroundWindow( DWORD( a.primaryPid() ) );
+
+        /// This secondary instance sends a message to primary instance
+        a.sendMessage("INSTANCE_STARTED");
+        return 0;
+    }
+#else
+    /// This emits the instanceStarted signal normally
+    SingleApplication a(argc, argv);
+#endif
+
+    QObject::connect(&a, &SingleApplication::instanceStarted,
+                     [](){ qInfo() << "New instance"; } );
+
 
     QCommandLineParser parser;
 //    parser.setApplicationDescription(PROJECT_NAME);
@@ -66,7 +97,36 @@ int main(int argc, char *argv[])
     }
 
     NotPad w{parser};
+
+#ifdef Q_OS_WINDOWS
+    QObject::connect(&a, &SingleApplication::receivedMessage, [&w]() {
+        raiseWidget(&w);
+    });
+#else
+    QObject::connect(&a, &SingleApplication::instanceStarted, [&w]() {
+        raiseWidget(&w);
+    });
+#endif
+
     w.setWindowIcon(QIcon(":/res/icon.ico"));
     w.show();
     return a.exec();
+}
+
+void raiseWidget(QWidget* widget)
+{
+#ifdef Q_OS_WINDOWS
+    HWND hwnd = (HWND)widget->winId();
+
+    /// Check if window is minimized to task bar
+    if(::IsIconic(hwnd))
+    {
+        ::ShowWindow(hwnd, SW_RESTORE);
+    }
+    ::SetForegroundWindow(hwnd);
+#else
+    widget->show();
+    widget->raise();
+    widget->activateWindow();
+#endif
 }

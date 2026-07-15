@@ -95,8 +95,13 @@ qt_add_executable(${EXE_TARGET_NAME}
     ${EXE_SOURCES}
 )
 
+# SingleApplication
+set(QAPPLICATION_CLASS QApplication CACHE STRING "Inheritance class for SingleApplication")
+add_subdirectory(ext/SingleApplication)
+
 target_link_libraries(${EXE_TARGET_NAME} PRIVATE
     ${TARGET_NAME}
+    SingleApplication::SingleApplication
 )
 
 target_compile_options(${EXE_TARGET_NAME} PRIVATE

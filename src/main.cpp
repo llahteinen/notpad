@@ -15,25 +15,10 @@ void raiseWidget(QWidget* widget);
 int main(int argc, char *argv[])
 {
     /// Single instance for this application
-#ifdef Q_OS_WINDOWS
     SingleApplication a(argc, argv, true, /// Allow secondary instances
                         (SingleApplication::Mode::User |
                          SingleApplication::Mode::SecondaryNotification)
                         );
-
-    if(a.isSecondary())
-    {
-        /// Enable the primary instance to set itself as foreground window
-        AllowSetForegroundWindow( DWORD( a.primaryPid() ) );
-
-        /// This secondary instance sends a message to primary instance
-        a.sendMessage("INSTANCE_STARTED");
-        return 0;
-    }
-#else
-    /// This emits the instanceStarted signal normally
-    SingleApplication a(argc, argv);
-#endif
 
     QObject::connect(&a, &SingleApplication::instanceStarted,
                      [](){ qInfo() << "New instance"; } );
@@ -96,17 +81,38 @@ int main(int argc, char *argv[])
         qInfo() << "Requesting theme" << theme;
     }
 
+    /// If this is secondary instance, send file list to primary
+    if(a.isSecondary())
+    {
+#ifdef Q_OS_WINDOWS
+        /// Enable the primary instance to set itself as foreground window
+        AllowSetForegroundWindow( DWORD( a.primaryPid() ) );
+#endif
+
+        /// Send argument file list to primary instance
+        const QStringList file_list = parser.positionalArguments();
+        QByteArray file_barr;
+        QDataStream stream(&file_barr, QIODevice::WriteOnly);
+        stream << file_list;
+
+        /// This secondary instance sends a message to primary instance
+        a.sendMessage(file_barr);
+
+        return 0;
+    }
+
+
     NotPad w{parser};
 
-#ifdef Q_OS_WINDOWS
-    QObject::connect(&a, &SingleApplication::receivedMessage, [&w]() {
+    /// Receive file list from secondary instances
+    QObject::connect(&a, &SingleApplication::receivedMessage, &w, [&w](quint32, QByteArray message) {
+        w.receiveMessage(message);
+    }, Qt::QueuedConnection);
+
+    QObject::connect(&a, &SingleApplication::receivedMessage, [&w](quint32 instanceId, QByteArray) {
+        qDebug() << "instanceId" << instanceId;
         raiseWidget(&w);
     });
-#else
-    QObject::connect(&a, &SingleApplication::instanceStarted, [&w]() {
-        raiseWidget(&w);
-    });
-#endif
 
     w.setWindowIcon(QIcon(":/res/icon.ico"));
     w.show();

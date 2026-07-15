@@ -42,15 +42,9 @@ set(RESOURCE_FILES
     ui_icons.qrc
 )
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_library(${TARGET_NAME} STATIC
-        ${PROJECT_SOURCES}
-    )
-else()
-    add_library(${TARGET_NAME} STATIC
-        ${PROJECT_SOURCES}
-    )
-endif()
+qt_add_library(${TARGET_NAME} STATIC
+    ${PROJECT_SOURCES}
+)
 
 qt6_add_resources(${TARGET_NAME} "resources"
     FILES
@@ -96,16 +90,10 @@ if(WIN32)
     list(APPEND EXE_SOURCES resource.rc)
 endif()
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(${EXE_TARGET_NAME}
-        MANUAL_FINALIZATION
-        ${EXE_SOURCES}
-    )
-else()
-    add_executable(${EXE_TARGET_NAME}
-        ${EXE_SOURCES}
-    )
-endif()
+qt_add_executable(${EXE_TARGET_NAME}
+    MANUAL_FINALIZATION
+    ${EXE_SOURCES}
+)
 
 target_link_libraries(${EXE_TARGET_NAME} PRIVATE
     ${TARGET_NAME}

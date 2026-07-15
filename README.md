@@ -10,8 +10,9 @@ Linux or macOS not tested (so far).
 
 ### Requirements
 
-- Qt 6.10 and probably compatible with many other versions
+- Qt 6.8+ and possibly compatible with some other versions
   - Originally developed using Qt 6.10.1, 6.11.1
+- Qt 5 not compatible
 
 ### Shared linked (Qt default)
 

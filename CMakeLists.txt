@@ -65,8 +65,9 @@ include(GNUInstallDirs)
 
 # Does not compile with Qt5
 # Compiles with Qt 6.8.1 MSVC
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network)
+# SingleApplication uses Network
 
 
 add_subdirectory(src)

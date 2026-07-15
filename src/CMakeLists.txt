@@ -95,8 +95,19 @@ qt_add_executable(${EXE_TARGET_NAME}
     ${EXE_SOURCES}
 )
 
+# SingleApplication
+set(QAPPLICATION_CLASS QApplication CACHE STRING "Inheritance class for SingleApplication")
+add_subdirectory(ext/SingleApplication)
+# Override flags for the target
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(SingleApplication PRIVATE
+        -Wno-effc++
+    )
+endif()
+
 target_link_libraries(${EXE_TARGET_NAME} PRIVATE
     ${TARGET_NAME}
+    SingleApplication::SingleApplication
 )
 
 target_compile_options(${EXE_TARGET_NAME} PRIVATE
@@ -160,7 +171,7 @@ if(WIN32 AND NOT BUILD_STATIC)
           --no-system-d3d-compiler
           --no-system-dxc-compiler
           --no-opengl-sw
-          --no-network
+          #--no-network # SingleApplication uses Network
           --skip-plugin-types imageformats,iconengines
         )")
     else()

@@ -148,6 +148,19 @@ NotPad::~NotPad()
     }
 }
 
+void NotPad::receiveMessage(const QByteArray& message)
+{
+    QDataStream stream(message);
+    QStringList list;
+    stream >> list;
+    qDebug() << list;
+
+    if(!list.isEmpty())
+    {
+        openFiles(list);
+    }
+}
+
 StatusBar* NotPad::statusBar() const
 {
     return m_statusBar;

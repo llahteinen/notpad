@@ -29,6 +29,10 @@ public:
     NotPad& operator=(const NotPad&) = delete;
 
 public slots:
+    /// \brief receiveMessage Receive a list of files to be opened
+    /// \param message List of file paths
+    void receiveMessage(const QByteArray& message);
+
     void show();    /// Hide base class show()
 
 private:

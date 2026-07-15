@@ -11,7 +11,7 @@ BEGIN
     BLOCK "040904B0"
     BEGIN
       VALUE "CompanyName", "@ORGANIZATION_NAME@"
-      VALUE "FileDescription", "Notepad application"
+      VALUE "FileDescription", "@PROJECT_NAME@"
       VALUE "FileVersion", "@PROJECT_FULL_VERSION@"
       VALUE "InternalName", "@PROJECT_NAME@"
       VALUE "LegalCopyright", "Copyright 2026 @ORGANIZATION_NAME@"

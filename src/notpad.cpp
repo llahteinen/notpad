@@ -267,13 +267,10 @@ void NotPad::loadSettings()
 
 void NotPad::handleArguments()
 {
-    /// arg0    = path to this executable
-    /// arg1... = possible file
-    /// Note that Qt automatically removes it's own supported args such as -widgetcount
     const auto arguments = m_commandLine.positionalArguments();
 //    qDebug() << "args" << arguments;
     m_argumentFiles.clear();
-    for(int i = 1; i < arguments.size(); ++i)
+    for(int i = 0; i < arguments.size(); ++i)
     {
         /// Check if we have files
         const QFileInfo arg{arguments.at(i)};

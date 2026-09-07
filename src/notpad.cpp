@@ -208,6 +208,11 @@ void NotPad::show()
     if(m_tabManager->count() == 0) m_tabManager->addEmptyTab();
 
 //    SETTINGS.currentDir = QDir("../../../testifiles"); /// Set save/load dialog starting location
+
+    if(m_editor)
+    {
+        m_editor->setFocus(Qt::ActiveWindowFocusReason);
+    }
 }
 
 void NotPad::dragEnterEvent(QDragEnterEvent* e)

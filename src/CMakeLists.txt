@@ -55,7 +55,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}  # Adds src/ to the include paths
 )
 
-target_link_libraries(${TARGET_NAME} PUBLIC Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(${TARGET_NAME} PUBLIC Qt6::Widgets)
 
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
@@ -133,9 +133,8 @@ set_target_properties(${EXE_TARGET_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(${EXE_TARGET_NAME})
-endif()
+#  In general, MANUAL_FINALIZATION should not be needed unless the project has to support CMake 3.18 or earlier.
+qt_finalize_executable(${EXE_TARGET_NAME})
 
 
 set(INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR})

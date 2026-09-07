@@ -21,15 +21,9 @@ foreach(TEST ${PROJECT_SOURCES})
     set(TARGET_NAME unit${TEST})
     message("TEST ${TARGET_NAME}")
 
-    if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-        qt_add_executable(${TARGET_NAME}
-            ${TEST}.cpp
-        )
-    else()
-        add_executable(${TARGET_NAME}
-            ${TEST}.cpp
-        )
-    endif()
+    qt_add_executable(${TARGET_NAME}
+        ${TEST}.cpp
+    )
 
     #add_test(NAME test_${TARGET_NAME} COMMAND ${TARGET_NAME} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}) # Not sure what this is used for
 

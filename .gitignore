@@ -2,4 +2,6 @@
 build*/
 install*/
 .DS_Store
-./icons/
+.idea/
+icons/
+*.lnk

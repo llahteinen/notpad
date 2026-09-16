@@ -24,6 +24,9 @@
   - Highlight previous search when re-entering Find
   - Seach immediately with ctrl+f when text is selected ?
     - or just highlight but don't search next ?
+  - UI adjustments?
+    - Floating overlay on editor? (this has problems in W11 NotePad)
+    - Or move the current layout between tabbar and editor?
 - Statusbar
   x Current encoding
   x Length of file
@@ -81,6 +84,7 @@ x Drag & drop files
 - Save settings to file
   x Window size
   - Settings
+  - Export settings to file
 - Save session
   x Reopen files that are saved to disk
   - Autosave curently edited file ?
@@ -93,12 +97,17 @@ x Reload current file
 - Recent files list
   - Reopen latest closed file /w shortcut
 - File finder select OS Native / Qt
+  - Improvements to Qt file finder?
+    - Mouse back/fwd support
+    - Copy path support
 - Key shortcuts
   x Close tab (ctrl+w)
   - Word wrap etc extra?
 - Dark mode support
   x Switch with OS
   x Switch manually
+- Extra editing features
+  - duplicate line (ctrl+d)
 
 ## Misc
 x exe file version, company name etc (Windows)
@@ -111,6 +120,11 @@ x License file
 ## Tuning
 - Rename the project
 x Large file open optimizing
+- Robustness and edge case improvements
+  - QSaveFile
+  - Checks at edge cases
+    - "The file you are opening is already open"
+    - Reload current file, but the file has disappeared on disk
 - File extension
   x Appending the extension
   - Keeping track of selected file types

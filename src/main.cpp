@@ -25,9 +25,24 @@ int main(int argc, char *argv[])
 
 
     QCommandLineParser parser;
-//    parser.setApplicationDescription(PROJECT_NAME);
+    /// Set this to allow e.g. -multiInst in addition to --multiInst
+    parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
+
+    parser.setApplicationDescription(PROJECT_NAME);
     parser.addHelpOption();
     parser.addVersionOption();
+
+    QCommandLineOption multi_option("multi",
+                                    QCoreApplication::translate("main", "Allow launching multiple instances."));
+    parser.addOption(multi_option);
+    /// Alias of multi for Notepad++ compatibility (in NP++ only works with single dash -multiInst)
+    QCommandLineOption multiInst_option("multiInst",
+                                        QCoreApplication::translate("main", "Allow launching multiple instances."));
+    parser.addOption(multiInst_option);
+
+    QCommandLineOption nosession_option("nosession",
+                                        QCoreApplication::translate("main", "Start without tabs from previous session."));
+    parser.addOption(nosession_option);
 
     /// This is only for printing help. The actual style command is handled automatically by Qt, and it is not obtainable with qApp->arguments()
     QCommandLineOption style_option("style",
@@ -81,8 +96,9 @@ int main(int argc, char *argv[])
         qInfo() << "Requesting theme" << theme;
     }
 
-    /// If this is secondary instance, send file list to primary
-    if(a.isSecondary())
+    const bool multi_instance = parser.isSet("multi") || parser.isSet("multiInst");
+    /// If we are in single instance mode and this is secondary instance, send file list to primary
+    if(!multi_instance && a.isSecondary())
     {
 #ifdef Q_OS_WINDOWS
         /// Enable the primary instance to set itself as foreground window
@@ -101,8 +117,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-
-    NotPad w{parser};
+    NotPad w{parser, parser.isSet("nosession")};
 
     /// Receive file list from secondary instances
     QObject::connect(&a, &SingleApplication::receivedMessage, &w, [&w](quint32, QByteArray message) {

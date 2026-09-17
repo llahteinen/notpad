@@ -23,7 +23,7 @@ class NotPad : public QMainWindow
     Q_OBJECT
 
 public:
-    NotPad(QCommandLineParser& args, QWidget *parent = nullptr);
+    NotPad(QCommandLineParser& args, bool noSession, QWidget *parent = nullptr);
     ~NotPad();
     NotPad(const NotPad&) = delete;
     NotPad& operator=(const NotPad&) = delete;
@@ -151,8 +151,10 @@ private:
     Editor* m_editor;       //!< Editor that is currently selected in the active tab
     Editor* m_prevEditor;   //!< Editor that was selected before the current one
 
+    /// Command line options
     QCommandLineParser& m_commandLine;
     QStringList m_argumentFiles;
+    bool m_noSession;
 
     QString m_systemThemeName;
     QString m_systemThemeNameDark;

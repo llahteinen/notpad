@@ -6,10 +6,9 @@
 ## Features
 - Command line arguments
   x Open file via command line argument
-    - Add a tab instead of a new instance
-  - Sessionless mode / single file mode
-- Single instance mode
-  - https://github.com/itay-grudev/SingleApplication
+    x Add a tab instead of a new instance
+  x Sessionless mode / single file mode
+x Single instance mode
   - Option to select behavior on second instance launch
     - Add tab / launch another instance / always ask
 - Find

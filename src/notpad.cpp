@@ -25,7 +25,7 @@
 
 
 
-NotPad::NotPad(QCommandLineParser& args, QWidget *parent)
+NotPad::NotPad(QCommandLineParser& args, bool noSession, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::NotPad)
     , m_locale{QLocale::system()}
@@ -37,6 +37,7 @@ NotPad::NotPad(QCommandLineParser& args, QWidget *parent)
     , m_prevEditor{}
     , m_commandLine{args}
     , m_argumentFiles{}
+    , m_noSession{noSession}
     , m_systemThemeName{}
     , m_systemThemeNameDark{}
 {
@@ -198,9 +199,13 @@ void NotPad::show()
     /// Setup open tabs
     /// Load previous session
     /// TODO: restore the active tab?
-    qDebug() << "sessionTabs" << SETTINGS.pers.sessionTabs;
-    /// Check if the files exist?
-    openFiles(SETTINGS.pers.sessionTabs);
+    if(!m_noSession)
+    {
+        qDebug() << "sessionTabs" << SETTINGS.pers.sessionTabs;
+        /// Check if the files exist?
+        openFiles(SETTINGS.pers.sessionTabs);
+    }
+
     /// Argument files will be opened as last tabs
     openFiles(m_argumentFiles);
 
@@ -336,7 +341,10 @@ bool NotPad::closeAllTabs()
     }
 
     /// 2. Persist remaining tabs, those that have a file whether saved or unsaved, as a session
-    persistCurrentTabs();
+    if(!m_noSession)
+    {
+        persistCurrentTabs();
+    }
 
     /// 3. Close all remaining tabs
     /// No need to ask permissions here anymore, since cleanupModifiedTabs already did

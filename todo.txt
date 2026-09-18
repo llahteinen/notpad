@@ -8,6 +8,7 @@ x If reloading file that has been already deleted, then no information appears
   x Open file via command line argument
     x Add a tab instead of a new instance
   x Sessionless mode / single file mode
+  x "Don't save settings" mode
 x Single instance mode
   - Option to select behavior on second instance launch
     - Add tab / launch another instance / always ask
@@ -84,11 +85,14 @@ x Drag & drop files
   x Window size
   - Settings
   - Export settings to file
+  - Settings data versioning
 - Save session
   x Reopen files that are saved to disk
   - Autosave curently edited file ?
   - Incognito tabs ?
   - Activate previously active tab
+  - Remember caret and scroll bar
+  - Session data versioning
 - Highlighting
   - Colorize current row
   - Highlight matches of selected text

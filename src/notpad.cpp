@@ -198,7 +198,6 @@ void NotPad::show()
 
     /// Setup open tabs
     /// Load previous session
-    /// TODO: restore the active tab?
     if(!m_noSession)
     {
         qDebug() << "sessionTabs" << SETTINGS.pers.sessionTabs;
@@ -647,7 +646,6 @@ void NotPad::openFiles(const QStringList &fileNameList)
             SETTINGS.currentDir = QFileInfo(fname).dir();
         }
     }
-    /// TODO: Check if a file is already open? Or allow multiple same files?
 }
 
 bool NotPad::openFile(const QString &fileName)

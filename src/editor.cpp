@@ -382,19 +382,23 @@ File::Status Editor::saveAs(const QString& fileName)
     return saved;
 }
 
-void Editor::reload()
+File::Status Editor::reload()
 {
     qDebug() << "reload";
-    if(m_file == nullptr)
-    {
-        qDebug() << "No file";
-        return;
-    }
+    File::Status status{};
     if(m_loadingInProgress)
     {
         qDebug() << "Already reloading";
-        return;
+        status.code = File::Status::CANCELED;
+        return status;
     }
+
+    status = checkFile();
+    if(status != File::Status::SUCCESS_READ)
+    {
+        return status;
+    }
+
     m_loadingInProgress = true;
 
     std::tie(m_textStream, m_textStreamThread) = createStreamAndThread(m_file->fileName());
@@ -407,6 +411,27 @@ void Editor::reload()
 
     /// QThread enters its own event loop here which executes until exit is called (or quit)
     m_textStreamThread->start();
+
+    return status;
+}
+
+File::Status Editor::checkFile()
+{
+    File::Status status{};
+    if(!m_file)
+    {
+        qDebug() << "No file";
+        status.code = File::Status::CANCELED;
+        return status;
+    }
+
+    status = File::checkFile(*m_file);
+    if(status.code == File::Status::FAIL_OPEN_NOTFOUND)
+    {
+        qDebug() << "File" << m_file->fileName() << "does not exist";
+        document()->setModified(true);
+    }
+    return status;
 }
 
 qsizetype Editor::getMatchCount(const QString& sterm, QTextDocument::FindFlags flags)

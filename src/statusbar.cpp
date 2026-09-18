@@ -67,3 +67,8 @@ void StatusBar::update(const Data& d)
                                                 m_locale.toString(d.cursor->pos + SETTINGS.lineNumberOffset)));/// 999999999
     }
 }
+
+void StatusBar::showMessage(const QString& text, int timeout)
+{
+    QStatusBar::showMessage(text, timeout);
+}

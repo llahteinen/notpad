@@ -42,6 +42,9 @@ public:
 
     void update(const Data& d);
 
+public slots:
+    void showMessage(const QString& text, int timeout = 2500); /// Hides base class method just to override the default timeout
+
 private:
     const QLocale& m_locale;
 

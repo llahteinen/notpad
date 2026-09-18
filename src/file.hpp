@@ -60,6 +60,11 @@ namespace File
     /// \param textMode Open file in text mode or binary mode
     /// \return Success status object
     Status openFile(QFile& file, const QString& fileName, bool textMode = true);
+
+    /// \brief Open a file for reading, but don't read anything and close it immediately.
+    /// \param file File to be opened, must have filename already set
+    /// \return Success status object, SUCCESS_READ on success
+    Status checkFile(QFile& file);
 };
 
 #endif // FILE_HPP

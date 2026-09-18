@@ -1002,7 +1002,11 @@ void NotPad::on_actionReload_from_disk_triggered()
     {
         if(confirmFileReload(editor, editor->name()))
         {
-            editor->reload();
+            const auto status = editor->reload();
+            if(status != File::Status::SUCCESS_READ)
+            {
+                messageOpenStatus(status);
+            }
         }
     }
 }

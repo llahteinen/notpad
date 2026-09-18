@@ -33,7 +33,9 @@ public:
     /// \return true if file was saved, false if saving was canceled by user or resulted in error
     File::Status saveAs(const QString& fileName);
 
-    void reload();
+    File::Status reload();
+    File::Status checkFile();
+
 
     /// \brief Count occurrences of a substring. Thread safe.
     qsizetype getMatchCount(const QString& sterm, QTextDocument::FindFlags flags);

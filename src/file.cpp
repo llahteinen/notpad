@@ -87,3 +87,25 @@ File::Status File::openFile(QFile& file, const QString& fileName, bool textMode)
     status.code = Status::SUCCESS_READ;
     return status;
 }
+
+File::Status File::checkFile(QFile& file)
+{
+    Status status{Status::UNKNOWN, file.fileName()};
+    if(!file.exists())
+    {
+        status.code = Status::FAIL_OPEN_NOTFOUND;
+        status.errorString = "File not found";
+        return status;
+    }
+
+    if(!file.open(QFile::ReadOnly))
+    {
+        status.code = Status::FAIL_OPEN_READ;
+        status.errorString = file.errorString();
+        return status;
+    }
+    file.close();
+
+    status.code = Status::SUCCESS_READ;
+    return status;
+}

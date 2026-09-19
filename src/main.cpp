@@ -1,4 +1,4 @@
-#include "notpad.hpp"
+#include "mainwindow.hpp"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -10,7 +10,7 @@
 #endif
 
 
-void raiseWidget(NotPad* widget);
+void raiseWidget(MainWindow* widget);
 
 int main(int argc, char *argv[])
 {
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    NotPad w{parser, parser.isSet("nosession")};
+    MainWindow w{parser, parser.isSet("nosession")};
 
     /// Receive file list from secondary instances
     QObject::connect(&a, &SingleApplication::receivedMessage, &w, [&w](quint32, QByteArray message) {
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
     return a.exec();
 }
 
-void raiseWidget(NotPad* widget)
+void raiseWidget(MainWindow* widget)
 {
 #ifdef Q_OS_WINDOWS
     HWND hwnd = (HWND)widget->winId();

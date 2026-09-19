@@ -1,5 +1,5 @@
-#ifndef NOTPAD_HPP
-#define NOTPAD_HPP
+#ifndef MAINWINDOW_HPP
+#define MAINWINDOW_HPP
 
 #include <QMainWindow>
 #include <QTextDocument>
@@ -14,20 +14,20 @@ class QFile;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
-class NotPad;
+class MainWindow;
 }
 QT_END_NAMESPACE
 
 
-class NotPad : public QMainWindow
+class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    NotPad(QCommandLineParser& args, bool noSession, QWidget *parent = nullptr);
-    ~NotPad();
-    NotPad(const NotPad&) = delete;
-    NotPad& operator=(const NotPad&) = delete;
+    MainWindow(QCommandLineParser& args, bool noSession, QWidget *parent = nullptr);
+    ~MainWindow();
+    MainWindow(const MainWindow&) = delete;
+    MainWindow& operator=(const MainWindow&) = delete;
 
 public slots:
     /// \brief receiveMessage Receive a list of files to be opened
@@ -139,7 +139,7 @@ private slots:
 private:
     void keyPressEvent(QKeyEvent* event) override;
 
-    Ui::NotPad *ui;
+    Ui::MainWindow *ui;
 
     QLocale m_locale;
 
@@ -168,4 +168,4 @@ signals:
 };
 
 
-#endif // NOTPAD_HPP
+#endif // MAINWINDOW_HPP

@@ -3,9 +3,9 @@ set(EXE_TARGET_NAME ${PROJECT_NAME})    # Exe target of the app, should only inc
 
 # LIBRARY TARGET ===========
 set(PROJECT_SOURCES
-        forms/notpad.ui
-        notpad.hpp
-        notpad.cpp
+        forms/mainwindow.ui
+        mainwindow.hpp
+        mainwindow.cpp
         settings.hpp
         settings.cpp
         tab.hpp

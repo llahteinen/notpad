@@ -1,5 +1,5 @@
-#include "notpad.hpp"
-#include "forms/ui_notpad.h"
+#include "mainwindow.hpp"
+#include "forms/ui_mainwindow.h"
 #include "tab.hpp"
 #include "editor.hpp"
 #include "gui/statusbar.hpp"
@@ -25,9 +25,9 @@
 
 
 
-NotPad::NotPad(QCommandLineParser& args, bool noSession, QWidget *parent)
+MainWindow::MainWindow(QCommandLineParser& args, bool noSession, QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::NotPad)
+    , ui(new Ui::MainWindow)
     , m_locale{QLocale::system()}
     , m_menuFontTypeGroup{}
     , m_menuDarkModeGroup{}
@@ -93,11 +93,11 @@ NotPad::NotPad(QCommandLineParser& args, bool noSession, QWidget *parent)
     while(m_tabManager->count() > 0)
         m_tabManager->removeTab(0);
 
-    connect(m_tabManager, &TabManager::currentChanged, this, &NotPad::onCurrentTabChanged);
-    connect(m_tabManager, &TabManager::tabCloseRequested, this, &NotPad::onTabCloseRequested);
+    connect(m_tabManager, &TabManager::currentChanged, this, &MainWindow::onCurrentTabChanged);
+    connect(m_tabManager, &TabManager::tabCloseRequested, this, &MainWindow::onTabCloseRequested);
 
-    connect(this, &NotPad::findResultFound, this, &NotPad::onFindResultFound);
-    connect(this, &NotPad::matchCountFinished, this, &NotPad::onMatchCountFinished);
+    connect(this, &MainWindow::findResultFound, this, &MainWindow::onFindResultFound);
+    connect(this, &MainWindow::matchCountFinished, this, &MainWindow::onMatchCountFinished);
 
     QThreadPool::globalInstance()->setThreadPriority(QThread::HighPriority);
 
@@ -122,7 +122,7 @@ NotPad::NotPad(QCommandLineParser& args, bool noSession, QWidget *parent)
     updateStyle(QGuiApplication::styleHints()->colorScheme());
 
     const auto* hints = QGuiApplication::styleHints();
-    connect(hints, &QStyleHints::colorSchemeChanged, this, &NotPad::onColorSchemeChanged);
+    connect(hints, &QStyleHints::colorSchemeChanged, this, &MainWindow::onColorSchemeChanged);
 
     showHideFind(false);
     showHideReplace(false);
@@ -133,7 +133,7 @@ NotPad::NotPad(QCommandLineParser& args, bool noSession, QWidget *parent)
     qDebug() << "startups" << SETTINGS.pers.startupCounter;
 }
 
-NotPad::~NotPad()
+MainWindow::~MainWindow()
 {
     if(!QThreadPool::globalInstance()->waitForDone(1000))
     {
@@ -149,7 +149,7 @@ NotPad::~NotPad()
     }
 }
 
-void NotPad::receiveMessage(const QByteArray& message)
+void MainWindow::receiveMessage(const QByteArray& message)
 {
     QDataStream stream(message);
     QStringList list;
@@ -162,12 +162,12 @@ void NotPad::receiveMessage(const QByteArray& message)
     }
 }
 
-StatusBar* NotPad::statusBar() const
+StatusBar* MainWindow::statusBar() const
 {
     return m_statusBar;
 }
 
-void NotPad::closeEvent(QCloseEvent* event)
+void MainWindow::closeEvent(QCloseEvent* event)
 {
     qDebug() << "MainWindow closeEvent";
     if((!SETTINGS.confirmAppClose || confirmAppClose(tr("Quitting")))
@@ -185,12 +185,12 @@ void NotPad::closeEvent(QCloseEvent* event)
 
 /// Triggers always when window is restored from minimized to taskbar
 /// What happens here happens just before the window is actually shown
-void NotPad::showEvent(QShowEvent* event)
+void MainWindow::showEvent(QShowEvent* event)
 {
     qDebug() << "showEvent" << event << "spontaneous" << event->spontaneous();
 }
 
-void NotPad::show()
+void MainWindow::show()
 {
     qDebug() << "show";
     QMainWindow::show();
@@ -219,7 +219,7 @@ void NotPad::show()
     }
 }
 
-void NotPad::dragEnterEvent(QDragEnterEvent* e)
+void MainWindow::dragEnterEvent(QDragEnterEvent* e)
 {
     qDebug() << "dragEnterEvent";
     /// "A widget must accept this event in order to receive the drag move events"
@@ -227,7 +227,7 @@ void NotPad::dragEnterEvent(QDragEnterEvent* e)
     e->setAccepted(Utils::hasValidFiles(e->mimeData()));
 }
 
-void NotPad::dropEvent(QDropEvent* e)
+void MainWindow::dropEvent(QDropEvent* e)
 {
     qDebug() << "dropEvent";
     const QStringList filenames = Utils::toFilelist(e->mimeData());
@@ -238,7 +238,7 @@ void NotPad::dropEvent(QDropEvent* e)
     }
 }
 
-void NotPad::saveSettings()
+void MainWindow::saveSettings()
 {
     SETTINGS.pers.windowGeometry = saveGeometry();
 
@@ -246,7 +246,7 @@ void NotPad::saveSettings()
     SETTINGS.pers.toQSettings(settings);
 }
 
-void NotPad::loadSettings()
+void MainWindow::loadSettings()
 {
     /// Load settings from persistent storage
     QSettings settings;
@@ -287,7 +287,7 @@ void NotPad::loadSettings()
     }
 }
 
-void NotPad::handleArguments()
+void MainWindow::handleArguments()
 {
     const auto arguments = m_commandLine.positionalArguments();
 //    qDebug() << "args" << arguments;
@@ -304,7 +304,7 @@ void NotPad::handleArguments()
     }
 }
 
-void NotPad::persistCurrentTabs()
+void MainWindow::persistCurrentTabs()
 {
     QStringList files;
     const auto count = m_tabManager->count();
@@ -321,7 +321,7 @@ void NotPad::persistCurrentTabs()
     SETTINGS.pers.sessionTabs = files;
 }
 
-bool NotPad::closeAllTabs()
+bool MainWindow::closeAllTabs()
 {
     /// Speed up shutdown a little bit if there are ongoing tasks running
     m_tabManager->iterateTabs([](Editor* editor) -> bool {
@@ -358,7 +358,7 @@ bool NotPad::closeAllTabs()
 }
 
 /// Closes tabs that don't have a file after asking user to save them (untitled discarded tabs)
-bool NotPad::saveOrCloseTab(Editor* editor)
+bool MainWindow::saveOrCloseTab(Editor* editor)
 {
     Q_ASSERT(editor != nullptr);
     /// If file is modified, ask save or discard
@@ -389,7 +389,7 @@ bool NotPad::saveOrCloseTab(Editor* editor)
     return true;
 }
 
-bool NotPad::cleanupModifiedTabs()
+bool MainWindow::cleanupModifiedTabs()
 {
     if(m_tabManager->count() == 0)
     {
@@ -418,7 +418,7 @@ bool NotPad::cleanupModifiedTabs()
     return success;
 }
 
-bool NotPad::onTabCloseRequested(int index)
+bool MainWindow::onTabCloseRequested(int index)
 {
     bool permission = false;
     Editor* editor = m_tabManager->widget(index);
@@ -439,7 +439,7 @@ bool NotPad::onTabCloseRequested(int index)
 }
 
 /// Note that when opening tabs, this fires first and the file loading in the tab finishes later
-void NotPad::onCurrentTabChanged(int index)
+void MainWindow::onCurrentTabChanged(int index)
 {
     qDebug() << "onCurrentTabChanged" << index;
     m_prevEditor = m_editor;
@@ -469,7 +469,7 @@ void NotPad::onCurrentTabChanged(int index)
     updateStatusBar();
 }
 
-void NotPad::setupMenu()
+void MainWindow::setupMenu()
 {
     if(m_menuFontTypeGroup != nullptr || m_menuDarkModeGroup != nullptr)
     {
@@ -479,7 +479,7 @@ void NotPad::setupMenu()
 
     /// Font type
     m_menuFontTypeGroup = new QActionGroup(this);
-    connect(m_menuFontTypeGroup, &QActionGroup::triggered, this, &NotPad::onMenuFontTypeGroup_triggered);
+    connect(m_menuFontTypeGroup, &QActionGroup::triggered, this, &MainWindow::onMenuFontTypeGroup_triggered);
     m_menuFontTypeGroup->setExclusive(true);
 
     m_menuFontTypeGroup->addAction(ui->actionFontMonospace);
@@ -496,7 +496,7 @@ void NotPad::setupMenu()
 
     /// Dark mode
     m_menuDarkModeGroup = new QActionGroup(this);
-    connect(m_menuDarkModeGroup, &QActionGroup::triggered, this, &NotPad::onMenuDarkModeGroup_triggered);
+    connect(m_menuDarkModeGroup, &QActionGroup::triggered, this, &MainWindow::onMenuDarkModeGroup_triggered);
     m_menuDarkModeGroup->setExclusive(true);
 
     m_menuDarkModeGroup->addAction(ui->actionSystem);
@@ -508,34 +508,34 @@ void NotPad::setupMenu()
     ui->actionDark->setProperty("colorScheme",      QVariant::fromValue(Qt::ColorScheme::Dark));
 }
 
-void NotPad::setupSignals()
+void MainWindow::setupSignals()
 {
     qDebug() << "setupSignals" << m_prevEditor << m_editor;
     if(m_prevEditor)
     {
-        disconnect(m_prevEditor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable);
-        disconnect(m_prevEditor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable);
-        disconnect(m_prevEditor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged);
-        disconnect(m_prevEditor, &Editor::hasFileChanged,        this, &NotPad::onHasFileChanged);
-        disconnect(m_prevEditor, &QPlainTextEdit::cursorPositionChanged, this, &NotPad::onCursorPositionChanged);
+        disconnect(m_prevEditor, &QPlainTextEdit::undoAvailable, this, &MainWindow::onUndoAvailable);
+        disconnect(m_prevEditor, &QPlainTextEdit::redoAvailable, this, &MainWindow::onRedoAvailable);
+        disconnect(m_prevEditor, &QPlainTextEdit::textChanged,   this, &MainWindow::onTextChanged);
+        disconnect(m_prevEditor, &Editor::hasFileChanged,        this, &MainWindow::onHasFileChanged);
+        disconnect(m_prevEditor, &QPlainTextEdit::cursorPositionChanged, this, &MainWindow::onCursorPositionChanged);
     }
     if(m_editor)
     {
         /// Signals for active tab only (disconnect on every tab switch)
-        connect(m_editor, &QPlainTextEdit::undoAvailable, this, &NotPad::onUndoAvailable, Qt::UniqueConnection);
-        connect(m_editor, &QPlainTextEdit::redoAvailable, this, &NotPad::onRedoAvailable, Qt::UniqueConnection);
-        connect(m_editor, &QPlainTextEdit::textChanged,   this, &NotPad::onTextChanged,   Qt::UniqueConnection);
-        connect(m_editor, &Editor::hasFileChanged,        this, &NotPad::onHasFileChanged, Qt::UniqueConnection);
-        connect(m_editor, &QPlainTextEdit::cursorPositionChanged, this, &NotPad::onCursorPositionChanged, Qt::UniqueConnection);
+        connect(m_editor, &QPlainTextEdit::undoAvailable, this, &MainWindow::onUndoAvailable, Qt::UniqueConnection);
+        connect(m_editor, &QPlainTextEdit::redoAvailable, this, &MainWindow::onRedoAvailable, Qt::UniqueConnection);
+        connect(m_editor, &QPlainTextEdit::textChanged,   this, &MainWindow::onTextChanged,   Qt::UniqueConnection);
+        connect(m_editor, &Editor::hasFileChanged,        this, &MainWindow::onHasFileChanged, Qt::UniqueConnection);
+        connect(m_editor, &QPlainTextEdit::cursorPositionChanged, this, &MainWindow::onCursorPositionChanged, Qt::UniqueConnection);
 
         /// Signals for active and background tabs, not supposed to get disconnected on tab switch
-        connect(m_editor, &Editor::dataLoadingFinished,   this, &NotPad::onLoadingFinished, Qt::UniqueConnection);
-        connect(m_editor, &Editor::dataLoadingUpdate,     this, &NotPad::onLoadingUpdate, Qt::UniqueConnection);
-        connect(this, &NotPad::findBoxVisibleChanged, m_editor, &Editor::setHighlighterEnabled, Qt::UniqueConnection);
+        connect(m_editor, &Editor::dataLoadingFinished,   this, &MainWindow::onLoadingFinished, Qt::UniqueConnection);
+        connect(m_editor, &Editor::dataLoadingUpdate,     this, &MainWindow::onLoadingUpdate, Qt::UniqueConnection);
+        connect(this, &MainWindow::findBoxVisibleChanged, m_editor, &Editor::setHighlighterEnabled, Qt::UniqueConnection);
     }
 }
 
-void NotPad::updateMenu()
+void MainWindow::updateMenu()
 {
     if(m_editor)
     {
@@ -553,7 +553,7 @@ void NotPad::updateMenu()
     }
 }
 
-void NotPad::updateStatusBar()
+void MainWindow::updateStatusBar()
 {
     if(m_editor)
     {
@@ -565,7 +565,7 @@ void NotPad::updateStatusBar()
     }
 }
 
-void NotPad::updateStyle(Qt::ColorScheme scheme)
+void MainWindow::updateStyle(Qt::ColorScheme scheme)
 {
     /// Set colors based on OS dark/light mode
     qDebug() << "Color scheme" << scheme;
@@ -613,7 +613,7 @@ void NotPad::updateStyle(Qt::ColorScheme scheme)
     }
 }
 
-void NotPad::messageOpenStatus(const File::Status& status)
+void MainWindow::messageOpenStatus(const File::Status& status)
 {
     QString msg;
     switch(status)
@@ -635,7 +635,7 @@ void NotPad::messageOpenStatus(const File::Status& status)
     statusBar()->showMessage(msg);
 }
 
-void NotPad::openFiles(const QStringList &fileNameList)
+void MainWindow::openFiles(const QStringList &fileNameList)
 {
 //    qDebug() << "fileNameList" << fileNameList;
     for(const auto& fname : fileNameList)
@@ -648,7 +648,7 @@ void NotPad::openFiles(const QStringList &fileNameList)
     }
 }
 
-bool NotPad::openFile(const QString &fileName)
+bool MainWindow::openFile(const QString &fileName)
 {
     const auto status = m_tabManager->addTabFromFile(fileName);
     qDebug() << "openFile status" << static_cast<int>(status);
@@ -659,7 +659,7 @@ bool NotPad::openFile(const QString &fileName)
     return status == File::Status::SUCCESS_READ;
 }
 
-void NotPad::messageSaveStatus(const File::Status& status)
+void MainWindow::messageSaveStatus(const File::Status& status)
 {
     QString msg;
     switch(status)
@@ -684,14 +684,13 @@ void NotPad::messageSaveStatus(const File::Status& status)
     statusBar()->showMessage(msg);
 }
 
-bool NotPad::save()
+bool MainWindow::save()
 {
     return save(m_editor);
 }
 
-bool NotPad::save(Editor* const editor)
+bool MainWindow::save(Editor* const editor)
 {
-    qDebug() << "NotPad::save";
     if(!editor->saveOrSaveAs())
     {
         return saveAs();
@@ -701,9 +700,8 @@ bool NotPad::save(Editor* const editor)
     return status == File::Status::SUCCESS_WRITE;
 }
 
-bool NotPad::saveAs()
+bool MainWindow::saveAs()
 {
-    qDebug() << "NotPad::saveAs";
     QString start_path = SETTINGS.currentDir.absolutePath();
     QString name_filter = SETTINGS.currentNameFilter;
     if(m_editor->file() != nullptr) /// TODO: duplikaattikoodia openissa
@@ -753,7 +751,7 @@ bool NotPad::saveAs()
     return status == File::Status::SUCCESS_WRITE;
 }
 
-bool NotPad::confirmAppClose(const QString& messageTitle)
+bool MainWindow::confirmAppClose(const QString& messageTitle)
 {
     bool permission = false;
     {
@@ -779,9 +777,9 @@ bool NotPad::confirmAppClose(const QString& messageTitle)
     return permission;
 }
 
-bool NotPad::confirmFileClose(Editor* editor, const QString& messageTitle)
+bool MainWindow::confirmFileClose(Editor* editor, const QString& messageTitle)
 {
-    qDebug() << "NotPad::confirmFileClose";
+    qDebug() << "MainWindow::confirmFileClose";
     bool permission = false;
     if(editor->isModified())
     {
@@ -822,9 +820,9 @@ bool NotPad::confirmFileClose(Editor* editor, const QString& messageTitle)
     return permission;
 }
 
-bool NotPad::confirmFileReload(Editor* editor, const QString& messageTitle)
+bool MainWindow::confirmFileReload(Editor* editor, const QString& messageTitle)
 {
-    qDebug() << "NotPad::confirmFileReload";
+    qDebug() << "MainWindow::confirmFileReload";
     bool permission = false;
     if(editor->isModified())
     {
@@ -859,7 +857,7 @@ bool NotPad::confirmFileReload(Editor* editor, const QString& messageTitle)
     return permission;
 }
 
-const QFile* NotPad::currentFile()
+const QFile* MainWindow::currentFile()
 {
     if(m_editor != nullptr)
     {
@@ -870,7 +868,7 @@ const QFile* NotPad::currentFile()
 
 /// EVENT HANDLERS =======================================
 
-void NotPad::keyPressEvent(QKeyEvent* event)
+void MainWindow::keyPressEvent(QKeyEvent* event)
 {
 //    qDebug() << "keyPressEvent" << event;
     switch(event->key())
@@ -939,7 +937,7 @@ void NotPad::keyPressEvent(QKeyEvent* event)
 
 /// SLOTS ================================================
 
-void NotPad::on_actionNew_triggered()
+void MainWindow::on_actionNew_triggered()
 {
     qDebug() << "on_actionNew_triggered";
 
@@ -958,12 +956,12 @@ void NotPad::on_actionNew_triggered()
     }
 }
 
-void NotPad::on_actionNewTab_triggered()
+void MainWindow::on_actionNewTab_triggered()
 {
     m_tabManager->addEmptyTab();
 }
 
-void NotPad::on_actionOpen_triggered()
+void MainWindow::on_actionOpen_triggered()
 {
     qDebug() << "on_actionOpen_triggered";
 
@@ -992,7 +990,7 @@ void NotPad::on_actionOpen_triggered()
     }
 }
 
-void NotPad::on_actionReload_from_disk_triggered()
+void MainWindow::on_actionReload_from_disk_triggered()
 {
     Editor* editor = m_editor;
     Q_ASSERT(editor != nullptr);
@@ -1009,19 +1007,19 @@ void NotPad::on_actionReload_from_disk_triggered()
     }
 }
 
-void NotPad::on_actionSave_triggered()
+void MainWindow::on_actionSave_triggered()
 {
     qDebug() << "on_actionSave_triggered";
     save();
 }
 
-void NotPad::on_actionSave_as_triggered()
+void MainWindow::on_actionSave_as_triggered()
 {
     qDebug() << "on_actionSave_as_triggered";
     saveAs();
 }
 
-void NotPad::on_actionAbout_triggered()
+void MainWindow::on_actionAbout_triggered()
 {
     qDebug() << "on_actionAbout_triggered";
     QString text = tr("A lightweight and small notepad application, "
@@ -1033,35 +1031,35 @@ void NotPad::on_actionAbout_triggered()
     QMessageBox::about(this, tr("About %1 v%2").arg(PROJECT_NAME, PROJECT_VERSION), text);
 }
 
-void NotPad::on_actionAboutQt_triggered()
+void MainWindow::on_actionAboutQt_triggered()
 {
     qDebug() << "on_actionAboutQt_triggered";
     QMessageBox::aboutQt(this);
 }
 
-void NotPad::on_find_findButton_clicked()
+void MainWindow::on_find_findButton_clicked()
 {
     find({});
 }
-void NotPad::on_find_findPrevButton_clicked()
+void MainWindow::on_find_findPrevButton_clicked()
 {
     find(QTextDocument::FindFlag::FindBackward);
 }
-void NotPad::on_find_replaceButton_clicked()
+void MainWindow::on_find_replaceButton_clicked()
 {
     replace();
 }
-void NotPad::on_find_replaceAndFindButton_clicked()
+void MainWindow::on_find_replaceAndFindButton_clicked()
 {
     replace(true);
 }
 
-void NotPad::on_find_replaceAllButton_clicked()
+void MainWindow::on_find_replaceAllButton_clicked()
 {
     replaceAll();
 }
 
-void NotPad::onFindResultFound(Editor* editor, QTextCursor result)
+void MainWindow::onFindResultFound(Editor* editor, QTextCursor result)
 {
     if(!editor || editor != m_editor)
     {
@@ -1071,7 +1069,7 @@ void NotPad::onFindResultFound(Editor* editor, QTextCursor result)
     editor->setTextCursor(result);
 }
 
-void NotPad::onMatchCountFinished(Editor* editor, qsizetype count)
+void MainWindow::onMatchCountFinished(Editor* editor, qsizetype count)
 {
     if(!editor || editor != m_editor)
     {
@@ -1087,7 +1085,7 @@ void NotPad::onMatchCountFinished(Editor* editor, qsizetype count)
     }
 }
 
-void NotPad::find(QTextDocument::FindFlags flags, int recursion)
+void MainWindow::find(QTextDocument::FindFlags flags, int recursion)
 {
 //    qDebug() << "find" << flags;
     qDebug() << "recursion" << recursion;
@@ -1166,7 +1164,7 @@ void NotPad::find(QTextDocument::FindFlags flags, int recursion)
     }
 }
 
-void NotPad::replace(bool findAfter)
+void MainWindow::replace(bool findAfter)
 {
     qDebug() << "replace";
 
@@ -1195,7 +1193,7 @@ void NotPad::replace(bool findAfter)
     }
 }
 
-void NotPad::replaceAll()
+void MainWindow::replaceAll()
 {
     if(m_editor->isReadOnly())
     {
@@ -1213,7 +1211,7 @@ void NotPad::replaceAll()
     m_editor->replaceAll(searchString, replaceString);
 }
 
-void NotPad::on_actionWord_wrap_triggered(bool enabled)
+void MainWindow::on_actionWord_wrap_triggered(bool enabled)
 {
 //    qDebug() << "on_actionWord_wrap_triggered" << enabled;
     m_editor->setWordWrap(enabled);
@@ -1221,22 +1219,22 @@ void NotPad::on_actionWord_wrap_triggered(bool enabled)
     SETTINGS.pers.wordWrap = enabled;
 }
 
-void NotPad::on_actionFontSmaller_triggered()
+void MainWindow::on_actionFontSmaller_triggered()
 {
     SETTINGS.incrementFontSize(-1);
 }
 
-void NotPad::on_actionFontLarger_triggered()
+void MainWindow::on_actionFontLarger_triggered()
 {
     SETTINGS.incrementFontSize(1);
 }
 
-void NotPad::on_actionRestoreFontSize_triggered()
+void MainWindow::on_actionRestoreFontSize_triggered()
 {
     SETTINGS.restoreFontSize();
 }
 
-void NotPad::on_actionFind_triggered(bool checked)
+void MainWindow::on_actionFind_triggered(bool checked)
 {
     qDebug() << "on_actionFind_triggered" << checked;
     if(!m_editor)
@@ -1273,7 +1271,7 @@ void NotPad::on_actionFind_triggered(bool checked)
     showHideFind(show);
 }
 
-void NotPad::on_actionReplace_triggered()
+void MainWindow::on_actionReplace_triggered()
 {
     /// If editor does not have text selected, focus should go to find lineEdit
     /// If editor has text selected -> the text goes to find lineEdit
@@ -1304,7 +1302,7 @@ void NotPad::on_actionReplace_triggered()
     }
 }
 
-void NotPad::on_main_find_showReplace_toolButton_clicked()
+void MainWindow::on_main_find_showReplace_toolButton_clicked()
 {
     /// Keep this button's state using a property. It's not set as checkable.
     /// Hide replace UI if checked property does no exist or if it was true
@@ -1315,7 +1313,7 @@ void NotPad::on_main_find_showReplace_toolButton_clicked()
     showHideReplace(show);
 }
 
-void NotPad::showHideFind(bool show)
+void MainWindow::showHideFind(bool show)
 {
     const bool raising_edge = !ui->main_find_widget->isVisible() && show;
     const bool falling_edge = ui->main_find_widget->isVisible() && !show;
@@ -1344,7 +1342,7 @@ void NotPad::showHideFind(bool show)
     }
 }
 
-void NotPad::showHideReplace(bool show)
+void MainWindow::showHideReplace(bool show)
 {
     /// Keep replace button's state in a property
     ui->main_find_showReplace_toolButton->setProperty("btn_checked", show);
@@ -1354,42 +1352,42 @@ void NotPad::showHideReplace(bool show)
     ui->main_find_replacewidget->setVisible(show);
 }
 
-void NotPad::on_actionUndo_triggered()
+void MainWindow::on_actionUndo_triggered()
 {
     m_editor->undo();
 }
 
-void NotPad::on_actionRedo_triggered()
+void MainWindow::on_actionRedo_triggered()
 {
     m_editor->redo();
 }
 
-void NotPad::onUndoAvailable(bool available)
+void MainWindow::onUndoAvailable(bool available)
 {
     qDebug() << "onUndoAvailable" << available << sender();
     ui->actionUndo->setEnabled(available);
 }
 
-void NotPad::onRedoAvailable(bool available)
+void MainWindow::onRedoAvailable(bool available)
 {
     qDebug() << "onRedoAvailable" << available << sender();
     ui->actionRedo->setEnabled(available);
 }
 
-void NotPad::onHasFileChanged(bool has)
+void MainWindow::onHasFileChanged(bool has)
 {
     qDebug() << "onHasFileChanged" << has;
     ui->actionReload_from_disk->setEnabled(has);
 }
 
 /// Seems that maybe highlighter is triggering this as well
-void NotPad::onTextChanged()
+void MainWindow::onTextChanged()
 {
 //    qDebug() << "onTextChanged" << sender();
     updateStatusBar();
 }
 
-void NotPad::onCursorPositionChanged()
+void MainWindow::onCursorPositionChanged()
 {
 //    qDebug() << "onCursorPositionChanged";
     if(!m_editor)
@@ -1401,7 +1399,7 @@ void NotPad::onCursorPositionChanged()
     statusBar()->update(sbdata);
 }
 
-void NotPad::onLoadingUpdate(int progress)
+void MainWindow::onLoadingUpdate(int progress)
 {
 //    qDebug() << "onLoadingUpdate";
     /// This could also be a progress bar in the statusbar
@@ -1413,7 +1411,7 @@ void NotPad::onLoadingUpdate(int progress)
     }
 }
 
-void NotPad::onLoadingFinished()
+void MainWindow::onLoadingFinished()
 {
     qDebug() << "onLoadingFinished" << sender();
     const auto* editor = qobject_cast<Editor*>(sender());
@@ -1424,17 +1422,17 @@ void NotPad::onLoadingFinished()
     updateStatusBar();
 }
 
-void NotPad::onColorSchemeChanged(Qt::ColorScheme colorScheme)
+void MainWindow::onColorSchemeChanged(Qt::ColorScheme colorScheme)
 {
     qDebug() << "onColorSchemeChanged" << colorScheme;
     /// Must be queued call, otherwise the styles get mangled badly.
     /// Seems that this colorSchemeChanged signal is emitted before the theme has actually changed.
     /// "When the colorSchemeChange() signal gets emitted, the old palette is still in effect."
     /// "To update application- specific colors when the effective palette changes, handle PaletteChange or ApplicationPaletteChange events."
-    QMetaObject::invokeMethod(this, &NotPad::updateStyle, Qt::QueuedConnection, colorScheme);
+    QMetaObject::invokeMethod(this, &MainWindow::updateStyle, Qt::QueuedConnection, colorScheme);
 }
 
-void NotPad::onMenuFontTypeGroup_triggered(QAction* action)
+void MainWindow::onMenuFontTypeGroup_triggered(QAction* action)
 {
     qDebug() << "onMenuFontTypeGroup_triggered" << action;
     const auto convertVariant = [](QFont::StyleHint& o_style, const QVariant& variant) -> bool {
@@ -1464,7 +1462,7 @@ void NotPad::onMenuFontTypeGroup_triggered(QAction* action)
     }
 }
 
-void NotPad::onMenuDarkModeGroup_triggered(QAction* action)
+void MainWindow::onMenuDarkModeGroup_triggered(QAction* action)
 {
     const auto variant = action->property("colorScheme");
     if(const auto* scheme = get_if<Qt::ColorScheme>(&variant))

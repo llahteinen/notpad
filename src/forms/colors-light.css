@@ -3,7 +3,7 @@
 /* darker 2   #E0E0E0 (== 224) */
 
 /* #f0f0f0 was the default in the palette */
-NotPad { background-color: #F0F0F0; } /* main color */
+MainWindow { background-color: #F0F0F0; } /* main color */
 
 /* File Edit Options etc */
 /* Affects the top menu bar but not inside the menus */

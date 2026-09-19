@@ -3,7 +3,7 @@
 /* lighter 2  #2E2E2E (== 46) */
 
 /* #f0f0f0 was the default in the palette */
-NotPad { background-color: #1E1E1E; } /* main color */
+MainWindow { background-color: #1E1E1E; } /* main color */
 
 /* File Edit Options etc */
 /* Affects the top menu bar but not inside the menus */

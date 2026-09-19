@@ -55,8 +55,14 @@ public:
 
 
     /// Give sensible defaults here for fresh installations
+    /// and if migrator for some reason does not find old values
     struct Persistables
     {
+        /// Version of the Persistables structure
+        /// Increase this if doing any breaking changes to Persistables structure
+        static constexpr unsigned int SETTINGS_VERSION = 1;
+        const QString programVersion{PROJECT_FULL_VERSION};
+
         /// Background
         unsigned int startupCounter{0};
         QByteArray windowGeometry{};
@@ -65,15 +71,30 @@ public:
         /// User editables
         /// Options (menu bar choices)
         bool wordWrap{true};    /// This would probably be best if it was saved per tab
-        QFont font;             /// This font will be used when constructing new editors
+        QFont font{};           /// This font will be used when constructing new editors
         Qt::ColorScheme colorScheme{Qt::ColorScheme::Unknown}; /// Unknown == system default
 
 
-        /// \brief Loads from persistent storage
-        void fromQSettings(const QSettings& settings);
+        /// \brief Loads from persistent storage and runs migrators if needed
+        void fromQSettings(QSettings& settings);
         /// \brief Saves to persistent storage
-        void toQSettings(QSettings& settings);
+        void toQSettings(QSettings& settings) const;
 
+        /// \brief Checks if the persisted settings had a lower version than the current
+        bool isMigrationNeeded(unsigned int storedSettingsVersion) const;
+
+    private:
+        using MigrationFunction = std::function<void(QSettings&)>;
+        /// Vector of migration functions, indexed by target version
+        /// migrator[0] migrates from v0 → v1, migrator[1] migrates from v1 → v2, etc
+        /// Reads from QSettings persistent storage and immediately writes new settings back
+        const QVector<MigrationFunction> migrators;
+
+        /// \brief Loads from persistent storage assuming it is in current Settings version format
+        void readCurrentQSettings(QSettings& settings);
+
+        Persistables();
+        friend class Settings;
     } pers{};
 
     const QStringList& getMonospaceFamilies() {

@@ -249,7 +249,7 @@ void NotPad::saveSettings()
 void NotPad::loadSettings()
 {
     /// Load settings from persistent storage
-    const QSettings settings;
+    QSettings settings;
     SETTINGS.pers.fromQSettings(settings);
 
     /// Apply settings

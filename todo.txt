@@ -85,7 +85,8 @@ x Drag & drop files
   x Window size
   - Settings
   - Export settings to file
-  - Settings data versioning
+  x Settings data versioning
+  x Settings migration from old version
 - Save session
   x Reopen files that are saved to disk
   - Autosave curently edited file ?

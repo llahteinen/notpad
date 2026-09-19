@@ -1,7 +1,7 @@
 #ifndef EDITOR_HPP
 #define EDITOR_HPP
 
-#include "file.hpp"
+#include "utils/file.hpp"
 #include "utils/highlighter.hpp"
 #include "utils/textstream.hpp"
 #include "utils/search.hpp"

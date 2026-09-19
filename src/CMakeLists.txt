@@ -12,11 +12,11 @@ set(PROJECT_SOURCES
         tab.cpp
         editor.hpp
         editor.cpp
-        file.hpp
-        file.cpp
-        statusbar.hpp
-        statusbar.cpp
         types.hpp
+        gui/statusbar.hpp
+        gui/statusbar.cpp
+        utils/file.hpp
+        utils/file.cpp
         utils/namefilterlist.hpp
         utils/namefilterlist.cpp
         utils/textstream.hpp

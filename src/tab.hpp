@@ -1,7 +1,7 @@
 #ifndef TAB_HPP
 #define TAB_HPP
 
-#include "file.hpp"
+#include "utils/file.hpp"
 #include <QTabWidget>
 
 class Editor;

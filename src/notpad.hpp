@@ -1,7 +1,6 @@
 #ifndef NOTPAD_HPP
 #define NOTPAD_HPP
 
-#include "file.hpp"
 #include <QMainWindow>
 #include <QTextDocument>
 #include <QLocale>
@@ -9,7 +8,9 @@
 class TabManager;
 class Editor;
 class StatusBar;
+namespace File{ struct Status; }
 class QCommandLineParser;
+class QFile;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

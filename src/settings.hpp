@@ -75,6 +75,7 @@ public:
         Qt::ColorScheme colorScheme{Qt::ColorScheme::Unknown}; /// Unknown == system default
 
 
+    private:
         /// \brief Loads from persistent storage and runs migrators if needed
         void fromQSettings(QSettings& settings);
         /// \brief Saves to persistent storage
@@ -83,7 +84,6 @@ public:
         /// \brief Checks if the persisted settings had a lower version than the current
         bool isMigrationNeeded(unsigned int storedSettingsVersion) const;
 
-    private:
         using MigrationFunction = std::function<void(QSettings&)>;
         /// Vector of migration functions, indexed by target version
         /// migrator[0] migrates from v0 → v1, migrator[1] migrates from v1 → v2, etc
@@ -132,13 +132,21 @@ public:
         }
     }
 
+    /// \brief Loads from persistent storage and runs migrators if needed
+    void load();
+    /// \brief Saves to persistent storage
+    void save();
+
+    void setWordWrap(bool wordWrap);
     void incrementFontSize(int increment);
     void restoreFontSize();
     void setFontStyle(QFont::StyleHint style);
     void setColorScheme(Qt::ColorScheme scheme);
 
 signals:
+    void wordWrapChanged(bool wordWrap);
     void fontChanged(const QFont& font);
+    void colorSchemeChanged(Qt::ColorScheme scheme);
 };
 
 //inline auto& SETTINGS = Settings::get(); /// Causes Settings::get() to be run too early (static)

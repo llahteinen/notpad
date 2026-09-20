@@ -29,6 +29,7 @@ void TabManager::setupEditor(Editor* editor)
     /// Dynamic global settings
     editor->setFont(SETTINGS.pers.font);
     editor->setWordWrap(SETTINGS.pers.wordWrap);
+    connect(&SETTINGS, &Settings::wordWrapChanged, editor, &Editor::setWordWrap);
     connect(&SETTINGS, &Settings::fontChanged, editor, &Editor::setFont);
 
     /// Hard coded stuff

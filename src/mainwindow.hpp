@@ -46,6 +46,7 @@ private:
 
     void saveSettings();
     void loadSettings();
+    void connectSettings();
     void handleArguments();
 
     void persistCurrentTabs();

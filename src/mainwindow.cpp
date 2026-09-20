@@ -13,7 +13,6 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QCloseEvent>
-#include <QSettings>
 #include <QThreadPool>
 #include <QFuture>
 #include <QToolButton>
@@ -119,7 +118,6 @@ MainWindow::MainWindow(QCommandLineParser& args, bool noSession, QWidget *parent
 //    QApplication::setStyle("windowsvista"); /// Does not look super great. Does not support dark mode (but doesn't break either)
 //    QApplication::setStyle("macOS"); /// Looks to fall back to windows11 style on Windows 11
 //    QApplication::setStyle("windows11"); /// Good Windows 11 style (from Qt 6.11 onwards). Needs some CSS magic
-    updateStyle(QGuiApplication::styleHints()->colorScheme());
 
     const auto* hints = QGuiApplication::styleHints();
     connect(hints, &QStyleHints::colorSchemeChanged, this, &MainWindow::onColorSchemeChanged);
@@ -128,6 +126,7 @@ MainWindow::MainWindow(QCommandLineParser& args, bool noSession, QWidget *parent
     showHideReplace(false);
 
     /// Load persisted data
+    connectSettings();
     loadSettings(); /// Must be before QMainWindow::show() because it loads window size etc
     SETTINGS.pers.startupCounter++;
     qDebug() << "startups" << SETTINGS.pers.startupCounter;
@@ -241,50 +240,66 @@ void MainWindow::dropEvent(QDropEvent* e)
 void MainWindow::saveSettings()
 {
     SETTINGS.pers.windowGeometry = saveGeometry();
-
-    QSettings settings;
-    SETTINGS.pers.toQSettings(settings);
+    SETTINGS.save();
 }
 
 void MainWindow::loadSettings()
 {
     /// Load settings from persistent storage
-    QSettings settings;
-    SETTINGS.pers.fromQSettings(settings);
+    SETTINGS.load();
 
     /// Apply settings
     /// Window geometry
     if(!SETTINGS.pers.windowGeometry.isEmpty()) restoreGeometry(SETTINGS.pers.windowGeometry); /// Seems to work even if the data is something weird
 
-    /// Menu font style
-    const auto style = SETTINGS.pers.font.styleHint();
-    auto actions = m_menuFontTypeGroup->actions();
-    auto action_it = std::ranges::find_if(actions, Utils::getPropertyEqualsPred("fontStyle", style));
-    if(action_it != actions.end())
-    {
-        (*action_it)->setChecked(true);
-        /// Font will be automatically used by the editors
-    }
-    else
-    {
-        qWarning() << "Font style menu match not found" << style;
-        actions.at(0)->setChecked(true);
-    }
+    /// Rest of the settings will be triggered via signals
+}
 
-    /// Menu dark mode
-    const auto scheme = SETTINGS.pers.colorScheme;
-    actions = m_menuDarkModeGroup->actions();
-    action_it = std::ranges::find_if(actions, Utils::getPropertyEqualsPred("colorScheme", scheme));
-    if(action_it != actions.end())
-    {
-        (*action_it)->setChecked(true);
-        QGuiApplication::styleHints()->setColorScheme(SETTINGS.pers.colorScheme);
-    }
-    else
-    {
-        qWarning() << "Dark mode menu match not found" << scheme;
-        actions.at(0)->setChecked(true);
-    }
+void MainWindow::connectSettings()
+{
+    /// Menu font style
+    connect(&SETTINGS, &Settings::fontChanged, this, [this](const QFont& font) {
+        const auto style = font.styleHint();
+        const auto actions = m_menuFontTypeGroup->actions();
+        const auto action_it = std::ranges::find_if(actions, Utils::getPropertyEqualsPred("fontStyle", style));
+        if(action_it != actions.end())
+        {
+            (*action_it)->setChecked(true);
+            /// Font will be automatically used by the editors
+        }
+        else
+        {
+            qWarning() << "Font style menu match not found" << style;
+            actions.at(0)->setChecked(true);
+        }
+    });
+
+    /// Dark mode
+    connect(&SETTINGS, &Settings::colorSchemeChanged, this, [this](Qt::ColorScheme scheme) {
+        /// When scheme is Unknown, styleHints will set it to the system current scheme,
+        /// but it emits colorSchemeChanged with the actual system current scheme, not Unknown.
+        /// The signal is emitted only when the actual color scheme actually changed.
+        /// There is no API to ask what the OS current scheme is, only what the application's is.
+        /// Let's emit the signal manually here regardless if the scheme actually changed or not, to trigger style reload.
+        const auto blocked = QGuiApplication::styleHints()->blockSignals(true);
+        QGuiApplication::styleHints()->setColorScheme(scheme);
+        QGuiApplication::styleHints()->blockSignals(blocked);
+        /// Don't use scheme because it could contain Unknown, colorScheme() always returns Light or Dark, never Unknown
+        emit QGuiApplication::styleHints()->colorSchemeChanged(QGuiApplication::styleHints()->colorScheme());
+
+        /// Set menu item
+        const auto actions = m_menuDarkModeGroup->actions();
+        const auto action_it = std::ranges::find_if(actions, Utils::getPropertyEqualsPred("colorScheme", scheme));
+        if(action_it != actions.end())
+        {
+            (*action_it)->setChecked(true);
+        }
+        else
+        {
+            qWarning() << "Dark mode menu match not found" << scheme;
+            actions.at(0)->setChecked(true);
+        }
+    });
 }
 
 void MainWindow::handleArguments()
@@ -568,7 +583,7 @@ void MainWindow::updateStatusBar()
 void MainWindow::updateStyle(Qt::ColorScheme scheme)
 {
     /// Set colors based on OS dark/light mode
-    qDebug() << "Color scheme" << scheme;
+    qDebug() << "updateStyle" << scheme;
     QFile colorStyleFile;
     if(scheme == Qt::ColorScheme::Dark)
     {
@@ -1214,9 +1229,7 @@ void MainWindow::replaceAll()
 void MainWindow::on_actionWord_wrap_triggered(bool enabled)
 {
 //    qDebug() << "on_actionWord_wrap_triggered" << enabled;
-    m_editor->setWordWrap(enabled);
-    /// Latest choice by user is persisted
-    SETTINGS.pers.wordWrap = enabled;
+    SETTINGS.setWordWrap(enabled);
 }
 
 void MainWindow::on_actionFontSmaller_triggered()
@@ -1467,7 +1480,6 @@ void MainWindow::onMenuDarkModeGroup_triggered(QAction* action)
     const auto variant = action->property("colorScheme");
     if(const auto* scheme = get_if<Qt::ColorScheme>(&variant))
     {
-        QGuiApplication::styleHints()->setColorScheme(*scheme); /// This will also trigger onColorSchemeChanged
         SETTINGS.setColorScheme(*scheme);
     }
     else

@@ -84,6 +84,27 @@ void Settings::Persistables::toQSettings(QSettings& settings) const
     settings.setValue("options/colorScheme",    static_cast<int>(colorScheme));
 }
 
+void Settings::load()
+{
+    QSettings settings;
+    pers.fromQSettings(settings);
+    emit wordWrapChanged(pers.wordWrap);
+    emit fontChanged(pers.font);
+    emit colorSchemeChanged(pers.colorScheme);
+}
+
+void Settings::save()
+{
+    QSettings settings;
+    pers.toQSettings(settings);
+}
+
+void Settings::setWordWrap(bool wordWrap)
+{
+    pers.wordWrap = wordWrap;
+    emit wordWrapChanged(wordWrap);
+}
+
 void Settings::incrementFontSize(int increment)
 {
     auto size = pers.font.pointSizeF();
@@ -134,5 +155,6 @@ void Settings::setFontStyle(QFont::StyleHint style)
 void Settings::setColorScheme(Qt::ColorScheme scheme)
 {
     pers.colorScheme = scheme;
+    emit colorSchemeChanged(scheme);
 }
 

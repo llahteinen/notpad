@@ -1,4 +1,9 @@
-Small and snappy notepad app with Win32 API, no WinUI, no AI slop, no bloat.
+# NotPad
+---
+
+Small and snappy notepad app for Windows, Linux and macOS. No AI slop, no bloat.
+
+Windows version with Win32 API, no sluggish WinUI.
 
 The idea is to have just enough features and remain lightweight and fast.
 
@@ -6,7 +11,7 @@ The idea is to have just enough features and remain lightweight and fast.
 
 Compiles for Windows with MSVC and MinGW.
 
-Linux or macOS not tested (so far).
+Linux build is tested with GCC 15/16, macOS with Clang.
 
 ### Requirements
 

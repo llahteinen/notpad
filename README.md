@@ -7,6 +7,9 @@ Windows version with Win32 API, no sluggish WinUI.
 
 The idea is to have just enough features and remain lightweight and fast.
 
+![Windows light theme](readme-windows-light.png)
+![Windows dark theme](readme-windows-dark.png)
+
 ## Building
 
 Compiles for Windows with MSVC and MinGW.

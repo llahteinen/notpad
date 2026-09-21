@@ -1,4 +1,4 @@
-# NotPad
+# QutePad
 ---
 
 Small and snappy notepad app for Windows, Linux and macOS. No AI slop, no bloat.

@@ -11,13 +11,14 @@ class Highlighter : public LSyntaxHighlighter
 {
 public:
 
-    Highlighter() : LSyntaxHighlighter(static_cast<QObject*>(nullptr)) {};
-    explicit Highlighter(QTextDocument* parent)
-        : LSyntaxHighlighter(parent)
+    struct HighlightRule
     {
-        m_highlightFormat.setBackground(Qt::yellow);
-        m_highlightFormat.setForeground(Qt::black);
-    }
+        QRegularExpression regex;
+        QTextCharFormat format;
+    };
+
+    Highlighter() : LSyntaxHighlighter(static_cast<QObject*>(nullptr)) {};
+    explicit Highlighter(QTextDocument* parent);
 
     ~Highlighter() = default;
 
@@ -29,11 +30,18 @@ public:
     void setSearchTerm(const QString& sterm);
 
     void setRegex(const QString& regexStr, QTextDocument::FindFlags flags = {}, int topPos = 0);
+    void setSelectionRegex(const QString& regexStr, QTextDocument::FindFlags flags = {}, int topPos = 0);
 
     QString m_searchTerm{};
-    QString m_regexStr{};
-    QRegularExpression m_regex{};
-    QTextCharFormat m_highlightFormat{};
+
+    QString m_searchRegexStr{};
+    HighlightRule m_searchRegex{{}, {}/*, false*/};
+
+    QString m_selectionRegexStr{};
+    HighlightRule m_selectionRegex{{}, {}/*, true*/};
+
+    const QVector<HighlightRule*> m_highlightRules{}; /// Prioritized list. Last one in the list wins
+
     int m_counter{-1};
     std::atomic<bool> m_running{false};
 };

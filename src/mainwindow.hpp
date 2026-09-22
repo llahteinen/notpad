@@ -55,9 +55,11 @@ private:
     bool cleanupModifiedTabs();
 
     void setupSignals();
+    void updateEditorSignals();
     void setupMenu();
     void updateMenu();
     void updateStatusBar();
+    void updateHighlighters();
     void updateStyle(Qt::ColorScheme scheme);
 
     void messageOpenStatus(const File::Status& status);

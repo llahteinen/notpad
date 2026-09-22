@@ -3,6 +3,22 @@
 #include <QRegularExpression>
 
 
+Highlighter::Highlighter(QTextDocument* parent)
+    : LSyntaxHighlighter(parent)
+    , m_highlightRules{&m_selectionRegex, &m_searchRegex}
+{
+    m_searchRegex.format.setBackground(Qt::yellow);
+    m_searchRegex.format.setForeground(Qt::black);
+
+    QTextCharFormat format;
+    auto color = QColor::fromHsl(0, 0, 170);
+    color.setAlpha(64);
+    QBrush brush(color);
+    format.setBackground(brush);
+    format.clearForeground();
+    m_selectionRegex.format = format;
+}
+
 void Highlighter::setSearchTerm(const QString& sterm)
 {
     if(sterm == m_searchTerm)
@@ -12,14 +28,14 @@ void Highlighter::setSearchTerm(const QString& sterm)
 
     m_searchTerm = sterm;
 //    m_regex = QRegularExpression(QRegularExpression::escape(m_searchTerm));
-    m_regex = QRegularExpression(QRegularExpression::escape(m_searchTerm), QRegularExpression::CaseInsensitiveOption);
+    m_searchRegex.regex = QRegularExpression(QRegularExpression::escape(m_searchTerm), QRegularExpression::CaseInsensitiveOption);
 
     rehighlight();
 }
 
 void Highlighter::setRegex(const QString& regexStr, QTextDocument::FindFlags flags, int topPos)
 {
-    if(regexStr == m_regexStr)
+    if(regexStr == m_searchRegexStr)
     {
         return;
     }
@@ -29,9 +45,27 @@ void Highlighter::setRegex(const QString& regexStr, QTextDocument::FindFlags fla
     {
         return;
     }
-    m_regex = reg;
-    m_regexStr = regexStr;
+    m_searchRegex.regex = reg;
+    m_searchRegexStr = regexStr;
     m_searchTerm = "";
+
+    rehighlight(topPos);
+}
+
+void Highlighter::setSelectionRegex(const QString& regexStr, QTextDocument::FindFlags flags, int topPos)
+{
+    if(regexStr == m_selectionRegexStr)
+    {
+        return;
+    }
+
+    const auto reg = Regex::stringToRegex(regexStr, flags);
+    if(!reg.isValid())
+    {
+        return;
+    }
+    m_selectionRegex.regex = reg;
+    m_selectionRegexStr = regexStr;
 
     rehighlight(topPos);
 }
@@ -57,16 +91,18 @@ void Highlighter::rehighlight(int topPos)
 
 void Highlighter::highlightBlock(const QString& text)
 {
-    if(text.isEmpty()) return;
-    if(m_searchTerm.isEmpty() && m_regexStr.isEmpty()) return;
-    if(!m_regex.isValid()) return;
+    if(Q_UNLIKELY(text.isEmpty())) return;
 
-    auto matchIterator = m_regex.globalMatch(text);
-
-    while(matchIterator.hasNext())
+    for(const auto* rule : m_highlightRules)
     {
-        QRegularExpressionMatch match = matchIterator.next();
-        setFormat(match.capturedStart(), match.capturedLength(), m_highlightFormat);
+        if(Q_UNLIKELY(!rule->regex.isValid())) continue;
+
+        auto matchIterator = rule->regex.globalMatch(text);
+        while(matchIterator.hasNext())
+        {
+            QRegularExpressionMatch match = matchIterator.next();
+            setFormat(match.capturedStart(), match.capturedLength(), rule->format);
+        }
     }
 
     ++m_counter;

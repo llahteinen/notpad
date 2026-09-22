@@ -41,6 +41,11 @@ Editor::Editor(TextStream* stream, std::unique_ptr<QFile> file_p, QWidget *paren
     /// We want contentsChange because only real edits should trigger it
     connect(document(), &QTextDocument::contentsChange, this, &Editor::onContentsChange);
 
+    connect(this, &Editor::selectionChanged, this, [this]() {
+        const auto selection = textCursor().selectedText();
+        setSelectionHighlightRegex(selection);
+    });
+
     if(m_textStream)
     {
         auto conn_type = Qt::AutoConnection;
@@ -629,6 +634,11 @@ void Editor::setHighlighterEnabled(bool enabled)
     {
         highLighter->setRegex("");
     }
+}
+
+void Editor::setSelectionHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags)
+{
+    highLighter->setSelectionRegex(regexStr, flags, firstVisibleBlock().position());
 }
 
 void Editor::onContentsChange([[maybe_unused]]int position, [[maybe_unused]]int charsRemoved, [[maybe_unused]]int charsAdded)

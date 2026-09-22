@@ -122,6 +122,8 @@ MainWindow::MainWindow(QCommandLineParser& args, bool noSession, QWidget *parent
     const auto* hints = QGuiApplication::styleHints();
     connect(hints, &QStyleHints::colorSchemeChanged, this, &MainWindow::onColorSchemeChanged);
 
+    setupSignals();
+
     showHideFind(false);
     showHideReplace(false);
 
@@ -479,9 +481,10 @@ void MainWindow::onCurrentTabChanged(int index)
     }
     qDebug() << "file" << currentFile();
 
-    setupSignals();
+    updateEditorSignals();
     updateMenu();
     updateStatusBar();
+    updateHighlighters();
 }
 
 void MainWindow::setupMenu()
@@ -523,9 +526,37 @@ void MainWindow::setupMenu()
     ui->actionDark->setProperty("colorScheme",      QVariant::fromValue(Qt::ColorScheme::Dark));
 }
 
+/// Setup signals other than those originating from editors
 void MainWindow::setupSignals()
 {
-    qDebug() << "setupSignals" << m_prevEditor << m_editor;
+    /// Set highlighting when find box appears or disappears
+    connect(this, &MainWindow::findBoxVisibleChanged, this, [this](bool visible) {
+        if(m_editor)
+        {
+            if(visible)
+            {
+                m_editor->setHighlightRegex(ui->find_lineEdit->text());
+            }
+            else
+            {
+                m_editor->setHighlightRegex("");
+            }
+        }
+    });
+    /// Set highlighting when find box text changes
+    connect(ui->find_lineEdit, &QLineEdit::textChanged, this, [this](const QString& text) {
+        qDebug() << "QLineEdit::textChanged" << text;
+        if(m_editor)
+        {
+            m_editor->setHighlightRegex(text);
+        }
+    });
+}
+
+/// Setup signals that originate from editors
+void MainWindow::updateEditorSignals()
+{
+//    qDebug() << "updateEditorSignals" << m_prevEditor << m_editor;
     if(m_prevEditor)
     {
         disconnect(m_prevEditor, &QPlainTextEdit::undoAvailable, this, &MainWindow::onUndoAvailable);
@@ -546,7 +577,6 @@ void MainWindow::setupSignals()
         /// Signals for active and background tabs, not supposed to get disconnected on tab switch
         connect(m_editor, &Editor::dataLoadingFinished,   this, &MainWindow::onLoadingFinished, Qt::UniqueConnection);
         connect(m_editor, &Editor::dataLoadingUpdate,     this, &MainWindow::onLoadingUpdate, Qt::UniqueConnection);
-        connect(this, &MainWindow::findBoxVisibleChanged, m_editor, &Editor::setHighlighterEnabled, Qt::UniqueConnection);
     }
 }
 
@@ -577,6 +607,17 @@ void MainWindow::updateStatusBar()
         sbdata.stats = { m_editor->document()->blockCount(), m_editor->document()->characterCount() };
         sbdata.cursor = { m_editor->textCursor() };
         statusBar()->update(sbdata);
+    }
+}
+
+void MainWindow::updateHighlighters()
+{
+    if(m_editor)
+    {
+        if(ui->main_find_widget->isVisible())
+        {
+            m_editor->setHighlightRegex(ui->find_lineEdit->text());
+        }
     }
 }
 
@@ -1260,11 +1301,14 @@ void MainWindow::on_actionFind_triggered(bool checked)
     /// Scenarios:
     /// Find widget is not currently visible
     ///  -> show
+    ///  -> start highlighting if there was some text selected or already in the box
     /// Find widget is already visible, but is not focused
     ///  -> set focus and select the text
     ///  -> If user has selected text in the editor, set new search text
+    ///  -> start higlighting
     /// Find widget is already visible and focused
     ///  -> hide
+    ///  -> stop highlighting
 
     bool show = checked;
 

@@ -56,6 +56,7 @@ public:
     void updateTabWidth();
 
     void setHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags = {});
+    void setSelectionHighlightRegex(const QString& regexStr, QTextDocument::FindFlags flags = {});
 
     void abortTasks();
 

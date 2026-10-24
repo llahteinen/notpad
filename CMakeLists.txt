@@ -1,13 +1,20 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
+string(TIMESTAMP BUILD_YYWW "%y%V" UTC)   # Year-WeekOfYear e.g. "2643", using ISO 8601 week numbers.
+
+set(BUILD_N 0) # Running number for the build, between 0...9. Increment this if there are more than one release on the same week.
+
+if(BUILD_N GREATER 9)
+    message(FATAL_ERROR "BUILD_N has to be smaller than 10")
+endif()
 
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 9)
 set(PROJECT_VERSION_PATCH 0)
+set(PROJECT_VERSION_TWEAK ${BUILD_YYWW}${BUILD_N})
 set(VERSION_SUFFIX "beta")
-set(VERSION_SUFFIX_I 128) # alpha = 127, beta = 128
 
-set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}")
 
 if(VERSION_SUFFIX)
     set(PROJECT_FULL_VERSION "${PROJECT_VERSION}-${VERSION_SUFFIX}")

@@ -171,7 +171,9 @@ if(WIN32 AND NOT BUILD_STATIC)
           --no-system-dxc-compiler
           --no-opengl-sw
           #--no-network # SingleApplication uses Network
-          --skip-plugin-types imageformats,iconengines
+          # PNG is supported without plugins. For SVG icons we would need to have at least qsvgicon
+          --skip-plugin-types imageformats,iconengines,networkinformation,tls
+          --exclude-plugins qtuiotouchplugin
         )")
     else()
         message(WARNING "windeployqt not found")

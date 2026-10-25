@@ -7,6 +7,7 @@
 #include "utils/utils.hpp"
 #include "utils/theme.hpp"
 #include "settings.hpp"
+#include "aboutdialog.hpp"
 #include <QString>
 #include <QFile>
 #include <QTextStream>
@@ -1036,19 +1037,12 @@ void MainWindow::on_actionSave_as_triggered()
 
 void MainWindow::on_actionAbout_triggered()
 {
-    qDebug() << "on_actionAbout_triggered";
-    QString text = tr("A lightweight and small notepad application, "
-                      "concentrating on plain text files. \n"
-                      "\n"
-                      "© %1 @ github\n"
-                      ).arg(ORGANIZATION_NAME);
-
-    QMessageBox::about(this, tr("About %1 v%2").arg(PROJECT_NAME, PROJECT_VERSION), text);
+    AboutDialog dialog(this);
+    dialog.exec();
 }
 
 void MainWindow::on_actionAboutQt_triggered()
 {
-    qDebug() << "on_actionAboutQt_triggered";
     QMessageBox::aboutQt(this);
 }
 

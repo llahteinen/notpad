@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
         raiseWidget(&w);
     });
 
-    w.setWindowIcon(QIcon(":/res/icon.ico"));
+    a.setWindowIcon(QIcon(":/res/icon.ico"));
     w.show();
     return a.exec();
 }

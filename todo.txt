@@ -115,8 +115,8 @@ x Reload current file
 
 ## Misc
 x exe file version, company name etc (Windows)
-- Improve about page
-  - www address
+x Improve about page
+  x www address
   x creator
 x License file
   - Add machine learning prohibition
@@ -140,7 +140,7 @@ x Large file open optimizing
   - Menu item change signal class
   - etc
 - Project cleaning
-  - file to utils
+  x file to utils
   - rename tab
 x Qt static linking
 - Exe signing

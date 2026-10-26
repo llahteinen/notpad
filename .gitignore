@@ -1,7 +1,9 @@
 *.user
 build*/
+cmake-build*/
 install*/
 .DS_Store
 .idea/
+.qtcreator/
 icons/
 *.lnk

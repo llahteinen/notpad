@@ -165,7 +165,7 @@ if(WIN32 AND NOT BUILD_STATIC)
 #      PATHS "${Qt6_ROOT_DIR}/bin"
     )
     if(DEPLOYQT)
-        set(DEPLOY_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+        set(DEPLOY_DIR ${CMAKE_INSTALL_FULL_BINDIR})
 
         install(CODE "execute_process(COMMAND
           \"${DEPLOYQT}\"
@@ -181,5 +181,75 @@ if(WIN32 AND NOT BUILD_STATIC)
         )")
     else()
         message(WARNING "windeployqt not found")
+    endif()
+endif()
+if(LINUX AND NOT BUILD_STATIC)
+    option(QUTEPAD_BUNDLE_APPDIR "Create a bundled AppDir during install" ON)
+
+    find_program(PATCHELF_EXECUTABLE patchelf)
+    # Derive the Qt installation prefix from the imported Qt6::Core target:
+    # .../gcc_64/lib/libQt6Core.so.6  ->  .../gcc_64
+    get_target_property(QT6_CORE_IMPORTED Qt6::Core IMPORTED_LOCATION)
+    if(NOT QT6_CORE_IMPORTED)
+        message(FATAL_ERROR "Qt6::Core target not available")
+    endif()
+    get_filename_component(QT6_LIB_DIR "${QT6_CORE_IMPORTED}" DIRECTORY)
+    get_filename_component(QT6_INSTALL_PREFIX "${QT6_LIB_DIR}" DIRECTORY)
+
+    set(DEPLOY_APPDIR "${CMAKE_INSTALL_PREFIX}/deploy/QutePad.AppDir")
+    message("QT6_INSTALL_PREFIX for deployment ${QT6_INSTALL_PREFIX}")
+    message("DEPLOY_APPDIR for deployment ${DEPLOY_APPDIR}")
+
+    if(QUTEPAD_BUNDLE_APPDIR AND PATCHELF_EXECUTABLE)
+        # "linuxdeployqt", copy required libraries to deploy destination
+        install(CODE "
+            execute_process(COMMAND
+                \"${CMAKE_SOURCE_DIR}/packaging/linux/linux-deploy.sh\"
+                \"${DEPLOY_APPDIR}\"
+                \"${CMAKE_INSTALL_FULL_BINDIR}/${EXE_TARGET_NAME}\"
+                \"${QT6_INSTALL_PREFIX}\"
+                \"${PATCHELF_EXECUTABLE}\"
+                COMMAND_ERROR_IS_FATAL ANY
+            )
+            message(STATUS \"AppDir bundle installed to ${DEPLOY_APPDIR}\")
+        ")
+        install(FILES ${PROJECT_SOURCE_DIR}/packaging/linux/qutepad.desktop
+                DESTINATION ${DEPLOY_APPDIR})
+        install(FILES ${PROJECT_SOURCE_DIR}/packaging/qutepad.png
+                DESTINATION ${DEPLOY_APPDIR})
+        install(PROGRAMS ${PROJECT_SOURCE_DIR}/packaging/linux/AppRun
+                DESTINATION ${DEPLOY_APPDIR})
+
+        # This does a simple dependency check and compares the deployed files
+        install(CODE "
+            execute_process(COMMAND
+                \"${CMAKE_SOURCE_DIR}/packaging/linux/linux-deploy-check.sh\"
+                \"${DEPLOY_APPDIR}\"
+                \"${CMAKE_INSTALL_FULL_BINDIR}/${EXE_TARGET_NAME}\"
+                \"${QT6_INSTALL_PREFIX}\"
+                COMMAND_ERROR_IS_FATAL ANY
+            )
+        ")
+
+        # Create AppImage
+        find_program(APPIMAGETOOL appimagetool)
+        if(APPIMAGETOOL)
+            install(CODE "
+                execute_process(
+                    COMMAND
+                        \"${APPIMAGETOOL}\"
+                        \"${DEPLOY_APPDIR}\"
+                        # DESTINATION left empty -> appimagetool generates file name and creates the file to working dir
+                        COMMAND_ERROR_IS_FATAL ANY
+                    WORKING_DIRECTORY
+                        \"${CMAKE_INSTALL_PREFIX}/deploy/\"
+                )
+                message(STATUS \"AppImage created: ${CMAKE_INSTALL_PREFIX}/deploy/${APPIMAGE_FILE}\")
+            ")
+        else()
+            message(WARNING "appimagetool not found, skipping AppImage create")
+        endif()
+    elseif(NOT PATCHELF_EXECUTABLE)
+        message(WARNING "patchelf not found, skipping deploy")
     endif()
 endif()

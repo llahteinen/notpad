@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
     QObject::connect(&a, &SingleApplication::instanceStarted,
                      [](){ qInfo() << "New instance"; } );
 
+    QGuiApplication::setDesktopFileName("qutepad");
 
     QCommandLineParser parser;
     /// Set this to allow e.g. -multiInst in addition to --multiInst

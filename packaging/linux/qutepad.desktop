@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Type=Application
+Name=QutePad
+GenericName=Text Editor
+Comment=QutePad multi-platform plain text editor
+Exec=QutePad %F
+Icon=qutepad
+Terminal=false
+Categories=Utility;TextEditor;
+MimeType=text/plain;
+StartupWMClass=qutepad

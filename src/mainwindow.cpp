@@ -102,10 +102,12 @@ MainWindow::MainWindow(QCommandLineParser& args, bool noSession, QWidget *parent
     QThreadPool::globalInstance()->setThreadPriority(QThread::HighPriority);
 
     QString project_name{PROJECT_NAME};
+    QString window_title = project_name;
 #if defined(QT_DEBUG)
     project_name.append("_dbg");
+    window_title = QString("%1 debug v%2").arg(PROJECT_NAME, PROJECT_FULL_VERSION);
 #endif
-    setWindowTitle(QString("%1 v%2").arg(project_name, PROJECT_FULL_VERSION));
+    setWindowTitle(window_title);
 
     QCoreApplication::setOrganizationName(ORGANIZATION_NAME);
     QCoreApplication::setOrganizationDomain(ORGANIZATION_DOMAIN);

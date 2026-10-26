@@ -19,7 +19,7 @@ Linux build is tested with GCC 15/16, macOS with Clang.
 ### Requirements
 
 - Qt 6.8+ and possibly compatible with some other versions
-  - Originally developed using Qt 6.10.1, 6.11.1
+  - Originally developed using Qt 6.10.1, 6.11.1, 6.12.0
 - Qt 5 not compatible
 
 ### Shared linked (Qt default)
@@ -34,6 +34,7 @@ You need to build Qt from sources first. Static libraries are not provided by Qt
   - For example with MSVC:
     - Launch your Qt command line from the provided shortcut e.g. Qt 6.10.1 (MSVC 2022 64-bit)
     - Run vcvarsall.bat that is located in e.g. C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat
+      - `vcvarsall.bat x64`
 - Configure the build
   - `cd /path/to/Qt/6.10.1` (sources would be located in /path/to/Qt/6.10.1/Src)
   - `mkdir build`

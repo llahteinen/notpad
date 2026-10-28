@@ -23,6 +23,8 @@ int main(int argc, char *argv[])
     QObject::connect(&a, &SingleApplication::instanceStarted,
                      [](){ qInfo() << "New instance"; } );
 
+    QCoreApplication::setApplicationName(PROJECT_NAME);
+    QCoreApplication::setApplicationVersion(PROJECT_FULL_VERSION);
     QGuiApplication::setDesktopFileName("qutepad");
 
     QCommandLineParser parser;

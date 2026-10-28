@@ -99,6 +99,8 @@ qt_add_executable(${EXE_TARGET_NAME}
     ${EXE_SOURCES}
 )
 
+target_compile_definitions(${EXE_TARGET_NAME} PRIVATE PROJECT_FULL_VERSION="${PROJECT_FULL_VERSION}")
+
 # SingleApplication
 set(QAPPLICATION_CLASS QApplication CACHE STRING "Inheritance class for SingleApplication")
 add_subdirectory(ext/SingleApplication)

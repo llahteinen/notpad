@@ -216,7 +216,7 @@ if(LINUX AND NOT BUILD_STATIC)
             )
             message(STATUS \"AppDir bundle installed to ${DEPLOY_APPDIR}\")
         ")
-        install(FILES ${PROJECT_SOURCE_DIR}/packaging/linux/qutepad.desktop
+        install(PROGRAMS ${PROJECT_SOURCE_DIR}/packaging/linux/qutepad.desktop
                 DESTINATION ${DEPLOY_APPDIR})
         install(FILES ${PROJECT_SOURCE_DIR}/packaging/qutepad.png
                 DESTINATION ${DEPLOY_APPDIR})
